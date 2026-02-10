@@ -26,7 +26,7 @@
 		371B27D32B3EB93A00EC1271 /* Representative.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27AF2B3EB93A00EC1271 /* Representative.swift */; };
 		371B27D42B3EB93A00EC1271 /* MotherBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27B02B3EB93A00EC1271 /* MotherBoard.swift */; };
 		371B27D52B3EB93A00EC1271 /* InputStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27B12B3EB93A00EC1271 /* InputStage.swift */; };
-		371B27D62B3EB93A00EC1271 /* CantoneseLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27B32B3EB93A00EC1271 /* CantoneseLabel.swift */; };
+		371B27D62B3EB93A00EC1271 /* PinyinLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27B32B3EB93A00EC1271 /* PinyinLabel.swift */; };
 		371B27D72B3EB93A00EC1271 /* NotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27B42B3EB93A00EC1271 /* NotationView.swift */; };
 		371B27D82B3EB93A00EC1271 /* SerialNumberLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27B52B3EB93A00EC1271 /* SerialNumberLabel.swift */; };
 		371B27D92B3EB93A00EC1271 /* CandidateBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27B62B3EB93A00EC1271 /* CandidateBoard.swift */; };
@@ -103,7 +103,7 @@
 		371B27AF2B3EB93A00EC1271 /* Representative.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Representative.swift; sourceTree = "<group>"; };
 		371B27B02B3EB93A00EC1271 /* MotherBoard.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MotherBoard.swift; sourceTree = "<group>"; };
 		371B27B12B3EB93A00EC1271 /* InputStage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InputStage.swift; sourceTree = "<group>"; };
-		371B27B32B3EB93A00EC1271 /* CantoneseLabel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CantoneseLabel.swift; sourceTree = "<group>"; };
+		371B27B32B3EB93A00EC1271 /* PinyinLabel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PinyinLabel.swift; sourceTree = "<group>"; };
 		371B27B42B3EB93A00EC1271 /* NotationView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotationView.swift; sourceTree = "<group>"; };
 		371B27B52B3EB93A00EC1271 /* SerialNumberLabel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SerialNumberLabel.swift; sourceTree = "<group>"; };
 		371B27B62B3EB93A00EC1271 /* CandidateBoard.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CandidateBoard.swift; sourceTree = "<group>"; };
@@ -280,7 +280,7 @@
 		371B27B22B3EB93A00EC1271 /* CandidateUI */ = {
 			isa = PBXGroup;
 			children = (
-				371B27B32B3EB93A00EC1271 /* CantoneseLabel.swift */,
+				371B27B32B3EB93A00EC1271 /* PinyinLabel.swift */,
 				371B27B42B3EB93A00EC1271 /* NotationView.swift */,
 				371B27B52B3EB93A00EC1271 /* SerialNumberLabel.swift */,
 				371B27B62B3EB93A00EC1271 /* CandidateBoard.swift */,
@@ -492,7 +492,7 @@
 				371B27E62B3EB93A00EC1271 /* CharacterExtensions.swift in Sources */,
 				371B27EB2B3EB93A00EC1271 /* ArrayExtensions.swift in Sources */,
 				371B27D42B3EB93A00EC1271 /* MotherBoard.swift in Sources */,
-				371B27D62B3EB93A00EC1271 /* CantoneseLabel.swift in Sources */,
+				371B27D62B3EB93A00EC1271 /* PinyinLabel.swift in Sources */,
 				371B27D12B3EB93A00EC1271 /* PunctuationKey.swift in Sources */,
 				371B27CB2B3EB93A00EC1271 /* UserLexicon.swift in Sources */,
 				371B27D72B3EB93A00EC1271 /* NotationView.swift in Sources */,

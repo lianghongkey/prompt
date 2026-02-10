@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// Display Cantonese text and Jyutping romanization
-struct CantoneseLabel: View {
+/// Display Mandarin text and Pinyin romanization
+struct PinyinLabel: View {
 
-        /// Cantonese text
+        /// Mandarin text
         let text: String
 
-        /// Jyutping
+        /// Pinyin
         let romanization: String
 
         let shouldDisplayRomanization: Bool
@@ -24,5 +24,5 @@ struct CantoneseLabel: View {
 }
 
 #Preview {
-        CantoneseLabel(text: "示例", romanization: "si6 lai6", shouldDisplayRomanization: true)
+        PinyinLabel(text: "示例", romanization: "shi4 li4", shouldDisplayRomanization: true)
 }

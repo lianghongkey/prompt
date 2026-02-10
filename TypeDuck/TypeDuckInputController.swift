@@ -193,14 +193,14 @@ final class TypeDuckInputController: IMKInputController, Sendable {
 
         private lazy var appContext: AppContext = AppContext()
 
-        nonisolated(unsafe) private lazy var inputForm: InputForm = InputForm.matchInputMethodMode()
+        private lazy var inputForm: InputForm = InputForm.matchInputMethodMode()
         func updateInputForm(to form: InputForm? = nil) {
                 let newForm = form ?? InputForm.matchInputMethodMode()
                 inputForm = newForm
                 appContext.updateInputForm(to: newForm)
         }
 
-        nonisolated(unsafe) private lazy var inputStage: InputStage = .standby
+        private lazy var inputStage: InputStage = .standby
 
         private func clearBufferText() { bufferText = String.empty }
         private lazy var bufferText: String = .empty {
@@ -498,7 +498,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 switch code.representative {
                 case .alphabet(_):
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 isEventHandled = true
                         case .transparent:
                                 return false
@@ -507,7 +507,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .number(_):
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 isEventHandled = true
                         case .transparent:
                                 return false
@@ -516,7 +516,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .keypadNumber(_):
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return false }
                                 isEventHandled = true
                         case .transparent:
@@ -526,7 +526,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .arrow(_):
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return false }
                                 isEventHandled = true
                         case .transparent:
@@ -538,7 +538,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         isEventHandled = true
                 case .backquote, .punctuation(_):
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 isEventHandled = true
                         case .transparent:
                                 return false
@@ -547,7 +547,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .separator:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 isEventHandled = true
                         case .transparent:
                                 return false
@@ -556,7 +556,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .return:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return false }
                                 isEventHandled = true
                         case .transparent:
@@ -566,7 +566,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .backspace, .forwardDelete:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return false }
                                 isEventHandled = true
                         case .transparent:
@@ -576,7 +576,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .escape, .clear:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return false }
                                 isEventHandled = true
                         case .transparent:
@@ -586,7 +586,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .space:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 let shouldHandle: Bool = isBuffering || isShifting
                                 guard shouldHandle else { return false }
                                 isEventHandled = true
@@ -597,7 +597,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .tab:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return false }
                                 isEventHandled = true
                         case .transparent:
@@ -607,7 +607,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .previousPage:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return false }
                                 isEventHandled = true
                         case .transparent:
@@ -617,7 +617,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .nextPage:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return false }
                                 isEventHandled = true
                         case .transparent:
@@ -660,7 +660,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         clearBufferText()
                 case .alphabet(let letter):
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 let text: String = isShifting ? letter.uppercased() : letter
                                 bufferText += text
                         case .transparent:
@@ -671,18 +671,18 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 case .number(let number):
                         let index: Int = (number == 0) ? 9 : (number - 1)
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 if hasControlShiftModifiers {
                                         guard !isBuffering else { return }
                                         handleOptions(index)
                                 } else if isShifting {
                                         switch Options.punctuationForm {
-                                        case .cantonese:
+                                        case .chinese:
                                                 if let shiftingBufferText = PunctuationKey.shiftingBufferText(of: number) {
                                                         insert(bufferText)
                                                         bufferText = shiftingBufferText
                                                 } else {
-                                                        let symbol: String = PunctuationKey.numberKeyShiftingCantoneseSymbol(of: number) ?? String.empty
+                                                        let symbol: String = PunctuationKey.numberKeyShiftingMandarinSymbol(of: number) ?? String.empty
                                                         insert(bufferText + symbol)
                                                         bufferText = String.empty
                                                 }
@@ -708,14 +708,14 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 handleOptions(index)
                         }
                 case .keypadNumber(let number):
-                        let isStrokeReverseLookup: Bool = currentInputForm.isCantonese && bufferText.hasPrefix("x")
+                        let isStrokeReverseLookup: Bool = currentInputForm.isMandarin && bufferText.hasPrefix("x")
                         guard isStrokeReverseLookup else { return }
                         bufferText += "\(number)"
                 case .arrow(let direction):
                         switch direction {
                         case .up:
                                 switch currentInputForm {
-                                case .cantonese:
+                                case .mandarin:
                                         guard isBuffering else { return }
                                         if appContext.isHighlightingStart {
                                                 updateDisplayCandidates(.previousPage, highlight: .end)
@@ -729,7 +729,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 }
                         case .down:
                                 switch currentInputForm {
-                                case .cantonese:
+                                case .mandarin:
                                         guard isBuffering else { return }
                                         if appContext.isHighlightingEnd {
                                                 updateDisplayCandidates(.nextPage, highlight: .start)
@@ -743,7 +743,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 }
                         case .left:
                                 switch currentInputForm {
-                                case .cantonese:
+                                case .mandarin:
                                         guard isBuffering else { return }
                                         updateDisplayCandidates(.previousPage, highlight: .unchanged)
                                 case .transparent:
@@ -753,7 +753,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 }
                         case .right:
                                 switch currentInputForm {
-                                case .cantonese:
+                                case .mandarin:
                                         guard isBuffering else { return }
                                         updateDisplayCandidates(.nextPage, highlight: .unchanged)
                                 case .transparent:
@@ -764,7 +764,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .backquote where hasControlShiftModifiers:
                         switch currentInputForm {
-                        case .cantonese, .transparent:
+                        case .mandarin, .transparent:
                                 markOptionsViewHintText()
                                 updateInputForm(to: .options)
                                 updateWindowFrame()
@@ -772,13 +772,13 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 handleOptions(-1)
                         }
                 case .backquote:
-                        guard currentInputForm.isCantonese else { return }
+                        guard currentInputForm.isMandarin else { return }
                         guard !isBuffering else { return }
-                        guard Options.punctuationForm.isCantoneseMode else { return }
+                        guard Options.punctuationForm.isChineseMode else { return }
                         let symbolText: String = isShifting ? PunctuationKey.backquote.shiftingKeyText : PunctuationKey.backquote.keyText
                         bufferText = symbolText
                 case .punctuation(let punctuationKey):
-                        guard currentInputForm.isCantonese else { return }
+                        guard currentInputForm.isMandarin else { return }
                         if isBuffering && !isShifting {
                                 switch punctuationKey {
                                 case .comma, .minus:
@@ -799,7 +799,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                         aftercareSelection(displayCandidate, shouldProcessUserLexicon: false)
                                 default:
                                         switch Options.punctuationForm {
-                                        case .cantonese:
+                                        case .chinese:
                                                 if let symbol = punctuationKey.instantSymbol {
                                                         insert(bufferText + symbol)
                                                         bufferText = String.empty
@@ -814,7 +814,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 }
                         } else {
                                 switch Options.punctuationForm {
-                                case .cantonese:
+                                case .chinese:
                                         let symbol: String? = isShifting ? punctuationKey.instantShiftingSymbol : punctuationKey.instantSymbol
                                         if let symbol {
                                                 insert(bufferText + symbol)
@@ -831,7 +831,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .separator:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 let shouldKeepBuffer: Bool = {
                                         guard !isShifting else { return false }
                                         guard let type = candidates.first?.type else { return false }
@@ -842,7 +842,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 } else {
                                         let text: String = isShifting ? PunctuationKey.quote.shiftingKeyText : PunctuationKey.quote.keyText
                                         switch Options.punctuationForm {
-                                        case .cantonese:
+                                        case .chinese:
                                                 insert(bufferText)
                                                 bufferText = text
                                         case .english:
@@ -857,13 +857,13 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .return:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return }
                                 let romanization: String? = {
                                         guard isShifting && candidates.isNotEmpty else { return nil }
                                         let index = appContext.highlightedIndex
                                         guard let candidate = appContext.displayCandidates.fetch(index)?.candidate else { return nil }
-                                        guard candidate.isCantonese else { return nil }
+                                        guard candidate.isMandarin else { return nil }
                                         return candidate.romanization
                                 }()
                                 if let romanization {
@@ -879,7 +879,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .backspace:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return }
                                 guard hasControlShiftModifiers else {
                                         bufferText = String(bufferText.dropLast())
@@ -888,7 +888,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 guard candidates.isNotEmpty else { return }
                                 let index = appContext.highlightedIndex
                                 guard let candidate = appContext.displayCandidates.fetch(index)?.candidate else { return }
-                                guard candidate.isCantonese else { return }
+                                guard candidate.isMandarin else { return }
                                 UserLexicon.removeItem(candidate: candidate)
                         case .transparent:
                                 return
@@ -897,13 +897,13 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .forwardDelete:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return }
                                 guard hasControlShiftModifiers else { return }
                                 guard candidates.isNotEmpty else { return }
                                 let index = appContext.highlightedIndex
                                 guard let candidate = appContext.displayCandidates.fetch(index)?.candidate else { return }
-                                guard candidate.isCantonese else { return }
+                                guard candidate.isMandarin else { return }
                                 UserLexicon.removeItem(candidate: candidate)
                         case .transparent:
                                 return
@@ -912,7 +912,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .escape, .clear:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return }
                                 clearBufferText()
                         case .transparent:
@@ -922,7 +922,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .space:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 if candidates.isNotEmpty {
                                         let index = appContext.highlightedIndex
                                         guard let selectedItem = appContext.displayCandidates.fetch(index) else { return }
@@ -943,7 +943,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .tab:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return }
                                 if isShifting {
                                         if appContext.isHighlightingStart {
@@ -969,7 +969,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .previousPage:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return }
                                 updateDisplayCandidates(.previousPage, highlight: .unchanged)
                         case .transparent:
@@ -979,7 +979,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 case .nextPage:
                         switch currentInputForm {
-                        case .cantonese:
+                        case .mandarin:
                                 guard isBuffering else { return }
                                 updateDisplayCandidates(.nextPage, highlight: .unchanged)
                         case .transparent:
@@ -990,7 +990,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 case .other:
                         switch keyCode {
                         case KeyCode.Special.VK_HOME:
-                                let shouldJump2FirstPage: Bool = currentInputForm.isCantonese && candidates.isNotEmpty
+                                let shouldJump2FirstPage: Bool = currentInputForm.isMandarin && candidates.isNotEmpty
                                 guard shouldJump2FirstPage else { return }
                                 updateDisplayCandidates(.establish, highlight: .start)
                         default:
@@ -1021,7 +1021,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 case 3:
                         Options.updateCharacterForm(to: .fullWidth)
                 case 4:
-                        Options.updatePunctuationForm(to: .cantonese)
+                        Options.updatePunctuationForm(to: .chinese)
                 case 5:
                         Options.updatePunctuationForm(to: .english)
                 case 6:
@@ -1046,7 +1046,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         }
         private func aftercareSelection(_ selected: DisplayCandidate, shouldProcessUserLexicon: Bool = true) {
                 let candidate = candidates.fetch(selected.candidateIndex) ?? candidates.first(where: { $0 == selected.candidate })
-                guard let candidate, candidate.isCantonese else {
+                guard let candidate, candidate.isMandarin else {
                         clearBufferText()
                         return
                 }

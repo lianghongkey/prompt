@@ -12,7 +12,7 @@ struct Options: Sendable {
                 case 4:
                         return .simplified
                 default:
-                        return .traditional
+                        return .simplified
                 }
         }()
         static func updateCharacterStandard(to standard: CharacterStandard) {
@@ -44,11 +44,11 @@ struct Options: Sendable {
                 let savedValue: Int = UserDefaults.standard.integer(forKey: OptionsKey.PunctuationForm)
                 switch savedValue {
                 case 0, 1:
-                        return .cantonese
+                        return .chinese
                 case 2:
                         return .english
                 default:
-                        return .cantonese
+                        return .chinese
                 }
         }()
         static func updatePunctuationForm(to form: PunctuationForm) {
@@ -76,16 +76,16 @@ struct Options: Sendable {
                 UserDefaults.standard.set(value, forKey: OptionsKey.EmojiSuggestions)
         }
 
-        /// 輸入法模式. Cantonese / ABC
+        /// 輸入法模式. Mandarin / ABC
         nonisolated(unsafe) private(set) static var inputMethodMode: InputMethodMode = {
                 let savedValue: Int = UserDefaults.standard.integer(forKey: OptionsKey.InputMethodMode)
                 switch savedValue {
                 case 0, 1:
-                        return .cantonese
+                        return .mandarin
                 case 2:
                         return .abc
                 default:
-                        return .cantonese
+                        return .mandarin
                 }
         }()
         static func updateInputMethodMode(to mode: InputMethodMode) {
@@ -114,16 +114,16 @@ enum CharacterForm: Int {
 
 /// 標點符號形態
 enum PunctuationForm: Int {
-        case cantonese = 1
+        case chinese = 1
         case english = 2
-        var isCantoneseMode: Bool { self == .cantonese }
+        var isChineseMode: Bool { self == .chinese }
         var isEnglishMode: Bool { self == .english }
 }
 
-/// Cantonese(Jyutping) / ABC
+/// Mandarin(Pinyin) / ABC
 enum InputMethodMode: Int {
-        case cantonese = 1
+        case mandarin = 1
         case abc = 2
-        var isCantonese: Bool { self == .cantonese }
+        var isMandarin: Bool { self == .mandarin }
         var isABC: Bool { self == .abc }
 }

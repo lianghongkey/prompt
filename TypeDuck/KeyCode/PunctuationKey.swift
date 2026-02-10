@@ -296,8 +296,8 @@ extension PunctuationKey {
                 }
         }
 
-        /// Number key symbol in Cantonese PunctuationForm
-        static func numberKeyShiftingCantoneseSymbol(of number: Int) -> String? {
+        /// Number key symbol in Mandarin PunctuationForm
+        static func numberKeyShiftingMandarinSymbol(of number: Int) -> String? {
                 switch number {
                 case 0:
                         return "）"

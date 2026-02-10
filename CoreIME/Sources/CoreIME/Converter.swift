@@ -1,10 +1,10 @@
 extension Candidate {
 
-        /// Convert Cantonese Candidate text to the specific variant
+        /// Convert Mandarin Candidate text to the specific variant
         /// - Parameter variant: Character variant
         /// - Returns: Transformed Candidate
         public func transformed(to variant: CharacterStandard) -> Candidate {
-                guard self.isCantonese else { return self }
+                guard self.isMandarin else { return self }
                 switch variant {
                 case .traditional:
                         return self

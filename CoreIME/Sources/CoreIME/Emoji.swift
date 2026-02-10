@@ -32,7 +32,7 @@ extension Engine {
                 let candidates: [Candidate] = symbols.compactMap({ entry -> Candidate? in
                         let codePointText: String = (entry.categoryCode == 1 || entry.categoryCode == 4) ? (mapSkinTone(entry.codepoint) ?? entry.codepoint) : entry.codepoint
                         guard let symbolText = generateSymbol(from: codePointText) else { return nil }
-                        return Candidate(symbol: symbolText, cantonese: entry.cantonese, romanization: entry.romanization, input: input, isEmoji: entry.categoryCode != 9)
+                        return Candidate(symbol: symbolText, mandarin: entry.cantonese, romanization: entry.romanization, input: input, isEmoji: entry.categoryCode != 9)
                 })
                 return candidates
         }

@@ -12,7 +12,7 @@ struct CandidateContentView: View {
                 let latinComments = enabledTranslations.filter(\.language.isLatin)
                 let devanagariComments = enabledTranslations.filter(\.language.isDevanagari)
                 HStack(alignment: .lastTextBaseline, spacing: 12) {
-                        CantoneseLabel(text: candidate.candidate.text, romanization: candidate.candidate.romanization, shouldDisplayRomanization: candidate.candidate.isCantonese)
+                        PinyinLabel(text: candidate.candidate.text, romanization: candidate.candidate.romanization, shouldDisplayRomanization: candidate.candidate.isMandarin)
                         if !hasNotationDisplayButton, let labelText = candidate.candidate.notation?.label, labelText.isValid {
                                 let labelList = Decorator.labelList(of: labelText)
                                 if labelList.isNotEmpty {

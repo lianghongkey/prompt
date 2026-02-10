@@ -3,8 +3,8 @@ import SwiftUI
 @MainActor
 enum Language: Int, Hashable, @preconcurrency Identifiable, CaseIterable, Sendable {
 
-        /// 粵語
-        case Cantonese
+        /// 普通话
+        case Mandarin
 
         /// 英語
         case English
@@ -54,10 +54,10 @@ enum Language: Int, Hashable, @preconcurrency Identifiable, CaseIterable, Sendab
                 return self == .Urdu
         }
 
-        /// Cantonese & Unicode
+        /// Mandarin & Unicode
         var isAnnotation: Bool {
                 switch self {
-                case .Cantonese, .Unicode:
+                case .Mandarin, .Unicode:
                         return true
                 default:
                         return false
@@ -67,7 +67,7 @@ enum Language: Int, Hashable, @preconcurrency Identifiable, CaseIterable, Sendab
         /// Non-Annotation
         var isTranslation: Bool {
                 switch self {
-                case .Cantonese, .Unicode:
+                case .Mandarin, .Unicode:
                         return false
                 default:
                         return true
@@ -77,8 +77,8 @@ enum Language: Int, Hashable, @preconcurrency Identifiable, CaseIterable, Sendab
         /// Language name in English
         var name: String {
                 switch self {
-                case .Cantonese:
-                        return "Cantonese"
+                case .Mandarin:
+                        return "Mandarin"
                 case .English:
                         return "English"
                 case .Hindi:
@@ -103,7 +103,7 @@ enum Language: Int, Hashable, @preconcurrency Identifiable, CaseIterable, Sendab
 
         var font: Font {
                 switch self {
-                case .Cantonese:
+                case .Mandarin:
                         return .body
                 case .English:
                         return .englishComment

@@ -12,24 +12,24 @@ struct DisplayCandidate: Hashable {
                 self.candidateIndex = candidateIndex
                 self.comments = {
                         switch candidate.type {
-                        case .cantonese:
+                        case .mandarin:
                                 return candidate.notation?.comments ?? []
                         case .text:
                                 return []
                         case .emoji, .symbol:
                                 var comments: [Comment] = []
-                                let cantoneseText = candidate.lexiconText
-                                if cantoneseText.isNotEmpty {
-                                        let cantoneseComment = Comment(language: .Cantonese, text: "〔\(cantoneseText)〕")
-                                        comments.append(cantoneseComment)
+                                let mandarinText = candidate.lexiconText
+                                if mandarinText.isNotEmpty {
+                                        let mandarinComment = Comment(language: .Mandarin, text: "〔\(mandarinText)〕")
+                                        comments.append(mandarinComment)
                                 }
                                 return comments
                         case .compose:
                                 var comments: [Comment] = []
-                                let cantoneseText = candidate.lexiconText
-                                if cantoneseText.isNotEmpty {
-                                        let cantoneseComment = Comment(language: .Cantonese, text: "〔\(cantoneseText)〕")
-                                        comments.append(cantoneseComment)
+                                let mandarinText = candidate.lexiconText
+                                if mandarinText.isNotEmpty {
+                                        let mandarinComment = Comment(language: .Mandarin, text: "〔\(mandarinText)〕")
+                                        comments.append(mandarinComment)
                                 }
                                 let unicodeCodePoint = candidate.romanization
                                 if unicodeCodePoint.isNotEmpty {
@@ -46,7 +46,7 @@ extension Notation {
         var comments: [Comment] {
                 return Language.allCases.compactMap({ language -> Comment? in
                         switch language {
-                        case .Cantonese:
+                        case .Mandarin:
                                 return nil
                         case .English:
                                 guard english.isValid else { return nil }

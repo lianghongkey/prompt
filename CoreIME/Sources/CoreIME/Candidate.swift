@@ -1,6 +1,6 @@
 public enum CandidateType: Int, Sendable {
 
-        case cantonese
+        case mandarin
 
         /// Plain text. Examples: iPad, macOS
         case text
@@ -30,7 +30,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
         /// Always be traditional characters.
         public let lexiconText: String
 
-        /// Jyutping
+        /// Pinyin
         public let romanization: String
 
         /// User input
@@ -53,13 +53,13 @@ public struct Candidate: Hashable, Comparable, Sendable {
         ///   - type: Candidate type.
         ///   - text: Candidate text for display.
         ///   - lexiconText: Candidate text for UserLexicon.
-        ///   - romanization: Jyutping.
+        ///   - romanization: Pinyin.
         ///   - input: User input for this Candidate.
         ///   - mark: Formatted user input for pre-edit display.
         ///   - order: Rank. Smaller is preferred.
         ///   - notation: Lexicon detail information.
         ///   - subNotations: For Compound Translations.
-        public init(type: CandidateType = .cantonese, text: String, lexiconText: String? = nil, romanization: String, input: String, mark: String? = nil, order: Int = 0, notation: Notation? = nil, subNotations: [Notation] = []) {
+        public init(type: CandidateType = .mandarin, text: String, lexiconText: String? = nil, romanization: String, input: String, mark: String? = nil, order: Int = 0, notation: Notation? = nil, subNotations: [Notation] = []) {
                 self.type = type
                 self.text = text
                 self.lexiconText = lexiconText ?? text
@@ -74,14 +74,14 @@ public struct Candidate: Hashable, Comparable, Sendable {
         /// Create a Candidate with an emoji or a symbol
         /// - Parameters:
         ///   - symbol: Emoji/Symbol text
-        ///   - cantonese: Cantonese word for this Emoji/Symbol
-        ///   - romanization: Romanization (Jyutping) of Cantonese word
+        ///   - mandarin: Mandarin word for this Emoji/Symbol
+        ///   - romanization: Romanization (Pinyin) of Mandarin word
         ///   - input: User input for this Candidate
         ///   - isEmoji: Emoji or symbol
-        init(symbol: String, cantonese: String, romanization: String, input: String, isEmoji: Bool) {
+        init(symbol: String, mandarin: String, romanization: String, input: String, isEmoji: Bool) {
                 self.type = isEmoji ? .emoji : .symbol
                 self.text = symbol
-                self.lexiconText = cantonese
+                self.lexiconText = mandarin
                 self.romanization = romanization
                 self.input = input
                 self.mark = input
@@ -108,14 +108,14 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 self.subNotations = []
         }
 
-        /// type == .cantonese
-        public var isCantonese: Bool {
-                return self.type == .cantonese
+        /// type == .mandarin
+        public var isMandarin: Bool {
+                return self.type == .mandarin
         }
 
-        /// type != .cantonese
-        public var isNotCantonese: Bool {
-                return self.type != .cantonese
+        /// type != .mandarin
+        public var isNotMandarin: Bool {
+                return self.type != .mandarin
         }
 
         /// Concatenated by multiple lexicons
@@ -130,7 +130,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
         // Equatable
         public static func ==(lhs: Candidate, rhs: Candidate) -> Bool {
                 guard lhs.type == rhs.type else { return false }
-                if lhs.isCantonese && rhs.isCantonese {
+                if lhs.isMandarin && rhs.isMandarin {
                         return lhs.text == rhs.text && lhs.romanization == rhs.romanization
                 } else {
                         return lhs.text == rhs.text
@@ -140,7 +140,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
         // Hashable
         public func hash(into hasher: inout Hasher) {
                 switch type {
-                case .cantonese:
+                case .mandarin:
                         hasher.combine(text)
                         hasher.combine(romanization)
                 case .text:
@@ -162,7 +162,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
         }
 
         public static func +(lhs: Candidate, rhs: Candidate) -> Candidate? {
-                guard lhs.isCantonese && rhs.isCantonese else { return nil }
+                guard lhs.isMandarin && rhs.isMandarin else { return nil }
                 let newText: String = lhs.text + rhs.text
                 let newLexiconText: String = lhs.lexiconText + rhs.lexiconText
                 let newRomanization: String = lhs.romanization + " " + rhs.romanization
@@ -193,8 +193,8 @@ extension Array where Element == Candidate {
         /// Returns a new Candidate by concatenating this Candidate sequence.
         /// - Returns: Single, concatenated Candidate.
         public func joined() -> Candidate? {
-                let isAllCantonese: Bool = !(contains(where: \.isNotCantonese))
-                guard isAllCantonese else { return nil }
+                let isAllMandarin: Bool = !(contains(where: \.isNotMandarin))
+                guard isAllMandarin else { return nil }
                 let text: String = map(\.text).joined()
                 let lexiconText: String = map(\.lexiconText).joined()
                 let romanization: String = map(\.romanization).joined(separator: " ")
@@ -228,5 +228,5 @@ extension Array where Element == Candidate {
 }
 
 extension Candidate {
-        public static let example: Candidate = Candidate(text: "舉例", lexiconText: "舉例", romanization: "geoi2 lai6", input: "geoilai", notation: .example)
+        public static let example: Candidate = Candidate(text: "举例", lexiconText: "举例", romanization: "ju3 li4", input: "juli", notation: .example)
 }

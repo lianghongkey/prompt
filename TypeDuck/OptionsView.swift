@@ -10,7 +10,7 @@ struct OptionsView: View {
                 String(localized: "OptionsView.CharacterStandard.Simplified"),
                 String(localized: "OptionsView.CharacterForm.HalfWidth"),
                 String(localized: "OptionsView.CharacterForm.FullWidth"),
-                String(localized: "OptionsView.PunctuationForm.Cantonese"),
+                String(localized: "OptionsView.PunctuationForm.Chinese"),
                 String(localized: "OptionsView.PunctuationForm.English")
         ]
 
@@ -32,7 +32,7 @@ struct OptionsView: View {
                         }
                         Divider()
                         Group {
-                                SettingLabel(index: 4, highlightedIndex: highlightedIndex, text: options[4], checked: punctuationForm == .cantonese)
+                                SettingLabel(index: 4, highlightedIndex: highlightedIndex, text: options[4], checked: punctuationForm == .chinese)
                                 SettingLabel(index: 5, highlightedIndex: highlightedIndex, text: options[5], checked: punctuationForm == .english)
                         }
                 }

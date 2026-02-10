@@ -16,7 +16,7 @@
 				<key>TISInputSourceID</key>
 				<string>hk.eduhk.inputmethod.TypeDuck.TypeDuckIM</string>
 				<key>TISIntendedLanguage</key>
-				<string>yue-Hant</string>
+				<string>zh-Hans</string>
 				<key>tsInputModeAlternateMenuIconFileKey</key>
 				<string>typeduck.png</string>
 				<key>tsInputModeDefaultStateKey</key>
@@ -53,11 +53,11 @@
 	<key>TICapsLockLanguageSwitchCapable</key>
 	<true/>
 	<key>TISIntendedLanguage</key>
-	<string>yue-Hant</string>
+	<string>zh-Hans</string>
 	<key>tsInputMethodCharacterRepertoireKey</key>
 	<array>
-		<string>Hant</string>
 		<string>Hans</string>
+		<string>Hant</string>
 	</array>
 	<key>tsInputMethodIconFileKey</key>
 	<string>typeduck.png</string>

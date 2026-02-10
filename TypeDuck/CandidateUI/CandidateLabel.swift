@@ -8,7 +8,7 @@ struct CandidateLabel: View {
                 self.index = index
                 self.candidate = candidate
                 self.shouldHighlight = shouldHighlight
-                self.isCantoneseCandidate = candidate.candidate.isCantonese
+                self.isMandarinCandidate = candidate.candidate.isMandarin
                 self.isCompoundCandidate = candidate.candidate.isCompound
                 self.shouldDisplayNotationButton = {
                         guard !(candidate.candidate.isCompound) else { return true }
@@ -37,7 +37,7 @@ struct CandidateLabel: View {
         private let index: Int
         private let candidate: DisplayCandidate
         private let shouldHighlight: Bool
-        private let isCantoneseCandidate: Bool
+        private let isMandarinCandidate: Bool
         private let isCompoundCandidate: Bool
         private let shouldDisplayNotationButton: Bool
 
@@ -61,7 +61,7 @@ struct CandidateLabel: View {
                         }
                 }
                 .padding(.horizontal, 4)
-                .padding(.vertical, isCantoneseCandidate ? 0 : 8)
+                .padding(.vertical, isMandarinCandidate ? 0 : 8)
                 .contentShape(Rectangle())
                 .popover(isPresented: $isPopoverPresented, attachmentAnchor: .point(.trailing), arrowEdge: .trailing) {
                         let notations: [Notation] = {

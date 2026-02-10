@@ -1,11 +1,11 @@
 enum InputForm: Int {
 
-        case cantonese = 1
+        case mandarin = 1
         case transparent = 2
         case options = 3
 
-        var isCantonese: Bool {
-                return self == .cantonese
+        var isMandarin: Bool {
+                return self == .mandarin
         }
         var isTransparent: Bool {
                 return self == .transparent
@@ -16,8 +16,8 @@ enum InputForm: Int {
 
         static func matchInputMethodMode() -> InputForm {
                 switch Options.inputMethodMode {
-                case .cantonese:
-                        return .cantonese
+                case .mandarin:
+                        return .mandarin
                 case .abc:
                         return .transparent
                 }

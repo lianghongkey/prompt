@@ -212,9 +212,7 @@ extension Array where Element == Candidate {
                 let hasUserLexicon: Bool = self.first?.isUserLexicon ?? false
                 if hasUserLexicon {
                         return self.compactMap({ item -> Candidate? in
-                                if item.isUserLexicon {
-                                        return Engine.embedNotations(for: item).transformed(to: characterStandard)
-                                } else if item.isCompound {
+                                if item.isCompound {
                                         return nil
                                 } else {
                                         return item.transformed(to: characterStandard)

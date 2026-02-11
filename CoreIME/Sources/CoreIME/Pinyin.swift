@@ -62,15 +62,16 @@ extension Engine {
 
         public static func pinyinReverseLookup(text: String, schemes: [[String]]) -> [Candidate] {
                 let canSegment: Bool = schemes.subelementCount != 0
+                let lexicons: [PinyinLexicon]
                 if canSegment {
-                        return pinyinProcess(pinyin: text, schemes: schemes)
-                                .map({ Engine.reveresLookup(text: $0.text, input: $0.input, mark: $0.mark) })
-                                .flatMap({ $0 })
+                        lexicons = pinyinProcess(pinyin: text, schemes: schemes)
                 } else {
-                        return pinyinProcessVerbatim(pinyin: text)
-                                .map({ Engine.reveresLookup(text: $0.text, input: $0.input, mark: $0.mark) })
-                                .flatMap({ $0 })
+                        lexicons = pinyinProcessVerbatim(pinyin: text)
                 }
+                // Convert PinyinLexicon to Candidate directly
+                return lexicons.map({ lexicon in
+                        Candidate(text: lexicon.text, romanization: lexicon.pinyin, input: lexicon.input, mark: lexicon.mark, order: lexicon.order)
+                })
         }
 
         // Expose pinyin methods for use in suggest()

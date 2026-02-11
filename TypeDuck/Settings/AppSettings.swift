@@ -60,27 +60,6 @@ struct AppSettings: Sendable {
         private static let defaultCandidatePageSize: Int = 7
         static let candidatePageSizeRange: Range<Int> = 1..<11
 
-        private(set) static var cangjieVariant: CangjieVariant = {
-                let savedValue: Int = UserDefaults.standard.integer(forKey: SettingsKey.CangjieVariant)
-                switch savedValue {
-                case CangjieVariant.cangjie5.rawValue:
-                        return .cangjie5
-                case CangjieVariant.cangjie3.rawValue:
-                        return .cangjie3
-                case CangjieVariant.quick5.rawValue:
-                        return .quick5
-                case CangjieVariant.quick3.rawValue:
-                        return .quick3
-                default:
-                        return .cangjie5
-                }
-        }()
-        static func updateCangjieVariant(to variant: CangjieVariant) {
-                cangjieVariant = variant
-                let value: Int = variant.rawValue
-                UserDefaults.standard.set(value, forKey: SettingsKey.CangjieVariant)
-        }
-
         private(set) static var isInputMemoryOn: Bool = {
                 let savedValue: Int = UserDefaults.standard.integer(forKey: SettingsKey.UserLexiconInputMemory)
                 switch savedValue {
@@ -118,7 +97,6 @@ struct SettingsKey {
         static let CandidatePageSize: String = "CandidatePageSize"
         static let EnabledCommentLanguages: String = "EnabledCommentLanguages"
         static let PrimaryCommentLanguage: String = "PrimaryCommentLanguage"
-        static let CangjieVariant: String = "CangjieVariant"
         static let UserLexiconInputMemory: String = "UserLexiconInputMemory"
 }
 

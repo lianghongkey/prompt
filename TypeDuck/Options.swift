@@ -7,9 +7,9 @@ struct Options: Sendable {
         nonisolated(unsafe) private(set) static var characterStandard: CharacterStandard = {
                 let savedValue: Int = UserDefaults.standard.integer(forKey: OptionsKey.CharacterStandard)
                 switch savedValue {
-                case 0, 1, 2, 3:
+                case 1, 2, 3:
                         return .traditional
-                case 4:
+                case 0, 4:
                         return .simplified
                 default:
                         return .simplified

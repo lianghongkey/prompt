@@ -205,6 +205,11 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         private func clearBufferText() { bufferText = String.empty }
         private lazy var bufferText: String = .empty {
                 willSet {
+                        // Debug: store buffer text value to UserDefaults
+                        let oldValue = bufferText
+                        logger.debug("bufferText willSet: '\(oldValue)' -> '\(newValue)'")
+                        UserDefaults.standard.set(newValue, forKey: "DEBUG_BUFFER_TEXT")
+
                         switch (bufferText.isEmpty, newValue.isEmpty) {
                         case (true, true):
                                 inputStage = .standby
@@ -219,6 +224,15 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 }
                 didSet {
+                        // Debug: store buffer text info to UserDefaults
+                        let value = bufferText
+                        let firstChar = value.first?.description ?? "nil"
+                        let isLetter = value.first?.isBasicLatinLetter ?? false
+                        logger.debug("bufferText didSet: '\(value)', firstChar: '\(firstChar)', isLetter: \(isLetter)")
+                        UserDefaults.standard.set(value, forKey: "DEBUG_BUFFER_DIDSET")
+                        UserDefaults.standard.set(firstChar, forKey: "DEBUG_BUFFER_FIRST")
+                        UserDefaults.standard.set(isLetter, forKey: "DEBUG_BUFFER_IS_LETTER")
+
                         switch bufferText.first {
                         case .none:
                                 suggestionTask?.cancel()
@@ -242,17 +256,13 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 switch bufferText.dropFirst().first {
                                 case .some("p"), .some("r"):
                                         pinyinReverseLookup()
-                                case .some("c"), .some("v"):
-                                        cangjieReverseLookup()
-                                case .some("s"), .some("x"), .some("b"):
-                                        strokeReverseLookup()
-                                case .some("l"), .some("q"):
-                                        structureReverseLookup()
                                 default:
                                         mark(text: bufferText)
                                 }
                         default:
                                 mark(text: bufferText)
+                                selectedCandidates = []
+                                candidates = []
                         }
                 }
         }
@@ -342,6 +352,12 @@ final class TypeDuckInputController: IMKInputController, Sendable {
 
         private lazy var suggestionTask: Task<Void, Never>? = nil
         private func suggest() {
+                // Debug output
+                let text = bufferText
+                logger.debug("suggest() called with bufferText: '\(text)'")
+                UserDefaults.standard.set("suggest called: \(text)", forKey: "DEBUG_SUGGEST_CALL")
+                UserDefaults.standard.set(Date(), forKey: "DEBUG_SUGGEST_TIME")
+
                 suggestionTask?.cancel()
                 let processingText: String = bufferText.toneConverted()
                 let needsSymbols: Bool = Options.isEmojiSuggestionsOn && selectedCandidates.isEmpty
@@ -351,7 +367,9 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         let bestScheme = segmentation.first
                         async let userLexiconCandidates: [Candidate] = isInputMemoryOn ? UserLexicon.suggest(text: processingText, segmentation: segmentation) : []
                         async let engineCandidates: [Candidate] = Engine.suggest(text: processingText, segmentation: segmentation, needsSymbols: needsSymbols)
-                        let suggestions = await (userLexiconCandidates + engineCandidates).transformed(with: Options.characterStandard)
+                        let results = await engineCandidates
+                        UserDefaults.standard.set(results.count, forKey: "DEBUG_ENGINE_COUNT")
+                        let suggestions = await (userLexiconCandidates + results).transformed(with: Options.characterStandard)
                         if !(Task.isCancelled) {
                                 await MainActor.run { [weak self] in
                                         self?.mark(text: {
@@ -367,6 +385,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                                 return leadingText + String.space + tailText
                                         }())
                                         self?.candidates = suggestions
+                                        UserDefaults.standard.set(suggestions.count, forKey: "DEBUG_SUGGESTIONS_COUNT")
                                 }
                         }
                 }
@@ -393,59 +412,6 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 let text2mark: String = head + tailText2Mark
                 mark(text: text2mark)
                 candidates = suggestions.map({ $0.transformed(to: Options.characterStandard) }).uniqued()
-        }
-        private func cangjieReverseLookup() {
-                let text: String = String(bufferText.dropFirst(2))
-                let converted = text.compactMap({ CharacterStandard.cangjie(of: $0) })
-                let isValidSequence: Bool = converted.isNotEmpty && (converted.count == text.count)
-                if isValidSequence {
-                        mark(text: String(converted))
-                        let lookup: [Candidate] = Engine.cangjieReverseLookup(text: text, variant: AppSettings.cangjieVariant)
-                        candidates = lookup.map({ $0.transformed(to: Options.characterStandard) }).uniqued()
-                } else {
-                        mark(text: bufferText)
-                        candidates = []
-                }
-        }
-        private func strokeReverseLookup() {
-                let text: String = String(bufferText.dropFirst(2))
-                let transformed: String = CharacterStandard.strokeTransform(text)
-                let converted = transformed.compactMap({ CharacterStandard.stroke(of: $0) })
-                let isValidSequence: Bool = converted.isNotEmpty && (converted.count == text.count)
-                if isValidSequence {
-                        mark(text: String(converted))
-                        let lookup: [Candidate] = Engine.strokeReverseLookup(text: transformed)
-                        candidates = lookup.map({ $0.transformed(to: Options.characterStandard) }).uniqued()
-                } else {
-                        mark(text: bufferText)
-                        candidates = []
-                }
-        }
-
-        /// LoengFan Reverse Lookup. 拆字、兩分反查. 例如 木 + 木 = 林: mukmuk
-        private func structureReverseLookup() {
-                guard bufferText.count > 3 else {
-                        mark(text: bufferText)
-                        candidates = []
-                        return
-                }
-                let text = bufferText.dropFirst(2).toneConverted()
-                let segmentation = Segmentor.segment(text: text)
-                let tailMarkedText: String = {
-                        let isMarkFree: Bool = text.first(where: { $0.isSeparatorOrTone }) == nil
-                        guard isMarkFree else { return text.formattedForMark() }
-                        guard let bestScheme = segmentation.first else { return text.formattedForMark() }
-                        let leadingLength: Int = bestScheme.length
-                        let leadingText: String = bestScheme.map(\.text).joined(separator: String.space)
-                        guard leadingLength != text.count else { return leadingText }
-                        let tailText = text.dropFirst(leadingLength)
-                        return leadingText + String.space + tailText
-                }()
-                let head = bufferText.prefix(2) + String.space
-                let text2mark: String = head + tailMarkedText
-                mark(text: text2mark)
-                let lookup: [Candidate] = Engine.structureReverseLookup(text: text, input: bufferText, segmentation: segmentation)
-                candidates = lookup.map({ $0.transformed(to: Options.characterStandard) }).uniqued()
         }
 
 
@@ -647,6 +613,10 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 return isEventHandled
         }
         private func process(keyCode: UInt16, client: InputClient?, hasControlShiftModifiers: Bool, isShifting: Bool) {
+                // Debug: log input method mode
+                UserDefaults.standard.set("InputForm: \(inputForm)", forKey: "DEBUG_INPUT_FORM")
+                UserDefaults.standard.set("IsMandarin: \(inputForm.isMandarin)", forKey: "DEBUG_IS_MANDARIN")
+
                 updateCurrentCursorBlock(to: client?.cursorBlock)
                 let oldClientID = currentClient?.uniqueClientIdentifierString()
                 let clientID = client?.uniqueClientIdentifierString()

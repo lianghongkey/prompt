@@ -1,33 +1,107 @@
 import Foundation
 import SQLite3
 
+public struct PinyinLexicon: Hashable, Comparable {
+
+        /// Chinese word.
+        public let text: String
+
+        /// Pinyin romanization for word text.
+        public let pinyin: String
+
+        /// User input.
+        public let input: String
+
+        /// Formatted user input for pre-edit display
+        public let mark: String
+
+        /// Rank, smaller is preferred.
+        public let order: Int
+
+        /// Create a PinyinLexicon.
+        /// - Parameters:
+        ///   - text: Chinese word.
+        ///   - pinyin: Pinyin romanization for word text.
+        ///   - input: User input.
+        ///   - order: Rank, smaller is preferred.
+        public init(text: String, pinyin: String? = nil, input: String, mark: String? = nil, order: Int? = nil) {
+                self.text = text
+                self.pinyin = pinyin ?? input
+                self.input = input
+                self.mark = mark ?? input
+                self.order = order ?? 0
+        }
+
+        // Equatable
+        public static func ==(lhs: PinyinLexicon, rhs: PinyinLexicon) -> Bool {
+                return lhs.text == rhs.text && lhs.input == rhs.input
+        }
+
+        // Hashable
+        public func hash(into hasher: inout Hasher) {
+                hasher.combine(text)
+                hasher.combine(input)
+        }
+
+        // Comparable
+        public static func < (lhs: PinyinLexicon, rhs: PinyinLexicon) -> Bool {
+                guard lhs.input.count == rhs.input.count else { return lhs.input.count > rhs.input.count }
+                return lhs.text.count < rhs.text.count
+        }
+
+        public static func + (lhs: PinyinLexicon, rhs: PinyinLexicon) -> PinyinLexicon {
+                let newText: String = lhs.text + rhs.text
+                let newPinyin: String = lhs.pinyin + " " + rhs.pinyin
+                let newInput: String = lhs.input + rhs.input
+                let newMark: String = lhs.mark + " " + rhs.mark
+                return PinyinLexicon(text: newText, pinyin: newPinyin, input: newInput, mark: newMark)
+        }
+}
+
 extension Engine {
 
         public static func pinyinReverseLookup(text: String, schemes: [[String]]) -> [Candidate] {
                 let canSegment: Bool = schemes.subelementCount != 0
                 if canSegment {
-                        return process(pinyin: text, schemes: schemes)
+                        return pinyinProcess(pinyin: text, schemes: schemes)
                                 .map({ Engine.reveresLookup(text: $0.text, input: $0.input, mark: $0.mark) })
                                 .flatMap({ $0 })
                 } else {
-                        return processVerbatim(pinyin: text)
+                        return pinyinProcessVerbatim(pinyin: text)
                                 .map({ Engine.reveresLookup(text: $0.text, input: $0.input, mark: $0.mark) })
                                 .flatMap({ $0 })
                 }
         }
 
-        private static func processVerbatim(pinyin text: String, limit: Int? = nil) -> [PinyinLexicon] {
+        // Expose pinyin methods for use in suggest()
+        internal static func query(pinyin text: String, schemes: [[String]], limit: Int? = nil) -> [PinyinLexicon] {
+                return pinyinQuery(pinyin: text, schemes: schemes, limit: limit)
+        }
+
+        internal static func processVerbatim(pinyin text: String, limit: Int? = nil) -> [PinyinLexicon] {
+                return pinyinProcessVerbatim(pinyin: text, limit: limit)
+        }
+
+        internal static func match(pinyin text: String, limit: Int? = nil) -> [PinyinLexicon] {
+                return pinyinMatchQuery(pinyin: text, limit: limit)
+        }
+
+        internal static func shortcut(pinyin text: String, limit: Int? = nil) -> [PinyinLexicon] {
+                return pinyinShortcutQuery(pinyin: text, limit: limit)
+        }
+
+        private static func pinyinProcessVerbatim(pinyin text: String, limit: Int? = nil) -> [PinyinLexicon] {
                 let rounds = (0..<text.count).map({ number -> [PinyinLexicon] in
                         let leading: String = String(text.dropLast(number))
-                        return match(pinyin: leading, limit: limit) + shortcut(pinyin: leading, limit: limit)
+                        return pinyinMatchQuery(pinyin: leading, limit: limit) + pinyinShortcutQuery(pinyin: leading, limit: limit)
                 })
                 return rounds.flatMap({ $0 }).uniqued()
         }
 
-        private static func process(pinyin text: String, schemes: [[String]], limit: Int? = nil) -> [PinyinLexicon] {
+        internal static func pinyinProcess(pinyin text: String, schemes: [[String]], limit: Int? = nil) -> [PinyinLexicon] {
                 let textCount = text.count
-                let primary = query(pinyin: text, schemes: schemes, limit: limit)
-                guard let firstInputCount = primary.first?.input.count else { return processVerbatim(pinyin: text, limit: limit) }
+                let primary = pinyinQuery(pinyin: text, schemes: schemes, limit: limit)
+                guard let firstInputCount = primary.first?.input.count else { return pinyinProcessVerbatim(pinyin: text, limit: limit) }
                 guard firstInputCount != textCount else { return primary }
                 let prefixes: [PinyinLexicon] = {
                         guard schemes.first(where: { $0.summedLength == textCount }) == nil else { return [] }
@@ -37,7 +111,7 @@ extension Engine {
                                 let schemeAnchors = scheme.compactMap(\.first)
                                 let anchors: String = String(schemeAnchors + [lastAnchor])
                                 let text2mark: String = scheme.joined(separator: " ") + " " + tail
-                                return shortcut(pinyin: anchors, limit: limit)
+                                return pinyinShortcutQuery(pinyin: anchors, limit: limit)
                                         .filter({ $0.pinyin.hasPrefix(text2mark) })
                                         .map({ PinyinLexicon(text: $0.text, pinyin: $0.pinyin, input: text, mark: text2mark) })
                         })
@@ -49,7 +123,7 @@ extension Engine {
                         let headInputCount = headText.count
                         let tailText = String(text.dropFirst(headInputCount))
                         let tailSegmentation = PinyinSegmentor.segment(text: tailText)
-                        guard let tail = process(pinyin: tailText, schemes: tailSegmentation, limit: 50).sorted().first else { return nil }
+                        guard let tail = pinyinProcess(pinyin: tailText, schemes: tailSegmentation, limit: 50).sorted().first else { return nil }
                         guard let head = primary.filter({ $0.input == headText }).sorted().first else { return nil }
                         let conjoined = head + tail
                         return conjoined
@@ -58,15 +132,15 @@ extension Engine {
                 return preferredConcatenated + primary
         }
 
-        private static func query(pinyin text: String, schemes: [[String]], limit: Int? = nil) -> [PinyinLexicon] {
+        internal static func pinyinQuery(pinyin text: String, schemes: [[String]], limit: Int? = nil) -> [PinyinLexicon] {
                 let textCount = text.count
-                let searches = search(pinyin: text, schemes: schemes, limit: limit)
+                let searches = pinyinSearch(pinyin: text, schemes: schemes, limit: limit)
                 let preferredSearches = searches.filter({ $0.input.count == textCount })
-                let matched = match(pinyin: text, limit: limit)
-                return (matched + preferredSearches + shortcut(pinyin: text, limit: limit) + searches).uniqued()
+                let matched = pinyinMatchQuery(pinyin: text, limit: limit)
+                return (matched + preferredSearches + pinyinShortcutQuery(pinyin: text, limit: limit) + searches).uniqued()
         }
 
-        private static func search(pinyin text: String, schemes: [[String]], limit: Int? = nil) -> [PinyinLexicon] {
+        internal static func pinyinSearch(pinyin text: String, schemes: [[String]], limit: Int? = nil) -> [PinyinLexicon] {
                 let textCount: Int = text.count
                 let perfectSchemes = schemes.filter({ $0.summedLength == textCount })
                 if perfectSchemes.isNotEmpty {
@@ -85,7 +159,7 @@ extension Engine {
                 }
         }
 
-        private static func match(pinyin text: String, limit: Int? = nil) -> [PinyinLexicon] {
+        private static func pinyinMatchQuery(pinyin text: String, limit: Int? = nil) -> [PinyinLexicon] {
                 var items: [PinyinLexicon] = []
                 let code: Int = text.hash
                 let limit: Int = limit ?? -1
@@ -102,7 +176,7 @@ extension Engine {
                 }
                 return items
         }
-        private static func shortcut(pinyin text: String, limit: Int? = nil) -> [PinyinLexicon] {
+        private static func pinyinShortcutQuery(pinyin text: String, limit: Int? = nil) -> [PinyinLexicon] {
                 guard let code: Int = text.charcode else { return [] }
                 var items: [PinyinLexicon] = []
                 let limit: Int = limit ?? 50
@@ -133,62 +207,5 @@ private extension Array where Element == PinyinLexicon {
                                 return lhs.text.count >= rhs.text.count
                         }
                 }
-        }
-}
-
-private struct PinyinLexicon: Hashable, Comparable {
-
-        /// Cantonese Chinese word.
-        let text: String
-
-        /// Pinyin romanization for word text.
-        let pinyin: String
-
-        /// User input.
-        let input: String
-
-        /// Formatted user input for pre-edit display
-        let mark: String
-
-        /// Rank, smaller is preferred.
-        let order: Int
-
-        /// Create a PinyinLexicon.
-        /// - Parameters:
-        ///   - text: Cantonese Chinese word.
-        ///   - pinyin: Pinyin romanization for word text.
-        ///   - input: User input.
-        ///   - order: Rank, smaller is preferred.
-        init(text: String, pinyin: String? = nil, input: String, mark: String? = nil, order: Int? = nil) {
-                self.text = text
-                self.pinyin = pinyin ?? input
-                self.input = input
-                self.mark = mark ?? input
-                self.order = order ?? 0
-        }
-
-        // Equatable
-        static func ==(lhs: PinyinLexicon, rhs: PinyinLexicon) -> Bool {
-                return lhs.text == rhs.text && lhs.input == rhs.input
-        }
-
-        // Hashable
-        func hash(into hasher: inout Hasher) {
-                hasher.combine(text)
-                hasher.combine(input)
-        }
-
-        // Comparable
-        static func < (lhs: PinyinLexicon, rhs: PinyinLexicon) -> Bool {
-                guard lhs.input.count == rhs.input.count else { return lhs.input.count > rhs.input.count }
-                return lhs.text.count < rhs.text.count
-        }
-
-        static func + (lhs: PinyinLexicon, rhs: PinyinLexicon) -> PinyinLexicon {
-                let newText: String = lhs.text + rhs.text
-                let newPinyin: String = lhs.pinyin + " " + rhs.pinyin
-                let newInput: String = lhs.input + rhs.input
-                let newMark: String = lhs.mark + " " + rhs.mark
-                return PinyinLexicon(text: newText, pinyin: newPinyin, input: newInput, mark: newMark)
         }
 }

@@ -116,4 +116,14 @@ extension String {
         public var isValid: Bool {
                 return self != "X"
         }
+
+        /// Deterministic hash function compatible with Python implementation
+        /// Uses the same algorithm: hash = (hash * 31 + char_code) & 0xFFFFFFFF
+        public var deterministicHash: Int {
+                var hashValue: UInt32 = 0
+                for character in self.utf8 {
+                        hashValue = (hashValue &* 31 &+ UInt32(character)) & 0xFFFFFFFF
+                }
+                return Int(hashValue) > 0 ? Int(hashValue) : 1
+        }
 }

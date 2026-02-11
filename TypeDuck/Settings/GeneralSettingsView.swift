@@ -14,7 +14,6 @@ struct GeneralSettingsView: View {
         @State private var primaryCommentLanguage: Language = AppSettings.primaryCommentLanguage
 
         @State private var isEmojiSuggestionsOn: Bool = Options.isEmojiSuggestionsOn
-        @State private var cangjieVariant: CangjieVariant = AppSettings.cangjieVariant
         @State private var isInputMemoryOn: Bool = AppSettings.isInputMemoryOn
 
         @State private var isClearInputMemoryConfirmDialogPresented: Bool = false
@@ -148,29 +147,6 @@ struct GeneralSettingsView: View {
                                         Spacer()
                                 }
                                 .block()
-                                VStack(spacing: 2) {
-                                        HStack {
-                                                Text("GeneralSettingsView.SectionHeader.ReverseLookup")
-                                                Spacer()
-                                        }
-                                        .font(.subheadline)
-                                        .padding(.horizontal, 12)
-                                        HStack {
-                                                Picker("GeneralSettingsView.CangjieVariant.Picker.TitleKey", selection: $cangjieVariant) {
-                                                        Text("GeneralSettingsView.CangjieVariant.Picker.Option1").tag(CangjieVariant.cangjie5)
-                                                        Text("GeneralSettingsView.CangjieVariant.Picker.Option2").tag(CangjieVariant.cangjie3)
-                                                        Text("GeneralSettingsView.CangjieVariant.Picker.Option3").tag(CangjieVariant.quick5)
-                                                        Text("GeneralSettingsView.CangjieVariant.Picker.Option4").tag(CangjieVariant.quick3)
-                                                }
-                                                .pickerStyle(.menu)
-                                                .scaledToFit()
-                                                .onChange(of: cangjieVariant) { newVariant in
-                                                        AppSettings.updateCangjieVariant(to: newVariant)
-                                                }
-                                                Spacer()
-                                        }
-                                        .block()
-                                }
                                 VStack(spacing: 20) {
                                         HStack {
                                                 Toggle("GeneralSettingsView.Toggle.InputMemory", isOn: $isInputMemoryOn)

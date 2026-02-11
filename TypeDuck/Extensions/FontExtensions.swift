@@ -4,10 +4,10 @@ extension Font {
 
         static let serialNumber: Font = Font.body.monospacedDigit()
 
-        /// For Cantonese text
+        /// For candidate Chinese text
         static let candidate: Font = Font.title2
 
-        /// For Jyutping romanization text
+        /// For Pinyin romanization text
         static let romanization: Font = Font.callout
 
         static let englishComment: Font = Font.title3

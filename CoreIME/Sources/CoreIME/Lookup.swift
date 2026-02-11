@@ -142,9 +142,9 @@ extension Engine {
 
 extension Engine {
 
-        /// Reverse Lookup.
+        /// Reverse Lookup - Find romanization for a given Chinese word
         /// - Parameters:
-        ///   - text: Cantonese word text.
+        ///   - text: Chinese word text.
         ///   - input: User input for this word.
         ///   - mark: Formatted user input for pre-edit display.
         /// - Returns: Candidates.

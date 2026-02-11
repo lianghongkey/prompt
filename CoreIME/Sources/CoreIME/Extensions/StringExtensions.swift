@@ -59,7 +59,9 @@ extension String {
 
 extension StringProtocol {
 
-        /// Convert v/x/q to the tone digits
+        /// Convert Cantonese tone marks (v/x/q) to digital tones (1/2/3)
+        /// This is for Cantonese input only, NOT used in Mandarin Pinyin mode
+        /// Cantonese: v→1, x→2, q→3, vv→4, xx→5, qq→6
         /// - Returns: Converted text with digital tones
         public func toneConverted() -> String {
                 return replacingOccurrences(of: "vv", with: "4")

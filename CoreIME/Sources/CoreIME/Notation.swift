@@ -11,10 +11,10 @@ public struct Notation: Hashable, Sendable {
                 hasher.combine(jyutping)
         }
 
-        /// Cantonese
+        /// Chinese word (used with lexicontable for detailed lexicon information)
         public let word: String
 
-        /// Romanization
+        /// Romanization (Pinyin for Mandarin or Jyutping for Cantonese)
         public let jyutping: String
 
         /// higher is preferred

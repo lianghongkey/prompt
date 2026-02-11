@@ -51,9 +51,9 @@ extension Character {
 }
 
 extension Character {
-        /// r, v, x, q, i
+        /// v, i (q, r, x removed to allow single-character pinyin input)
         var isInvalidAnchor: Bool {
                 return Self.invalidAnchors.contains(self)
         }
-        private static let invalidAnchors: Set<Character> = ["r", "v", "x", "q", "i"]
+        private static let invalidAnchors: Set<Character> = ["v", "i"]
 }

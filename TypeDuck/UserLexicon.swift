@@ -136,7 +136,7 @@ struct UserLexicon: Sendable {
 
 private struct LexiconEntry {
 
-        /// (Candidate.lexiconText + Candidate.jyutping).hash
+        /// (Candidate.lexiconText + Candidate.romanization).hash
         let id: Int
 
         let frequency: Int64
@@ -144,12 +144,12 @@ private struct LexiconEntry {
         /// Candidate.lexiconText
         let word: String
 
-        /// Jyutping
+        /// Romanization (Pinyin for Mandarin)
         let romanization: String
 
-        /// jyutping.initials.hash
+        /// romanization.initials.hash
         let shortcut: Int
 
-        /// jyutping.withoutTonesAndSpaces.hash
+        /// romanization.withoutTonesAndSpaces.hash
         let ping: Int
 }

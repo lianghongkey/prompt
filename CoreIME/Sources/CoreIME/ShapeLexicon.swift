@@ -1,7 +1,7 @@
 /// For Cangjie/Quick/Stroke Reverse Lookup
 struct ShapeLexicon: Hashable {
 
-        /// Cantonese word
+        /// Chinese word
         let text: String
 
         /// User input

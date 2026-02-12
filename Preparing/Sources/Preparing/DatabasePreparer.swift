@@ -15,7 +15,7 @@ struct DatabasePreparer {
                 createPinyinTable()
                 createSymbolTable()
                 createEmojiSkinMappingTable()
-                createSyllableTable()
+                // Note: Removed createSyllableTable() - no longer needed for Mandarin-only input
                 createPinyinSyllableTable()
                 createOtherIndies()
                 backupInMemoryDatabase()
@@ -67,11 +67,12 @@ struct DatabasePreparer {
                 for number in range {
                         let line = sourceLines[number]
                         let parts = line.split(separator: "\t")
-                        guard parts.count == 3 else { return }
+                        // Support both 3-column (old) and 4-column (new) formats
+                        guard parts.count == 4 else { continue }
                         let word = parts[0]
                         let pinyin = parts[1]
                         let shortcut = parts[2]
-                        let ping = parts[0].hash
+                        let ping = parts[3]
                         insert(values: "('\(word)', '\(pinyin)', \(shortcut), \(ping))")
                 }
         }
@@ -128,13 +129,7 @@ struct DatabasePreparer {
                 guard sqlite3_step(insertStatement) == SQLITE_DONE else { return }
         }
 
-        private static func createSyllableTable() {
-                let createTable: String = "CREATE TABLE syllabletable(code INTEGER NOT NULL PRIMARY KEY, tenkey INTEGER NOT NULL, token TEXT NOT NULL, origin TEXT NOT NULL);"
-                var createStatement: OpaquePointer? = nil
-                guard sqlite3_prepare_v2(database, createTable, -1, &createStatement, nil) == SQLITE_OK else { sqlite3_finalize(createStatement); return }
-                guard sqlite3_step(createStatement) == SQLITE_DONE else { sqlite3_finalize(createStatement); return }
-                sqlite3_finalize(createStatement)
-        }
+        // Note: createSyllableTable() removed - Cantonese support no longer needed
 
         private static func createPinyinSyllableTable() {
                 let createTable: String = "CREATE TABLE pinyinsyllabletable(code INTEGER NOT NULL PRIMARY KEY, syllable TEXT NOT NULL);"
@@ -146,29 +141,17 @@ struct DatabasePreparer {
                 guard let content = try? String(contentsOf: url, encoding: .utf8) else { return }
                 let sourceLines: [String] = content.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: .newlines)
                 let entries = sourceLines.compactMap { syllable -> String? in
-                        let parts = syllable.split(separator: "\t").map({ $0.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: .controlCharacters) })
-                        guard parts.count == 2 else { return nil }
-                        let token = parts[0]
-                        let origin = parts[1]
-                        guard let code = syllable.charcode else { return nil }
-                        guard let tenkey = token.tenKeyCharcode else { return nil }
-                        return "(\(code), \(tenkey), '\(token)', '\(origin)')"
+                        let trimmed = syllable.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: .controlCharacters)
+                        guard !trimmed.isEmpty else { return nil }
+                        guard let code = trimmed.charcode else { return nil }
+                        return "(\(code), '\(trimmed)')"
                 }
                 let values: String = entries.compactMap({ $0 }).joined(separator: ", ")
                 let insertValues: String = "INSERT INTO pinyinsyllabletable (code, syllable) VALUES \(values);"
                 var insertStatement: OpaquePointer? = nil
                 defer { sqlite3_finalize(insertStatement) }
                 guard sqlite3_prepare_v2(database, insertValues, -1, &insertStatement, nil) == SQLITE_OK else { return }
-                let range: Range<Int> = 0..<values.count/2000
-                for number in range {
-                        let bound = number == 1999 ? values.count : min((number + 1) * 2000, values.count)
-                        let part = values[(number * 2000)..<bound]
-                        let insert: String = "INSERT INTO pinyinsyllabletable (code, syllable) VALUES \(values);"
-                        var insertStatement: OpaquePointer? = nil
-                        defer { sqlite3_finalize(insertStatement) }
-                        guard sqlite3_prepare_v2(database, insert, -1, &insertStatement, nil) == SQLITE_OK else { return }
-                        guard sqlite3_step(insertStatement) == SQLITE_DONE else { return }
-                }
+                guard sqlite3_step(insertStatement) == SQLITE_DONE else { return }
         }
 
         private static func createOtherIndies() {

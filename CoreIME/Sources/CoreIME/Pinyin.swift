@@ -60,7 +60,7 @@ public struct PinyinLexicon: Hashable, Comparable {
 
 extension Engine {
 
-        public static func pinyinReverseLookup(text: String, schemes: [[String]]) -> [Candidate] {
+        public static func pinyinReverseLookup(text: String, schemes: Segmentation) -> [Candidate] {
                 let canSegment: Bool = schemes.subelementCount != 0
                 let lexicons: [PinyinLexicon]
                 if canSegment {
@@ -75,7 +75,7 @@ extension Engine {
         }
 
         // Expose pinyin methods for use in suggest()
-        internal static func query(pinyin text: String, schemes: [[String]], limit: Int? = nil) -> [PinyinLexicon] {
+        internal static func query(pinyin text: String, schemes: Segmentation, limit: Int? = nil) -> [PinyinLexicon] {
                 return pinyinQuery(pinyin: text, schemes: schemes, limit: limit)
         }
 
@@ -99,19 +99,19 @@ extension Engine {
                 return rounds.flatMap({ $0 }).uniqued()
         }
 
-        internal static func pinyinProcess(pinyin text: String, schemes: [[String]], limit: Int? = nil) -> [PinyinLexicon] {
+        internal static func pinyinProcess(pinyin text: String, schemes: Segmentation, limit: Int? = nil) -> [PinyinLexicon] {
                 let textCount = text.count
                 let primary = pinyinQuery(pinyin: text, schemes: schemes, limit: limit)
                 guard let firstInputCount = primary.first?.input.count else { return pinyinProcessVerbatim(pinyin: text, limit: limit) }
                 guard firstInputCount != textCount else { return primary }
                 let prefixes: [PinyinLexicon] = {
-                        guard schemes.first(where: { $0.summedLength == textCount }) == nil else { return [] }
+                        guard schemes.first(where: { $0.length == textCount }) == nil else { return [] }
                         let shortcuts = schemes.map({ scheme -> [PinyinLexicon] in
-                                let tail = text.dropFirst(scheme.summedLength)
+                                let tail = text.dropFirst(scheme.length)
                                 guard let lastAnchor = tail.first else { return [] }
-                                let schemeAnchors = scheme.compactMap(\.first)
+                                let schemeAnchors = scheme.compactMap({ $0.text.first })
                                 let anchors: String = String(schemeAnchors + [lastAnchor])
-                                let text2mark: String = scheme.joined(separator: " ") + " " + tail
+                                let text2mark: String = scheme.map({ $0.origin }).joined(separator: " ") + " " + tail
                                 return pinyinShortcutQuery(pinyin: anchors, limit: limit)
                                         .filter({ $0.pinyin.hasPrefix(text2mark) })
                                         .map({ PinyinLexicon(text: $0.text, pinyin: $0.pinyin, input: text, mark: text2mark) })
@@ -133,22 +133,22 @@ extension Engine {
                 return preferredConcatenated + primary
         }
 
-        internal static func pinyinQuery(pinyin text: String, schemes: [[String]], limit: Int? = nil) -> [PinyinLexicon] {
-                let textCount = text.count
+        internal static func pinyinQuery(pinyin text: String, schemes: Segmentation, limit: Int? = nil) -> [PinyinLexicon] {
+                let textCount: Int = text.count
                 let searches = pinyinSearch(pinyin: text, schemes: schemes, limit: limit)
                 let preferredSearches = searches.filter({ $0.input.count == textCount })
                 let matched = pinyinMatchQuery(pinyin: text, limit: limit)
                 return (matched + preferredSearches + pinyinShortcutQuery(pinyin: text, limit: limit) + searches).uniqued()
         }
 
-        internal static func pinyinSearch(pinyin text: String, schemes: [[String]], limit: Int? = nil) -> [PinyinLexicon] {
+        internal static func pinyinSearch(pinyin text: String, schemes: Segmentation, limit: Int? = nil) -> [PinyinLexicon] {
                 let textCount: Int = text.count
-                let perfectSchemes = schemes.filter({ $0.summedLength == textCount })
+                let perfectSchemes = schemes.filter({ $0.length == textCount })
                 if perfectSchemes.isNotEmpty {
                         let matches = perfectSchemes.map({ scheme -> [PinyinLexicon] in
                                 var queries: [[PinyinLexicon]] = []
                                 for number in (0..<scheme.count) {
-                                        let pingText = scheme.dropLast(number).joined()
+                                        let pingText = scheme.dropLast(number).map({ $0.origin }).joined()
                                         let matched = match(pinyin: pingText, limit: limit)
                                         queries.append(matched)
                                 }
@@ -156,13 +156,13 @@ extension Engine {
                         })
                         return matches.flatMap({ $0 }).ordered(with: textCount)
                 } else {
-                        return schemes.map({ match(pinyin: $0.joined(), limit: limit) }).flatMap({ $0 }).ordered(with: textCount)
+                        return schemes.map({ match(pinyin: $0.map({ $0.origin }).joined(), limit: limit) }).flatMap({ $0 }).ordered(with: textCount)
                 }
         }
 
         private static func pinyinMatchQuery(pinyin text: String, limit: Int? = nil) -> [PinyinLexicon] {
                 var items: [PinyinLexicon] = []
-                let code: Int = text.hash
+                let code: Int = text.deterministicHash
                 let limit: Int = limit ?? -1
                 let command: String = "SELECT rowid, word, pinyin FROM pinyintable WHERE ping = \(code) LIMIT \(limit);"
                 var statement: OpaquePointer? = nil

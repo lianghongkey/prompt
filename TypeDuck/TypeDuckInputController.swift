@@ -364,7 +364,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 let needsSymbols: Bool = Options.isEmojiSuggestionsOn && selectedCandidates.isEmpty
                 let isInputMemoryOn: Bool = AppSettings.isInputMemoryOn
                 suggestionTask = Task.detached(priority: .high) { [weak self] in
-                        let segmentation = Segmentor.segment(text: processingText)
+                        let segmentation = PinyinSegmentor.segment(text: processingText)
                         let bestScheme = segmentation.first
                         async let userLexiconCandidates: [Candidate] = isInputMemoryOn ? UserLexicon.suggest(text: processingText, segmentation: segmentation) : []
                         async let engineCandidates: [Candidate] = Engine.suggest(text: processingText, segmentation: segmentation, needsSymbols: needsSymbols)
@@ -398,13 +398,13 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         candidates = []
                         return
                 }
-                let schemes: [[String]] = PinyinSegmentor.segment(text: text)
+                let schemes: Segmentation = PinyinSegmentor.segment(text: text)
                 let suggestions: [Candidate] = Engine.pinyinReverseLookup(text: text, schemes: schemes)
                 let tailText2Mark: String = {
                         if let firstCandidate = suggestions.first, firstCandidate.input.count == text.count { return firstCandidate.mark }
                         guard let bestScheme = schemes.first else { return text }
-                        let leadingLength: Int = bestScheme.summedLength
-                        let leadingText: String = bestScheme.joined(separator: String.space)
+                        let leadingLength: Int = bestScheme.length
+                        let leadingText: String = bestScheme.map(\.origin).joined(separator: String.space)
                         guard leadingLength != text.count else { return leadingText }
                         let tailText = text.dropFirst(leadingLength)
                         return leadingText + String.space + tailText

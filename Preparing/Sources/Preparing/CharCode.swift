@@ -13,6 +13,15 @@ extension StringProtocol {
                 let code: Int = codes.tenKeyCombined()
                 return code
         }
+        /// Deterministic hash function compatible with query implementation
+        /// Uses same algorithm: hash = (hash * 31 + char_code) & 0xFFFFFFFF
+        var deterministicHash: Int {
+                var hashValue: UInt32 = 0
+                for character in self.utf8 {
+                        hashValue = (hashValue &* 31 &+ UInt32(character)) & 0xFFFFFFFF
+                }
+                return Int(hashValue) > 0 ? Int(hashValue) : 1
+        }
 }
 
 extension RandomAccessCollection where Element == Int {

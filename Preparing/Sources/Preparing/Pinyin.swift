@@ -23,7 +23,7 @@ struct Pinyin {
                         }
 
                         // Otherwise, calculate shortcut and ping from pinyin
-                        let ping = pinyin.replacingOccurrences(of: " ", with: "").hash
+                        let ping = pinyin.deterministicHash
                         let anchors = pinyin.split(separator: " ").compactMap(\.first)
                         let anchorsText = String(anchors)
                         guard let shortcut = anchorsText.charcode else { return nil }

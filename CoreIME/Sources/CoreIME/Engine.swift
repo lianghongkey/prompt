@@ -94,14 +94,29 @@ public struct Engine {
                         let pinyinMatches = pinyinMatchInternal(text: text, input: text)
                         return pinyinMatches.isEmpty ? pinyinShortcutInternal(text: text, limit: 100) : pinyinMatches
                 default:
-                        // Multi-character input - try direct pinyin match first
-                        return pinyinSuggestMulti(text: text)
+                        // Multi-character input - use segmentation to build spaced pinyin
+                        return pinyinSuggestMulti(text: text, segmentation: segmentation)
                 }
         }
 
-        private static func pinyinSuggestMulti(text: String) -> [Candidate] {
-                // Try exact match first (for multi-character pinyin like "wo", "men", "zhong", "guo")
-                let exactMatches = pinyinMatchInternal(text: text, input: text)
+        private static func pinyinSuggestMulti(text: String, segmentation: Segmentation) -> [Candidate] {
+                // Use segmentation to build spaced pinyin for database query
+                // For example: "ganshenme" -> ["gan", "shen", "me"] -> "gan shen me"
+
+                // Try the best segmentation (first one, which is longest with fewest tokens)
+                guard let bestScheme = segmentation.first else {
+                        // Fallback: try direct match with original text
+                        return pinyinMatchInternal(text: text, input: text)
+                }
+
+                // Build spaced pinyin from segmentation
+                let spacedPinyin = bestScheme.map(\.origin).joined(separator: " ")
+
+                // Also calculate the combined input text (without spaces) for Candidate
+                let combinedInput = bestScheme.map(\.text).joined()
+
+                // Query database with spaced pinyin
+                let exactMatches = pinyinMatchInternal(text: spacedPinyin, input: combinedInput)
 
                 // If no exact match, try prefix matches
                 if exactMatches.isEmpty {

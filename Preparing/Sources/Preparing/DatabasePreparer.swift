@@ -55,18 +55,32 @@ struct DatabasePreparer {
                 guard sqlite3_prepare_v2(database, createTable, -1, &createStatement, nil) == SQLITE_OK else { sqlite3_finalize(createStatement); return }
                 guard sqlite3_step(createStatement) == SQLITE_DONE else { sqlite3_finalize(createStatement); return }
                 sqlite3_finalize(createStatement)
-                let sourceLines: [String] = Pinyin.generate()
+                // Read directly from pinyin.txt to avoid Pinyin.generate() processing issues
+                guard let url = Bundle.module.url(forResource: "pinyin", withExtension: "txt") else { return }
+                guard let sourceContent = try? String(contentsOf: url, encoding: .utf8) else { return }
+                let sourceLines = sourceContent
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .trimmingCharacters(in: .controlCharacters)
+                        .components(separatedBy: .newlines)
+                        .filter({ !($0.isEmpty) })
+
+                print("Processing \(sourceLines.count) lines from pinyin.txt")
+
                 func insert(values: String) {
                         let insert: String = "INSERT INTO pinyintable (word, pinyin, shortcut, ping) VALUES \(values);"
                         var insertStatement: OpaquePointer? = nil
                         defer { sqlite3_finalize(insertStatement) }
                         guard sqlite3_prepare_v2(database, insert, -1, &insertStatement, nil) == SQLITE_OK else { return }
-                        guard sqlite3_step(insertStatement) == SQLITE_DONE else { return }
+                        guard sqlite3_step(insertStatement) == SQLITE_DONE else {
+                                print("Failed to insert: \(values)")
+                                return
+                        }
                 }
-                let range: Range<Int> = 0..<sourceLines.count
-                for number in range {
+
+                var insertedCount = 0
+                for number in 0..<sourceLines.count {
                         let line = sourceLines[number]
-                        let parts = line.split(separator: "\t")
+                        let parts = line.split(separator: "\t").map({ String($0).trimmingCharacters(in: .whitespaces) })
                         // Support both 3-column (old) and 4-column (new) formats
                         guard parts.count == 4 else { continue }
                         let word = parts[0]
@@ -74,7 +88,12 @@ struct DatabasePreparer {
                         let shortcut = parts[2]
                         let ping = parts[3]
                         insert(values: "('\(word)', '\(pinyin)', \(shortcut), \(ping))")
+                        insertedCount += 1
+                        if insertedCount % 100000 == 0 {
+                                print("Inserted \(insertedCount) records...")
+                        }
                 }
+                print("Total inserted: \(insertedCount) records")
         }
 
         private static func createSymbolTable() {

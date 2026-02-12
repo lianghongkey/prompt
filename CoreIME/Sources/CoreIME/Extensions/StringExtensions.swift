@@ -59,19 +59,6 @@ extension String {
 
 extension StringProtocol {
 
-        /// Convert Cantonese tone marks (v/x/q) to digital tones (1/2/3)
-        /// This is for Cantonese input only, NOT used in Mandarin Pinyin mode
-        /// Cantonese: v→1, x→2, q→3, vv→4, xx→5, qq→6
-        /// - Returns: Converted text with digital tones
-        public func toneConverted() -> String {
-                return replacingOccurrences(of: "vv", with: "4")
-                .replacingOccurrences(of: "xx", with: "5")
-                .replacingOccurrences(of: "qq", with: "6")
-                .replacingOccurrences(of: "v", with: "1")
-                .replacingOccurrences(of: "x", with: "2")
-                .replacingOccurrences(of: "q", with: "3")
-        }
-
         /// Format text with separators and tones
         /// - Returns: Formatted text
         public func formattedForMark() -> String {

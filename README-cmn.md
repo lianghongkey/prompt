@@ -1,4 +1,4 @@
-README in [粵語(Cantonese)](README.md) | [English](README-en.md)
+README in [English](README-en.md) | [English](README-en.md)
 
 # TypeDuck for macOS
 兼容性: macOS 12 Monterey 或者更高。
@@ -12,7 +12,7 @@ README in [粵語(Cantonese)](README.md) | [English](README-en.md)
 **請注意**: 登出電腦會將所有程序結束運行。
 
 安裝之後，如果看不到有 TypeDuck 輸入法，請前往 系統設置App → 鍵盤 → 輸入方式，手動添加。  
-添加的時候，可以在「Cantonese, Traditional」/繁體粵語/繁體廣東話 語言項找到 TypeDuck，也可以搜索「TypeDuck」來找。
+添加的時候，可以在「Chinese, Simplified」/简体中文/简体中文 語言項找到 TypeDuck，也可以搜索「TypeDuck」來找。
 
 
 <img width="300" alt="Screenshot 1" src="images/screenshot-step-1-and-2.png"/><img width="300" alt="Screenshot 2" src="images/screenshot-step-3.png"/>
@@ -54,4 +54,4 @@ osascript -e 'tell application id "hk.eduhk.inputmethod.TypeDuck" to quit'
 ~~~
 
 
-如果想要替換 CSV 詞庫，請替換 `./Preparing/Sources/Preparing/Resources/data.csv` 文件，再依上文重新構建一次數據庫。
+如果想要替換 词库，請替換 `./Preparing/Sources/Preparing/Resources/pinyin.txt` 文件，再依上文重新構建一次數據庫。

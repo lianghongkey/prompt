@@ -13,17 +13,6 @@ struct CandidateContentView: View {
                 let devanagariComments = enabledTranslations.filter(\.language.isDevanagari)
                 HStack(alignment: .lastTextBaseline, spacing: 12) {
                         PinyinLabel(text: candidate.candidate.text, romanization: candidate.candidate.romanization, shouldDisplayRomanization: candidate.candidate.isMandarin)
-                        if !hasNotationDisplayButton, let labelText = candidate.candidate.notation?.label, labelText.isValid {
-                                let labelList = Decorator.labelList(of: labelText)
-                                if labelList.isNotEmpty {
-                                        HStack(alignment: .lastTextBaseline, spacing: 4) {
-                                                ForEach(0..<labelList.count, id: \.self) { index in
-                                                        let label = labelList[index]
-                                                        Text(verbatim: label).foregroundStyle(Color.secondary)
-                                                }
-                                        }
-                                }
-                        }
                         if annotationComments.isNotEmpty {
                                 ForEach(0..<annotationComments.count, id: \.self) { index in
                                         let comment = annotationComments[index]

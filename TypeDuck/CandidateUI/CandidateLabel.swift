@@ -11,25 +11,8 @@ struct CandidateLabel: View {
                 self.isMandarinCandidate = candidate.candidate.isMandarin
                 self.isCompoundCandidate = candidate.candidate.isCompound
                 self.shouldDisplayNotationButton = {
-                        guard !(candidate.candidate.isCompound) else { return true }
-                        guard let notation = candidate.candidate.notation else { return false }
-                        if notation.partOfSpeech.isValid {
-                                return true
-                        } else if notation.register.isValid {
-                                return true
-                        } else if notation.normalized.isValid {
-                                return true
-                        } else if notation.written.isValid {
-                                return true
-                        } else if notation.vernacular.isValid {
-                                return true
-                        } else if notation.collocation.isValid {
-                                return true
-                        } else if candidate.comments.contains(where: \.language.isTranslation) {
-                                return true
-                        } else {
-                                return false
-                        }
+                        // Notation display button disabled - Cantonese fields removed
+                        return false
                 }()
         }
 

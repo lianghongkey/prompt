@@ -2,73 +2,35 @@ public struct Notation: Hashable, Sendable {
 
         // Equatable
         public static func ==(lhs: Notation, rhs: Notation) -> Bool {
-                return lhs.word == rhs.word && lhs.jyutping == rhs.jyutping
+                return lhs.word == rhs.word && lhs.pinyin == rhs.pinyin
         }
 
         // Hashable
         public func hash(into hasher: inout Hasher) {
                 hasher.combine(word)
-                hasher.combine(jyutping)
+                hasher.combine(pinyin)
         }
 
-        /// Chinese word (used with lexicontable for detailed lexicon information)
+        /// Chinese word
         public let word: String
 
-        /// Romanization (Pinyin for Mandarin or Jyutping for Cantonese)
-        public let jyutping: String
+        /// Pinyin romanization
+        public let pinyin: String
 
         /// higher is preferred
         public let frequency: Int
 
-        /// (Currently unused)
-        public let altFrequency: Int
-
         /// smaller is preferred
         public let pronunciationOrder: Int
 
-        /// 變調
-        public let isSandhi: Bool
-
-        /// 文讀 / 白讀
-        public let literaryColloquial: String
-
-        /// 詞性
-        public let partOfSpeech: String
-
-        /// 語體 / 語域
-        public let register: String
-
-        /// place, name, etc.
-        public let label: String
-
-        /// Standard Form
-        public let normalized: String
-
-        /// Written Form. 對應嘅書面語
-        public let written: String
-
-        /// Vernacular Form. 對應嘅口語
-        public let vernacular: String
-
-        /// Word Form. 詞組
-        public let collocation: String
-
-        /// 英語
-        public let english: String
-
-        /// 烏爾都語. RTL
-        public let urdu: String
-
-        /// 尼泊爾語
-        public let nepali: String
-
-        /// 印地語
-        public let hindi: String
-
-        /// 印尼語
-        public let indonesian: String
+        public init(word: String, pinyin: String, frequency: Int, pronunciationOrder: Int = 1) {
+                self.word = word
+                self.pinyin = pinyin
+                self.frequency = frequency
+                self.pronunciationOrder = pronunciationOrder
+        }
 }
 
 extension Notation {
-        public static let example: Notation = Notation(word: "舉例", jyutping: "geoi2 lai6", frequency: 1, altFrequency: 1, pronunciationOrder: 1, isSandhi: true, literaryColloquial: "lit", partOfSpeech: "n", register: "for", label: "surname", normalized: "示例", written: "示例", vernacular: "示例", collocation: "示例", english: "example", urdu: "مثال", nepali: "उदाहरण", hindi: "उदाहरण", indonesian: "contoh")
+        public static let example: Notation = Notation(word: "举例", pinyin: "ju3 li3", frequency: 1000, pronunciationOrder: 1)
 }

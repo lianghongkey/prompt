@@ -44,28 +44,7 @@ struct DisplayCandidate: Hashable {
 
 extension Notation {
         var comments: [Comment] {
-                return Language.allCases.compactMap({ language -> Comment? in
-                        switch language {
-                        case .Mandarin:
-                                return nil
-                        case .English:
-                                guard english.isValid else { return nil }
-                                return Comment(language: language, text: english)
-                        case .Hindi:
-                                guard hindi.isValid else { return nil }
-                                return Comment(language: language, text: hindi)
-                        case .Indonesian:
-                                guard indonesian.isValid else { return nil }
-                                return Comment(language: language, text: indonesian)
-                        case .Nepali:
-                                guard nepali.isValid else { return nil }
-                                return Comment(language: language, text: nepali)
-                        case .Urdu:
-                                guard urdu.isValid else { return nil }
-                                return Comment(language: language, text: urdu)
-                        case .Unicode:
-                                return nil
-                        }
-                })
+                // Translation comments removed - only Mandarin input supported
+                return []
         }
 }

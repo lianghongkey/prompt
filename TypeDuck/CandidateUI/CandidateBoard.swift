@@ -12,7 +12,7 @@ struct CandidateBoard: View {
                                 let shouldHighlight: Bool = index == highlightedIndex
                                 let candidate: DisplayCandidate = context.displayCandidates[index]
                                 let subCandidates = candidate.candidate.subNotations.map({ notation -> DisplayCandidate in
-                                        let convertedCandidate = Candidate(text: notation.word, romanization: notation.jyutping, input: String.empty, notation: notation)
+                                        let convertedCandidate = Candidate(text: notation.word, romanization: notation.pinyin, input: String.empty, notation: notation)
                                         return DisplayCandidate(candidate: convertedCandidate, candidateIndex: -1)
                                 })
                                 VStack(alignment: .leading, spacing: 0) {

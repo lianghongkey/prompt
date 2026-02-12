@@ -359,8 +359,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 UserDefaults.standard.set(Date(), forKey: "DEBUG_SUGGEST_TIME")
 
                 suggestionTask?.cancel()
-                // Only apply toneConverted for Cantonese mode; in Mandarin mode, q, x, v are valid initials
-                let processingText: String = inputForm.isMandarin ? bufferText : bufferText.toneConverted()
+                let processingText: String = bufferText
                 let needsSymbols: Bool = Options.isEmojiSuggestionsOn && selectedCandidates.isEmpty
                 let isInputMemoryOn: Bool = AppSettings.isInputMemoryOn
                 suggestionTask = Task.detached(priority: .high) { [weak self] in

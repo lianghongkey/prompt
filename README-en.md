@@ -1,4 +1,4 @@
-README in [粵語(Cantonese)](README.md) | [普通話(Mandarin)](README-cmn.md)
+README in [普通話(Mandarin)](README-cmn.md)
 
 # TypeDuck for macOS
 Compatibility: macOS 12 Monterey or higher.
@@ -12,7 +12,7 @@ Compatibility: macOS 12 Monterey or higher.
 **Note**: Logging out of your computer will quit all currently running apps.
 
 After installing, if you don't see the TypeDuck input method, please go to system Settings app → Keyboard → Input Sources, add it manually.  
-You can find TypeDuck under the *Cantonese, Traditional* language, or you can search for *TypeDuck* to find it.
+You can find TypeDuck under the *Chinese, Simplified* language, or you can search for *TypeDuck* to find it.
 
 
 <img width="300" alt="Screenshot 1" src="images/screenshot-step-1-and-2.png"/><img width="300" alt="Screenshot 2" src="images/screenshot-step-3.png"/>
@@ -53,4 +53,4 @@ When replacing the old TypeDuck.app, Finder may prompt a message indicating that
 osascript -e 'tell application id "hk.eduhk.inputmethod.TypeDuck" to quit'
 ~~~
 
-If you want to replace the CSV lexicon, please replace the `./Preparing/Sources/Preparing/Resources/data.csv` file, then reprepare databases.
+If you want to replace the lexicon, please replace the `./Preparing/Sources/Preparing/Resources/pinyin.txt` file, then reprepare databases.

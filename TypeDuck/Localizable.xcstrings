@@ -1,3658 +1,3314 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "GeneralSettingsView.Button.ClearInputMemory" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear Input Memory"
+  "sourceLanguage": "en",
+  "strings": {
+    "GeneralSettingsView.Button.ClearInputMemory": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear Input Memory"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶"
           }
         }
       }
     },
-    "GeneralSettingsView.CangjieVariant.Picker.Option1" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cangjie5"
+    "GeneralSettingsView.CangjieVariant.Picker.Option1": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cangjie5"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡五代"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡五代"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡五代"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡五代"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡五代"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡五代"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡五代"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡五代"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡五代"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡五代"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡五代"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡五代"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡五代"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡五代"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡五代"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡五代"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡五代"
           }
         }
       }
     },
-    "GeneralSettingsView.CangjieVariant.Picker.Option2" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cangjie3"
+    "GeneralSettingsView.CangjieVariant.Picker.Option2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cangjie3"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡三代"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡三代"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡三代"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡三代"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡三代"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡三代"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡三代"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡三代"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡三代"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡三代"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡三代"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡三代"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡三代"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡三代"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡三代"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡三代"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡三代"
           }
         }
       }
     },
-    "GeneralSettingsView.CangjieVariant.Picker.Option3" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quick5"
+    "GeneralSettingsView.CangjieVariant.Picker.Option3": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick5"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成五代"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成五代"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成五代"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成五代"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成五代"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成五代"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成五代"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成五代"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成五代"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成五代"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成五代"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成五代"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成五代"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成五代"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成五代"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成五代"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成五代"
           }
         }
       }
     },
-    "GeneralSettingsView.CangjieVariant.Picker.Option4" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quick3"
+    "GeneralSettingsView.CangjieVariant.Picker.Option4": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick3"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成三代"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成三代"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成三代"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成三代"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成三代"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成三代"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成三代"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成三代"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成三代"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成三代"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成三代"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成三代"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成三代"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成三代"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成三代"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "速成三代"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "速成三代"
           }
         }
       }
     },
-    "GeneralSettingsView.CangjieVariant.Picker.TitleKey" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cangjie / Quick(Sucheng) Version"
+    "GeneralSettingsView.CangjieVariant.Picker.TitleKey": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cangjie / Quick(Sucheng) Version"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡／速成版本"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡／速成版本"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡／速成版本"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡／速成版本"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡／速成版本"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡／速成版本"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡／速成版本"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡／速成版本"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡／速成版本"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡／速成版本"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡／速成版本"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡／速成版本"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡／速成版本"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡／速成版本"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡／速成版本"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "倉頡／速成版本"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倉頡／速成版本"
           }
         }
       }
     },
-    "GeneralSettingsView.ConfirmationDialog.ClearInputMemory.Cancel" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
+    "GeneralSettingsView.ConfirmationDialog.ClearInputMemory.Cancel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取消"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         }
       }
     },
-    "GeneralSettingsView.ConfirmationDialog.ClearInputMemory.Confirm" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear"
+    "GeneralSettingsView.ConfirmationDialog.ClearInputMemory.Confirm": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
           }
         }
       }
     },
-    "GeneralSettingsView.ConfirmationDialog.ClearInputMemory.Title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear Input Memory?"
+    "GeneralSettingsView.ConfirmationDialog.ClearInputMemory.Title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear Input Memory?"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶？"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶？"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶？"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶？"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶？"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶？"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶？"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶？"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶？"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶？"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶？"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶？"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶？"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶？"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶？"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清空輸入記憶？"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空輸入記憶？"
           }
         }
       }
     },
-    "GeneralSettingsView.SectionHeader.ReverseLookup" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reverse Lookup"
+    "GeneralSettingsView.SectionHeader.ReverseLookup": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reverse Lookup"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反查"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "反查"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反查"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "反查"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反查"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "反查"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反查"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "反查"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反查"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "反查"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反查"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "反查"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反查"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "反查"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反查"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "反查"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "反查"
           }
         }
       }
     },
-    "GeneralSettingsView.Toggle.InputMemory" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Input Memory"
+    "GeneralSettingsView.Toggle.InputMemory": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Input Memory"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "記憶輸入"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記憶輸入"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "記憶輸入"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記憶輸入"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "記憶輸入"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記憶輸入"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "記憶輸入"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記憶輸入"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "記憶輸入"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記憶輸入"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "記憶輸入"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記憶輸入"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "記憶輸入"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記憶輸入"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "記憶輸入"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "記憶輸入"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記憶輸入"
           }
         }
       }
     },
-    "Menu.About" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About"
+    "Menu.About": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         }
       }
     },
-    "Menu.CheckForUpdates" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Check for Updates…"
+    "Menu.CheckForUpdates": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check for Updates…"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查更新⋯"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新⋯"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查更新⋯"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新⋯"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查更新⋯"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新⋯"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查更新⋯"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新⋯"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查更新⋯"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新⋯"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查更新⋯"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新⋯"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查更新⋯"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新⋯"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查更新⋯"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檢查更新⋯"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "檢查更新⋯"
           }
         }
       }
     },
-    "Menu.Help" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Help"
+    "Menu.Help": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         }
       }
     },
-    "Menu.Settings" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings…"
+    "Menu.Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings…"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定⋯"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定⋯"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定⋯"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定⋯"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定⋯"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定⋯"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定⋯"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定⋯"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定⋯"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定⋯"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定⋯"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定⋯"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定⋯"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定⋯"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定⋯"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定⋯"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定⋯"
           }
         }
       }
     },
-    "Menu.Title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+    "Menu.Title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         }
       }
     },
-    "OptionsView.CharacterForm.FullWidth" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全形 (Full-width)"
+    "OptionsView.CharacterForm.FullWidth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全形 (Full-width)"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全形"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全形"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全形"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全形"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全形"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全形"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全形"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全形"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全形"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全形"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全形"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全形"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全形"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全形"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全形"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全形"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全形"
           }
         }
       }
     },
-    "OptionsView.CharacterForm.HalfWidth" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "半形 (Half-width)"
+    "OptionsView.CharacterForm.HalfWidth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "半形 (Half-width)"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "半形"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "半形"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "半形"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "半形"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "半形"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "半形"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "半形"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "半形"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "半形"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "半形"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "半形"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "半形"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "半形"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "半形"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "半形"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "半形"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "半形"
           }
         }
       }
     },
-    "OptionsView.CharacterStandard.Simplified" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简体 (Simplified)"
+    "OptionsView.CharacterStandard.Simplified": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "简体 (Simplified)"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简体"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "简体"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简体"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "简体"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简体"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "简体"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简体"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "简体"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简体"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "简体"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简体"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "简体"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简体"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "简体"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简体"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "简体"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "简体"
           }
         }
       }
     },
-    "OptionsView.CharacterStandard.Traditional" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "繁體 (Traditional)"
+    "OptionsView.CharacterStandard.Traditional": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繁體 (Traditional)"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "繁體"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繁體"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "繁體"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繁體"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "繁體"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繁體"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "繁體"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繁體"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "繁體"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繁體"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "繁體"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繁體"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "繁體"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繁體"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "繁體"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "繁體"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繁體"
           }
         }
       }
     },
-    "OptionsView.PunctuationForm.Cantonese" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "中文標點 (，、；。)"
+    "OptionsView.PunctuationForm.Cantonese": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文標點 (，、；。)"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "中文標點"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文標點"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "中文標點"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文標點"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "中文標點"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文標點"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "中文標點"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文標點"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "中文標點"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文標點"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "中文標點"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文標點"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "中文標點"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文標點"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "中文標點"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "中文標點"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中文標點"
           }
         }
       }
     },
-    "OptionsView.PunctuationForm.Chinese" : {
-
-    },
-    "OptionsView.PunctuationForm.English" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英文標點 (, ' ; .)"
+    "OptionsView.PunctuationForm.Chinese": {},
+    "OptionsView.PunctuationForm.English": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英文標點 (, ' ; .)"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英文標點"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英文標點"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英文標點"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英文標點"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英文標點"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英文標點"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英文標點"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英文標點"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英文標點"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英文標點"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英文標點"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英文標點"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英文標點"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英文標點"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英文標點"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英文標點"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英文標點"
           }
         }
       }
     },
-    "Settings.Window.Title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+    "Settings.Window.Title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         }
       }
     },
-    "SettingsView.AboutView.Title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About"
+    "SettingsView.AboutView.Title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         }
       }
     },
-    "SettingsView.AboutView.Version" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Version"
+    "SettingsView.AboutView.Version": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版本"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         }
       }
     },
-    "SettingsView.AboutView.Welcome" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Welcome to TypeDuck"
+    "SettingsView.AboutView.Welcome": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome to TypeDuck"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歡迎使用 TypeDuck"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歡迎使用 TypeDuck"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歡迎使用 TypeDuck"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歡迎使用 TypeDuck"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歡迎使用 TypeDuck"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歡迎使用 TypeDuck"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歡迎使用 TypeDuck"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歡迎使用 TypeDuck"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歡迎使用 TypeDuck"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歡迎使用 TypeDuck"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歡迎使用 TypeDuck"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歡迎使用 TypeDuck"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歡迎使用 TypeDuck"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歡迎使用 TypeDuck"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歡迎使用 TypeDuck"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "歡迎使用 TypeDuck"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歡迎使用 TypeDuck"
           }
         }
       }
     },
-    "SettingsView.Colon" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : ": "
+    "SettingsView.Colon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ": "
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "："
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "："
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "："
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "："
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "："
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "："
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "："
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "："
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "："
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "："
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "："
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "："
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "："
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "："
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "："
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "："
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "："
           }
         }
       }
     },
-    "SettingsView.GeneralSettingsView.CommentLanguage.English" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "English"
+    "SettingsView.GeneralSettingsView.CommentLanguage.English": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英語 (English)"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英語 (English)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英語 (English)"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英語 (English)"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英語 (English)"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英語 (English)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英語 (English)"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英語 (English)"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英語 (English)"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英語 (English)"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英語 (English)"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英語 (English)"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英語 (English)"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英語 (English)"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英語 (English)"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "英語 (English)"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "英語 (English)"
           }
         }
       }
     },
-    "SettingsView.GeneralSettingsView.CommentLanguage.Hindi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hindi"
+    "SettingsView.GeneralSettingsView.CommentLanguage.Hindi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印地語 (Hindi)"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印地語 (Hindi)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印地語 (Hindi)"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印地語 (Hindi)"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印地語 (Hindi)"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印地語 (Hindi)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印地語 (Hindi)"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印地語 (Hindi)"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印地語 (Hindi)"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印地語 (Hindi)"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印地語 (Hindi)"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印地語 (Hindi)"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印地語 (Hindi)"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印地語 (Hindi)"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印地語 (Hindi)"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印地語 (Hindi)"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印地語 (Hindi)"
           }
         }
       }
     },
-    "SettingsView.GeneralSettingsView.CommentLanguage.Indonesian" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Indonesian"
+    "SettingsView.GeneralSettingsView.CommentLanguage.Indonesian": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indonesian"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印尼語 (Indonesian)"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印尼語 (Indonesian)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印尼語 (Indonesian)"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印尼語 (Indonesian)"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印尼語 (Indonesian)"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印尼語 (Indonesian)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印尼語 (Indonesian)"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印尼語 (Indonesian)"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印尼語 (Indonesian)"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印尼語 (Indonesian)"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印尼語 (Indonesian)"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印尼語 (Indonesian)"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印尼語 (Indonesian)"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印尼語 (Indonesian)"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印尼語 (Indonesian)"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "印尼語 (Indonesian)"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "印尼語 (Indonesian)"
           }
         }
       }
     },
-    "SettingsView.GeneralSettingsView.CommentLanguage.Nepali" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nepali"
+    "SettingsView.GeneralSettingsView.CommentLanguage.Nepali": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepali"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "尼泊爾語 (Nepali)"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尼泊爾語 (Nepali)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "尼泊爾語 (Nepali)"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尼泊爾語 (Nepali)"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "尼泊爾語 (Nepali)"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尼泊爾語 (Nepali)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "尼泊爾語 (Nepali)"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尼泊爾語 (Nepali)"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "尼泊爾語 (Nepali)"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尼泊爾語 (Nepali)"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "尼泊爾語 (Nepali)"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尼泊爾語 (Nepali)"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "尼泊爾語 (Nepali)"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尼泊爾語 (Nepali)"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "尼泊爾語 (Nepali)"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "尼泊爾語 (Nepali)"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尼泊爾語 (Nepali)"
           }
         }
       }
     },
-    "SettingsView.GeneralSettingsView.CommentLanguage.Urdu" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Urdu"
+    "SettingsView.GeneralSettingsView.CommentLanguage.Urdu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Urdu"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "烏爾都語 (Urdu)"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "烏爾都語 (Urdu)"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "烏爾都語 (Urdu)"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "烏爾都語 (Urdu)"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "烏爾都語 (Urdu)"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "烏爾都語 (Urdu)"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "烏爾都語 (Urdu)"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "烏爾都語 (Urdu)"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "烏爾都語 (Urdu)"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "烏爾都語 (Urdu)"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "烏爾都語 (Urdu)"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "烏爾都語 (Urdu)"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "烏爾都語 (Urdu)"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "烏爾都語 (Urdu)"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "烏爾都語 (Urdu)"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "烏爾都語 (Urdu)"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "烏爾都語 (Urdu)"
           }
         }
       }
     },
-    "SettingsView.GeneralSettingsView.SectionHeader.DisplayLanguages" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Display Languages"
+    "SettingsView.GeneralSettingsView.SectionHeader.DisplayLanguages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Display Languages"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示語言"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示語言"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示語言"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示語言"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示語言"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示語言"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示語言"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示語言"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示語言"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示語言"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示語言"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示語言"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示語言"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示語言"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示語言"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示語言"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示語言"
           }
         }
       }
     },
-    "SettingsView.GeneralSettingsView.Settings.CandidateCountPerPage" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Candidate Count Per Page"
+    "SettingsView.GeneralSettingsView.Settings.CandidateCountPerPage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Candidate Count Per Page"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每頁候選詞數目"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每頁候選詞數目"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每頁候選詞數目"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每頁候選詞數目"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每頁候選詞數目"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每頁候選詞數目"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每頁候選詞數目"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每頁候選詞數目"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每頁候選詞數目"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每頁候選詞數目"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每頁候選詞數目"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每頁候選詞數目"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每頁候選詞數目"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每頁候選詞數目"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每頁候選詞數目"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "每頁候選詞數目"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每頁候選詞數目"
           }
         }
       }
     },
-    "SettingsView.GeneralSettingsView.Settings.EmojiSuggestions" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Emoji Suggestions"
+    "SettingsView.GeneralSettingsView.Settings.EmojiSuggestions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emoji Suggestions"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表情符號 (Emoji) 候選詞"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表情符號 (Emoji) 候選詞"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表情符號 (Emoji) 候選詞"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表情符號 (Emoji) 候選詞"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表情符號 (Emoji) 候選詞"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表情符號 (Emoji) 候選詞"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表情符號 (Emoji) 候選詞"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表情符號 (Emoji) 候選詞"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表情符號 (Emoji) 候選詞"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表情符號 (Emoji) 候選詞"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表情符號 (Emoji) 候選詞"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表情符號 (Emoji) 候選詞"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表情符號 (Emoji) 候選詞"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表情符號 (Emoji) 候選詞"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表情符號 (Emoji) 候選詞"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表情符號 (Emoji) 候選詞"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "表情符號 (Emoji) 候選詞"
           }
         }
       }
     },
-    "SettingsView.GeneralSettingsView.Settings.PrimaryCommentLanguage" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Main Language"
+    "SettingsView.GeneralSettingsView.Settings.PrimaryCommentLanguage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Main Language"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要語言"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要語言"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要語言"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要語言"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要語言"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要語言"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要語言"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要語言"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要語言"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要語言"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要語言"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要語言"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要語言"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要語言"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要語言"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主要語言"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主要語言"
           }
         }
       }
     },
-    "SettingsView.GeneralSettingsView.Title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+    "SettingsView.GeneralSettingsView.Title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "TypeDuck"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TypeDuck"
           }
         }
       }
     },
-    "SettingsView.HelpView.Disjunction" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "or"
+    "SettingsView.HelpView.Disjunction": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "or"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "或"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "或"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.ClearCurrentPreEditText" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear Current Pre-edit Text"
+    "SettingsView.HelpView.Shortcut.ClearCurrentPreEditText": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear Current Pre-edit Text"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除當前預輸入音節"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除當前預輸入音節"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除當前預輸入音節"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除當前預輸入音節"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除當前預輸入音節"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除當前預輸入音節"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除當前預輸入音節"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除當前預輸入音節"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除當前預輸入音節"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除當前預輸入音節"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除當前預輸入音節"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除當前預輸入音節"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除當前預輸入音節"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除當前預輸入音節"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除當前預輸入音節"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "清除當前預輸入音節"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除當前預輸入音節"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.FirstPage" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Back to the First Page"
+    "SettingsView.HelpView.Shortcut.FirstPage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to the First Page"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "返回第一頁"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回第一頁"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "返回第一頁"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回第一頁"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "返回第一頁"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回第一頁"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "返回第一頁"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回第一頁"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "返回第一頁"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回第一頁"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "返回第一頁"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回第一頁"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "返回第一頁"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回第一頁"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "返回第一頁"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "返回第一頁"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回第一頁"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.ForgetCandidate" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove Current Candidate from Input Memory"
+    "SettingsView.HelpView.Shortcut.ForgetCandidate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Current Candidate from Input Memory"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從輸入記憶刪除當前候選詞"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從輸入記憶刪除當前候選詞"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從輸入記憶刪除當前候選詞"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從輸入記憶刪除當前候選詞"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從輸入記憶刪除當前候選詞"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從輸入記憶刪除當前候選詞"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從輸入記憶刪除當前候選詞"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從輸入記憶刪除當前候選詞"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從輸入記憶刪除當前候選詞"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從輸入記憶刪除當前候選詞"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從輸入記憶刪除當前候選詞"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從輸入記憶刪除當前候選詞"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從輸入記憶刪除當前候選詞"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從輸入記憶刪除當前候選詞"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從輸入記憶刪除當前候選詞"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "從輸入記憶刪除當前候選詞"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從輸入記憶刪除當前候選詞"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.InputCurrentPreEditText" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Input Current Pre-edit Text"
+    "SettingsView.HelpView.Shortcut.InputCurrentPreEditText": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Input Current Pre-edit Text"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前預輸入音節"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前預輸入音節"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前預輸入音節"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前預輸入音節"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前預輸入音節"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前預輸入音節"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前預輸入音節"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前預輸入音節"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前預輸入音節"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前預輸入音節"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前預輸入音節"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前預輸入音節"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前預輸入音節"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前預輸入音節"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前預輸入音節"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前預輸入音節"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前預輸入音節"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.InputCurrentRomanization" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Input Current Candidate’s Jyutping"
+    "SettingsView.HelpView.Shortcut.InputCurrentRomanization": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Input Current Candidate’s Jyutping"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞粵拼"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞粵拼"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞粵拼"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞粵拼"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞粵拼"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞粵拼"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞粵拼"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞粵拼"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞粵拼"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞粵拼"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞粵拼"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞粵拼"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞粵拼"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞粵拼"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞粵拼"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞粵拼"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞粵拼"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.NextCandidate" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Move to Next Candidate"
+    "SettingsView.HelpView.Shortcut.NextCandidate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to Next Candidate"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一個候選詞"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一個候選詞"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一個候選詞"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一個候選詞"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一個候選詞"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一個候選詞"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一個候選詞"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一個候選詞"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一個候選詞"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一個候選詞"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一個候選詞"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一個候選詞"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一個候選詞"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一個候選詞"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一個候選詞"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一個候選詞"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一個候選詞"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.NextPage" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Move to Next Page"
+    "SettingsView.HelpView.Shortcut.NextPage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to Next Page"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一頁"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一頁"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一頁"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一頁"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一頁"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一頁"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一頁"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一頁"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一頁"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一頁"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一頁"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一頁"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一頁"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一頁"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一頁"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至下一頁"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至下一頁"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.PrevCandidate" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Move to Previous Candidate"
+    "SettingsView.HelpView.Shortcut.PrevCandidate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to Previous Candidate"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一個候選詞"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一個候選詞"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一個候選詞"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一個候選詞"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一個候選詞"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一個候選詞"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一個候選詞"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一個候選詞"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一個候選詞"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一個候選詞"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一個候選詞"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一個候選詞"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一個候選詞"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一個候選詞"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一個候選詞"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一個候選詞"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一個候選詞"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.PrevPage" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Move to Previous Page"
+    "SettingsView.HelpView.Shortcut.PrevPage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to Previous Page"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一頁"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一頁"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一頁"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一頁"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一頁"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一頁"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一頁"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一頁"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一頁"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一頁"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一頁"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一頁"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一頁"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一頁"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一頁"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "移至上一頁"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移至上一頁"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.SelectCandidate" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Input Current Candidate"
+    "SettingsView.HelpView.Shortcut.SelectCandidate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Input Current Candidate"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.SelectFirstCharacterOfCandidate" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Input Current Candidate’s First Character"
+    "SettingsView.HelpView.Shortcut.SelectFirstCharacterOfCandidate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Input Current Candidate’s First Character"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之首字"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之首字"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之首字"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之首字"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之首字"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之首字"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之首字"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之首字"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之首字"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之首字"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之首字"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之首字"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之首字"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之首字"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之首字"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之首字"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之首字"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.SelectLastCharacterOfCandidate" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Input Current Candidate’s Last Character"
+    "SettingsView.HelpView.Shortcut.SelectLastCharacterOfCandidate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Input Current Candidate’s Last Character"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之末字"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之末字"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之末字"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之末字"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之末字"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之末字"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之末字"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之末字"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之末字"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之末字"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之末字"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之末字"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之末字"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之末字"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之末字"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輸入當前候選詞之末字"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入當前候選詞之末字"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.ToggleOption" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Directly Toggle a Specific Option"
+    "SettingsView.HelpView.Shortcut.ToggleOption": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Directly Toggle a Specific Option"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接切換特定快捷選項"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接切換特定快捷選項"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接切換特定快捷選項"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接切換特定快捷選項"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接切換特定快捷選項"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接切換特定快捷選項"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接切換特定快捷選項"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接切換特定快捷選項"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接切換特定快捷選項"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接切換特定快捷選項"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接切換特定快捷選項"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接切換特定快捷選項"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接切換特定快捷選項"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接切換特定快捷選項"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接切換特定快捷選項"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接切換特定快捷選項"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接切換特定快捷選項"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.ToggleOption.NumberKeys" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "number keys"
+    "SettingsView.HelpView.Shortcut.ToggleOption.NumberKeys": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "number keys"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "數字鍵"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "數字鍵"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "數字鍵"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "數字鍵"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "數字鍵"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "數字鍵"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "數字鍵"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "數字鍵"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "數字鍵"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "數字鍵"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "數字鍵"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "數字鍵"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "數字鍵"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "數字鍵"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "數字鍵"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "數字鍵"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "數字鍵"
           }
         }
       }
     },
-    "SettingsView.HelpView.Shortcut.ToggleOptionsView" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter/Exit Options View"
+    "SettingsView.HelpView.Shortcut.ToggleOptionsView": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter/Exit Options View"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示／隱藏快捷選項頁面"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示／隱藏快捷選項頁面"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示／隱藏快捷選項頁面"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示／隱藏快捷選項頁面"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示／隱藏快捷選項頁面"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示／隱藏快捷選項頁面"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示／隱藏快捷選項頁面"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示／隱藏快捷選項頁面"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示／隱藏快捷選項頁面"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示／隱藏快捷選項頁面"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示／隱藏快捷選項頁面"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示／隱藏快捷選項頁面"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示／隱藏快捷選項頁面"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示／隱藏快捷選項頁面"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示／隱藏快捷選項頁面"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示／隱藏快捷選項頁面"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示／隱藏快捷選項頁面"
           }
         }
       }
     },
-    "SettingsView.HelpView.Title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Help"
+    "SettingsView.HelpView.Title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         }
       }
     },
-    "SettingsView.NavigationTitle.About" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About"
+    "SettingsView.NavigationTitle.About": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關於"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關於"
           }
         }
       }
     },
-    "SettingsView.NavigationTitle.Help" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Help"
+    "SettingsView.NavigationTitle.Help": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "輔助説明"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輔助説明"
           }
         }
       }
     },
-    "SettingsView.NavigationTitle.Settings" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings"
+    "SettingsView.NavigationTitle.Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
           }
         },
-        "yue" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
+        "zh-Hans-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
           }
         },
-        "zh-Hans-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
+        "zh-Hant-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
           }
         },
-        "zh-Hant-CN" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
+        "zh-Hant-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
           }
         },
-        "zh-Hant-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
+        "zh-Hant-MO": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
           }
         },
-        "zh-Hant-MO" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
+        "zh-Hant-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
           }
         },
-        "zh-Hant-TW" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
-          }
-        },
-        "zh-HK" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "設定"
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

@@ -103,6 +103,18 @@ public struct Engine {
                 // Use segmentation to build spaced pinyin for database query
                 // For example: "ganshenme" -> ["gan", "shen", "me"] -> "gan shen me"
 
+                // Apply fuzzy pinyin correction if enabled and segmentation failed
+                if FuzzyPinyinSettings.isAnyEnabled && segmentation.isEmpty {
+                        // Try to correct the input using fuzzy pinyin mappings
+                        let correctedInputs = generateCorrectedInputs(text)
+                        for correctedInput in correctedInputs {
+                                let correctedSegmentation = PinyinSegmentor.segment(text: correctedInput)
+                                if !correctedSegmentation.isEmpty {
+                                        return pinyinSuggestMulti(text: text, segmentation: correctedSegmentation)
+                                }
+                        }
+                }
+
                 // Try the best segmentation (first one, which is longest with fewest tokens)
                 guard let bestScheme = segmentation.first else {
                         // Fallback: try direct match with original text
@@ -115,15 +127,85 @@ public struct Engine {
                 // Also calculate the combined input text (without spaces) for Candidate
                 let combinedInput = bestScheme.map(\.text).joined()
 
-                // Query database with spaced pinyin
-                let exactMatches = pinyinMatchInternal(text: spacedPinyin, input: combinedInput)
+                // Query database with spaced pinyin (original match)
+                var allCandidates = pinyinMatchInternal(text: spacedPinyin, input: combinedInput)
+
+                // Apply fuzzy pinyin if enabled
+                if FuzzyPinyinSettings.isAnyEnabled {
+                        let pinyinArray = bestScheme.map(\.origin)
+                        let expandedArrays = FuzzyPinyinExpander.expandArray(pinyinArray)
+
+                        // Query with all fuzzy variants
+                        for expandedArray in expandedArrays {
+                                let expandedSpacedPinyin = expandedArray.joined(separator: " ")
+                                let fuzzyCandidates = pinyinMatchInternal(text: expandedSpacedPinyin, input: combinedInput)
+                                allCandidates.append(contentsOf: fuzzyCandidates)
+                        }
+
+                        // Remove duplicates (keep first occurrence which has higher priority)
+                        var seen = Set<Int>()
+                        var uniqueCandidates: [Candidate] = []
+                        for candidate in allCandidates {
+                                if !seen.contains(candidate.order) {
+                                        seen.insert(candidate.order)
+                                        uniqueCandidates.append(candidate)
+                                }
+                        }
+                        allCandidates = uniqueCandidates
+                }
 
                 // If no exact match, try prefix matches
-                if exactMatches.isEmpty {
+                if allCandidates.isEmpty {
                         return pinyinShortcutInternal(text: text, limit: 100)
                 }
 
-                return exactMatches
+                return allCandidates
+        }
+
+        /// Generate corrected inputs by applying fuzzy pinyin mappings (both directions)
+        /// For example: "don" -> ["dong"] when on/ong is enabled
+        private static func generateCorrectedInputs(_ text: String) -> Set<String> {
+                var results = Set<String>()
+                let mappings = FuzzyPinyinSettings.allMappings
+
+                // Generate all possible corrections
+                for mapping in mappings {
+                        // Handle initial mappings (bidirectional: z <-> zh)
+                        for (initial, alternatives) in mapping.initials {
+                                for alternative in alternatives {
+                                        // Replace initial with alternative
+                                        if text.contains(initial) {
+                                                let corrected = text.replacingOccurrences(of: initial, with: alternative)
+                                                results.insert(corrected)
+                                        }
+                                        // Replace alternative with initial
+                                        if text.contains(alternative) {
+                                                let corrected = text.replacingOccurrences(of: alternative, with: initial)
+                                                results.insert(corrected)
+                                        }
+                                }
+                        }
+
+                        // Handle final mappings (bidirectional: on <-> ong)
+                        for (final, alternatives) in mapping.finals {
+                                for alternative in alternatives {
+                                        // Replace final with alternative
+                                        if text.contains(final) {
+                                                let corrected = text.replacingOccurrences(of: final, with: alternative)
+                                                results.insert(corrected)
+                                        }
+                                        // Replace alternative with final
+                                        if text.contains(alternative) {
+                                                let corrected = text.replacingOccurrences(of: alternative, with: final)
+                                                results.insert(corrected)
+                                        }
+                                }
+                        }
+                }
+
+                // Remove the original input
+                results.remove(text)
+                return results
         }
 
         private static func pinyinMatchInternal(text: String, input: String) -> [Candidate] {
@@ -146,7 +228,8 @@ public struct Engine {
                         let rowID: Int = Int(sqlite3_column_int64(statement, 0))
                         let word: String = String(cString: sqlite3_column_text(statement, 1))
                         let pinyin: String = String(cString: sqlite3_column_text(statement, 2))
-                        let candidate = Candidate(text: word, romanization: pinyin, input: input, mark: pinyin, order: rowID)
+                        // Use input as mark to display user's actual input, not the standard pinyin
+                        let candidate = Candidate(text: word, romanization: pinyin, input: input, mark: input, order: rowID)
                         candidates.append(candidate)
                 }
                 if let msg = "pinyinMatchInternal: found \(candidates.count) results\n".data(using: .utf8) {

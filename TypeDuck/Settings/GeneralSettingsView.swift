@@ -6,13 +6,6 @@ struct GeneralSettingsView: View {
         @State private var pageSize: Int = AppSettings.candidatePageSize
         private let pageSizeRange: Range<Int> = AppSettings.candidatePageSizeRange
 
-        @State private var isEnglishEnabled: Bool = Language.English.isEnabledCommentLanguage
-        @State private var isHindiEnabled: Bool = Language.Hindi.isEnabledCommentLanguage
-        @State private var isIndonesianEnabled: Bool = Language.Indonesian.isEnabledCommentLanguage
-        @State private var isNepaliEnabled: Bool = Language.Nepali.isEnabledCommentLanguage
-        @State private var isUrduEnabled: Bool = Language.Urdu.isEnabledCommentLanguage
-        @State private var primaryCommentLanguage: Language = AppSettings.primaryCommentLanguage
-
         @State private var isEmojiSuggestionsOn: Bool = Options.isEmojiSuggestionsOn
         @State private var isInputMemoryOn: Bool = AppSettings.isInputMemoryOn
 
@@ -23,9 +16,9 @@ struct GeneralSettingsView: View {
 
         var body: some View {
                 ScrollView {
-                        LazyVStack(spacing: 16) {
+                        LazyVStack(alignment: .leading, spacing: 16) {
                                 HStack {
-                                        Picker("SettingsView.GeneralSettingsView.Settings.CandidateCountPerPage", selection: $pageSize) {
+                                        Picker("每页候选词数量", selection: $pageSize) {
                                                 ForEach(pageSizeRange, id: \.self) {
                                                         Text(verbatim: "\($0)").tag($0)
                                                 }
@@ -38,107 +31,8 @@ struct GeneralSettingsView: View {
                                         Spacer()
                                 }
                                 .block()
-                                VStack(spacing: 2) {
-                                        HStack {
-                                                Text("SettingsView.GeneralSettingsView.SectionHeader.DisplayLanguages")
-                                                Spacer()
-                                        }
-                                        .font(.subheadline)
-                                        .padding(.horizontal, 12)
-                                        VStack(alignment: .leading, spacing: 24) {
-                                                VStack(alignment: .leading) {
-                                                        HStack {
-                                                                Text("SettingsView.GeneralSettingsView.CommentLanguage.English")
-                                                                Spacer()
-                                                                Toggle("SettingsView.GeneralSettingsView.CommentLanguage.English", isOn: $isEnglishEnabled)
-                                                                        .toggleStyle(.switch)
-                                                                        .labelsHidden()
-                                                                        .scaledToFit()
-                                                                        .onChange(of: isEnglishEnabled) { newState in
-                                                                                let language: Language = .English
-                                                                                let isEnabled: Bool = language.isEnabledCommentLanguage
-                                                                                let shouldEnable: Bool = !isEnabled
-                                                                                AppSettings.updateCommentLanguage(language, shouldEnable: shouldEnable)
-                                                                        }
-                                                        }
-                                                        HStack {
-                                                                Text("SettingsView.GeneralSettingsView.CommentLanguage.Hindi")
-                                                                Spacer()
-                                                                Toggle("SettingsView.GeneralSettingsView.CommentLanguage.Hindi", isOn: $isHindiEnabled)
-                                                                        .toggleStyle(.switch)
-                                                                        .labelsHidden()
-                                                                        .scaledToFit()
-                                                                        .onChange(of: isHindiEnabled) { newState in
-                                                                                let language: Language = .Hindi
-                                                                                let isEnabled: Bool = language.isEnabledCommentLanguage
-                                                                                let shouldEnable: Bool = !isEnabled
-                                                                                AppSettings.updateCommentLanguage(language, shouldEnable: shouldEnable)
-                                                                        }
-                                                        }
-                                                        HStack {
-                                                                Text("SettingsView.GeneralSettingsView.CommentLanguage.Indonesian")
-                                                                Spacer()
-                                                                Toggle("SettingsView.GeneralSettingsView.CommentLanguage.Indonesian", isOn: $isIndonesianEnabled)
-                                                                        .toggleStyle(.switch)
-                                                                        .labelsHidden()
-                                                                        .scaledToFit()
-                                                                        .onChange(of: isIndonesianEnabled) { newState in
-                                                                                let language: Language = .Indonesian
-                                                                                let isEnabled: Bool = language.isEnabledCommentLanguage
-                                                                                let shouldEnable: Bool = !isEnabled
-                                                                                AppSettings.updateCommentLanguage(language, shouldEnable: shouldEnable)
-                                                                        }
-                                                        }
-                                                        HStack {
-                                                                Text("SettingsView.GeneralSettingsView.CommentLanguage.Nepali")
-                                                                Spacer()
-                                                                Toggle("SettingsView.GeneralSettingsView.CommentLanguage.Nepali", isOn: $isNepaliEnabled)
-                                                                        .toggleStyle(.switch)
-                                                                        .labelsHidden()
-                                                                        .scaledToFit()
-                                                                        .onChange(of: isNepaliEnabled) { newState in
-                                                                                let language: Language = .Nepali
-                                                                                let isEnabled: Bool = language.isEnabledCommentLanguage
-                                                                                let shouldEnable: Bool = !isEnabled
-                                                                                AppSettings.updateCommentLanguage(language, shouldEnable: shouldEnable)
-                                                                        }
-                                                        }
-                                                        HStack {
-                                                                Text("SettingsView.GeneralSettingsView.CommentLanguage.Urdu")
-                                                                Spacer()
-                                                                Toggle("SettingsView.GeneralSettingsView.CommentLanguage.Urdu", isOn: $isUrduEnabled)
-                                                                        .toggleStyle(.switch)
-                                                                        .labelsHidden()
-                                                                        .scaledToFit()
-                                                                        .onChange(of: isUrduEnabled) { newState in
-                                                                                let language: Language = .Urdu
-                                                                                let isEnabled: Bool = language.isEnabledCommentLanguage
-                                                                                let shouldEnable: Bool = !isEnabled
-                                                                                AppSettings.updateCommentLanguage(language, shouldEnable: shouldEnable)
-                                                                        }
-                                                        }
-                                                }
-                                                .fixedSize()
-                                                HStack {
-                                                        Picker("SettingsView.GeneralSettingsView.Settings.PrimaryCommentLanguage", selection: $primaryCommentLanguage) {
-                                                                Text("SettingsView.GeneralSettingsView.CommentLanguage.English").tag(Language.English)
-                                                                Text("SettingsView.GeneralSettingsView.CommentLanguage.Hindi").tag(Language.Hindi)
-                                                                Text("SettingsView.GeneralSettingsView.CommentLanguage.Indonesian").tag(Language.Indonesian)
-                                                                Text("SettingsView.GeneralSettingsView.CommentLanguage.Nepali").tag(Language.Nepali)
-                                                                Text("SettingsView.GeneralSettingsView.CommentLanguage.Urdu").tag(Language.Urdu)
-                                                        }
-                                                        .pickerStyle(.menu)
-                                                        .scaledToFit()
-                                                        .onChange(of: primaryCommentLanguage) { newLanguage in
-                                                                AppSettings.updatePrimaryCommentLanguage(to: newLanguage)
-                                                        }
-                                                        Spacer()
-                                                }
-                                        }
-                                        .block()
-                                }
                                 HStack {
-                                        Toggle("SettingsView.GeneralSettingsView.Settings.EmojiSuggestions", isOn: $isEmojiSuggestionsOn)
+                                        Toggle("表情符号建议", isOn: $isEmojiSuggestionsOn)
                                                 .toggleStyle(.switch)
                                                 .scaledToFit()
                                                 .onChange(of: isEmojiSuggestionsOn) { newState in
@@ -149,7 +43,7 @@ struct GeneralSettingsView: View {
                                 .block()
                                 VStack(spacing: 20) {
                                         HStack {
-                                                Toggle("GeneralSettingsView.Toggle.InputMemory", isOn: $isInputMemoryOn)
+                                                Toggle("输入记忆", isOn: $isInputMemoryOn)
                                                         .toggleStyle(.switch)
                                                         .scaledToFit()
                                                         .onChange(of: isInputMemoryOn) { newState in
@@ -162,20 +56,20 @@ struct GeneralSettingsView: View {
                                                         Button(role: .destructive) {
                                                                 isClearInputMemoryConfirmDialogPresented = true
                                                         } label: {
-                                                                Text("GeneralSettingsView.Button.ClearInputMemory")
+                                                                Text("清空输入记忆")
                                                         }
                                                         .buttonStyle(.plain)
                                                         .padding(.horizontal, 8)
                                                         .padding(.vertical, 4)
                                                         .foregroundStyle(Color.red)
                                                         .background(Material.thick, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                                        .confirmationDialog("GeneralSettingsView.ConfirmationDialog.ClearInputMemory.Title", isPresented: $isClearInputMemoryConfirmDialogPresented) {
-                                                                Button("GeneralSettingsView.ConfirmationDialog.ClearInputMemory.Confirm", role: .destructive) {
+                                                        .confirmationDialog("清空输入记忆？", isPresented: $isClearInputMemoryConfirmDialogPresented) {
+                                                                Button("清空", role: .destructive) {
                                                                         clearInputMemoryProgress = 0
                                                                         isPerformingClearInputMemory = true
                                                                         UserLexicon.deleteAll()
                                                                 }
-                                                                Button("GeneralSettingsView.ConfirmationDialog.ClearInputMemory.Cancel", role: .cancel) {
+                                                                Button("取消", role: .cancel) {
                                                                         isClearInputMemoryConfirmDialogPresented = false
                                                                 }
                                                         }
@@ -201,7 +95,7 @@ struct GeneralSettingsView: View {
                         .textSelection(.enabled)
                         .padding()
                 }
-                .navigationTitle("SettingsView.GeneralSettingsView.Title")
+                .navigationTitle("设置")
         }
 }
 

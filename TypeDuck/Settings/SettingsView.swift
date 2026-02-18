@@ -21,6 +21,7 @@ struct SettingsView: View {
 
         // macOS 12
         @State private var isGeneralSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .general
+        @State private var isFuzzyPinyinSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .fuzzyPinyin
         @State private var isHelpViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .help
         @State private var isAboutViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .about
 
@@ -28,39 +29,54 @@ struct SettingsView: View {
                 if #available(macOS 13.0, *) {
                         NavigationSplitView {
                                 List(selection: $selection) {
-                                        Label("SettingsView.NavigationTitle.Settings", systemImage: "gear").tag(SettingsSidebarRow.general)
-                                        Label("SettingsView.NavigationTitle.Help", systemImage: "keyboard").tag(SettingsSidebarRow.help)
-                                        Label("SettingsView.NavigationTitle.About", systemImage: "info.circle").tag(SettingsSidebarRow.about)
+                                        Label("设置", systemImage: "gear").tag(SettingsSidebarRow.general)
+                                        Label("模糊音", systemImage: "speaker.wave.2").tag(SettingsSidebarRow.fuzzyPinyin)
+                                        Label("帮助", systemImage: "keyboard").tag(SettingsSidebarRow.help)
+                                        Label("关于", systemImage: "info.circle").tag(SettingsSidebarRow.about)
                                 }
-                                .toolbarBackground(Material.bar, for: .windowToolbar)
-                                .navigationTitle("SettingsView.NavigationTitle.Settings")
+                                .frame(minWidth: 150)
                         } detail: {
-                                switch selection {
-                                case .general:
-                                        GeneralSettingsView().applyVisualEffect()
-                                case .help:
-                                        HelpView().applyVisualEffect()
-                                case .about:
-                                        AboutView().applyVisualEffect()
-                                }
+                                detailView
                         }
+                        .navigationSplitViewStyle(.balanced)
                 } else {
                         NavigationView {
                                 List {
-                                        NavigationLink(destination: GeneralSettingsView().applyVisualEffect(), isActive: $isGeneralSettingsViewActive) {
-                                                Label("SettingsView.NavigationTitle.Settings", systemImage: "gear")
+                                        NavigationLink(destination: GeneralSettingsView(), isActive: $isGeneralSettingsViewActive) {
+                                                Label("设置", systemImage: "gear")
                                         }
-                                        NavigationLink(destination: HelpView().applyVisualEffect(), isActive: $isHelpViewActive) {
-                                                Label("SettingsView.NavigationTitle.Help", systemImage: "keyboard")
+                                        NavigationLink(destination: FuzzyPinyinSettingsView(), isActive: $isFuzzyPinyinSettingsViewActive) {
+                                                Label("模糊音", systemImage: "speaker.wave.2")
                                         }
-                                        NavigationLink(destination: AboutView().applyVisualEffect(), isActive: $isAboutViewActive) {
-                                                Label("SettingsView.NavigationTitle.About", systemImage: "info.circle")
+                                        NavigationLink(destination: HelpView(), isActive: $isHelpViewActive) {
+                                                Label("帮助", systemImage: "keyboard")
+                                        }
+                                        NavigationLink(destination: AboutView(), isActive: $isAboutViewActive) {
+                                                Label("关于", systemImage: "info.circle")
                                         }
                                 }
                                 .listStyle(.sidebar)
-                                .navigationTitle("SettingsView.NavigationTitle.Settings")
+                                .frame(minWidth: 150)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+        }
+
+        @ViewBuilder
+        private var detailView: some View {
+                ScrollView {
+                        switch selection {
+                        case .general:
+                                GeneralSettingsView()
+                        case .fuzzyPinyin:
+                                FuzzyPinyinSettingsView()
+                        case .help:
+                                HelpView()
+                        case .about:
+                                AboutView()
                         }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
 }
 
@@ -70,6 +86,7 @@ struct SettingsView: View {
 
 enum SettingsSidebarRow: Int, Hashable, Identifiable, CaseIterable {
         case general
+        case fuzzyPinyin
         case help
         case about
         var id: Int {

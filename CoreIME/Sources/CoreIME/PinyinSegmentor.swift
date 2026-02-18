@@ -100,6 +100,21 @@ public struct PinyinSegmentor {
         }
 
         private static func match<T: StringProtocol>(_ text: T) -> SegmentToken? {
+                // 先尝试直接匹配
+                if let token = matchDirect(text) {
+                        return token
+                }
+
+                // 如果启用了模糊音，尝试模糊匹配
+                if FuzzyPinyinSettings.isAnyEnabled {
+                        return matchWithFuzzy(text)
+                }
+
+                return nil
+        }
+
+        /// 直接匹配数据库中的音节
+        private static func matchDirect<T: StringProtocol>(_ text: T) -> SegmentToken? {
                 guard let code: Int = text.charcode else { return nil }
                 let command: String = "SELECT syllable FROM pinyinsyllabletable WHERE code = \(code) LIMIT 1;"
                 var statement: OpaquePointer? = nil
@@ -108,5 +123,25 @@ public struct PinyinSegmentor {
                 guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
                 let syllable: String = String(cString: sqlite3_column_text(statement, 0))
                 return SegmentToken(text: syllable, origin: syllable)
+        }
+
+        /// 使用模糊音匹配
+        private static func matchWithFuzzy<T: StringProtocol>(_ text: T) -> SegmentToken? {
+                let textString = String(text)
+
+                // 尝试使用模糊音扩展
+                let expanded = FuzzyPinyinExpander.expand(textString)
+
+                // 对每个扩展的拼音尝试匹配
+                for variant in expanded {
+                        if let token = matchDirect(variant) {
+                                // 找到匹配：
+                                // - text: 使用原始输入（保持正确的字符长度）
+                                // - origin: 使用匹配到的标准音节（用于后续数据库查询）
+                                return SegmentToken(text: textString, origin: token.origin)
+                        }
+                }
+
+                return nil
         }
 }

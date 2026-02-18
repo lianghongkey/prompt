@@ -5,7 +5,7 @@ import CoreIME
 struct AppSettings: Sendable {
 
         /// Translations
-        static let commentLanguages: [Language] = [.English, .Hindi, .Indonesian, .Nepali, .Urdu ]
+        static let commentLanguages: [Language] = [.English]
 
         private static let defaultEnabledCommentLanguages: [Language] = commentLanguages
 

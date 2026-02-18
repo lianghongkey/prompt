@@ -5,7 +5,7 @@ struct HelpView: View {
                 ScrollView {
                         LazyVStack(alignment: .leading, spacing: 16) {
                                 HStack(spacing: 4) {
-                                        LabelText("SettingsView.HelpView.Shortcut.ToggleOptionsView")
+                                        LabelText("显示／隐藏快捷选项页面")
                                         Text.separator
                                         KeyBlockView.control
                                         Text.plus
@@ -16,7 +16,7 @@ struct HelpView: View {
                                 }
                                 .block()
                                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                        LabelText("SettingsView.HelpView.Shortcut.ToggleOption")
+                                        LabelText("直接切换特定快捷选项")
                                         Text.separator
                                         VStack(spacing: 6) {
                                                 HStack(spacing: 4) {
@@ -28,8 +28,8 @@ struct HelpView: View {
                                                         Spacer()
                                                 }
                                                 HStack(spacing: 0) {
-                                                        Text("SettingsView.HelpView.Shortcut.ToggleOption.NumberKeys").fontWeight(.medium)
-                                                        Text("SettingsView.Colon").foregroundStyle(Color.secondary)
+                                                        Text("数字键").fontWeight(.medium)
+                                                        Text("：").foregroundStyle(Color.secondary)
                                                         Text(verbatim: "1, 2, 3, …, 8, 9, 0")
                                                         Spacer()
                                                 }
@@ -39,7 +39,7 @@ struct HelpView: View {
                                 .block()
                                 VStack(spacing: 8) {
                                         HStack(spacing: 4) {
-                                                LabelText("SettingsView.HelpView.Shortcut.ClearCurrentPreEditText")
+                                                LabelText("清除当前预输入音节")
                                                 Text.separator
                                                 KeyBlockView.escape
                                                 Text.or
@@ -51,13 +51,13 @@ struct HelpView: View {
                                                 Spacer()
                                         }
                                         HStack(spacing: 4) {
-                                                LabelText("SettingsView.HelpView.Shortcut.InputCurrentPreEditText")
+                                                LabelText("输入当前预输入音节")
                                                 Text.separator
                                                 KeyBlockView.returnKey
                                                 Spacer()
                                         }
                                         HStack(spacing: 4) {
-                                                LabelText("SettingsView.HelpView.Shortcut.InputCurrentRomanization")
+                                                LabelText("输入当前候选词拼音")
                                                 Text.separator
                                                 KeyBlockView.shift
                                                 Text.plus
@@ -65,25 +65,25 @@ struct HelpView: View {
                                                 Spacer()
                                         }
                                         HStack(spacing: 4) {
-                                                LabelText("SettingsView.HelpView.Shortcut.SelectCandidate")
+                                                LabelText("输入当前候选词")
                                                 Text.separator
                                                 KeyBlockView.space
                                                 Spacer()
                                         }
                                         HStack(spacing: 4) {
-                                                LabelText("SettingsView.HelpView.Shortcut.SelectFirstCharacterOfCandidate")
+                                                LabelText("输入当前候选词之首字")
                                                 Text.separator
                                                 KeyBlockView("[")
                                                 Spacer()
                                         }
                                         HStack(spacing: 4) {
-                                                LabelText("SettingsView.HelpView.Shortcut.SelectLastCharacterOfCandidate")
+                                                LabelText("输入当前候选词之末字")
                                                 Text.separator
                                                 KeyBlockView("]")
                                                 Spacer()
                                         }
                                         HStack(spacing: 4) {
-                                                LabelText("SettingsView.HelpView.Shortcut.ForgetCandidate")
+                                                LabelText("从输入记忆删除当前候选词")
                                                 Text.separator
                                                 KeyBlockView.control
                                                 Text.plus
@@ -96,7 +96,7 @@ struct HelpView: View {
                                 .block()
                                 VStack(spacing: 8) {
                                         HStack(spacing: 4) {
-                                                LabelText("SettingsView.HelpView.Shortcut.PrevCandidate")
+                                                LabelText("移至上一个候选词")
                                                 Text.separator
                                                 KeyBlockView("▲")
                                                 Text.or
@@ -106,7 +106,7 @@ struct HelpView: View {
                                                 Spacer()
                                         }
                                         HStack(spacing: 4) {
-                                                LabelText("SettingsView.HelpView.Shortcut.NextCandidate")
+                                                LabelText("移至下一个候选词")
                                                 Text.separator
                                                 KeyBlockView("▼")
                                                 Text.or
@@ -114,7 +114,7 @@ struct HelpView: View {
                                                 Spacer()
                                         }
                                         HStack(spacing: 4) {
-                                                LabelText("SettingsView.HelpView.Shortcut.PrevPage")
+                                                LabelText("移至上一页")
                                                 Text.separator
                                                 KeyBlockView("◀")
                                                 Text.or
@@ -124,7 +124,7 @@ struct HelpView: View {
                                                 Spacer()
                                         }
                                         HStack(spacing: 4) {
-                                                LabelText("SettingsView.HelpView.Shortcut.NextPage")
+                                                LabelText("移至下一页")
                                                 Text.separator
                                                 KeyBlockView("▶")
                                                 Text.or
@@ -134,7 +134,7 @@ struct HelpView: View {
                                                 Spacer()
                                         }
                                         HStack(spacing: 4) {
-                                                LabelText("SettingsView.HelpView.Shortcut.FirstPage")
+                                                LabelText("返回第一页")
                                                 Text.separator
                                                 KeyBlockView("Home ⤒")
                                                 Spacer()
@@ -145,7 +145,7 @@ struct HelpView: View {
                         .textSelection(.enabled)
                         .padding()
                 }
-                .navigationTitle("SettingsView.HelpView.Title")
+                .navigationTitle("帮助")
         }
 }
 
@@ -154,10 +154,10 @@ struct HelpView: View {
 }
 
 private struct LabelText: View {
-        init(_ title: LocalizedStringKey) {
+        init(_ title: String) {
                 self.title = title
         }
-        private let title: LocalizedStringKey
+        private let title: String
         var body: some View {
                 Text(title)
                         .lineLimit(1)
@@ -173,20 +173,20 @@ private struct KeyBlockView: View {
                 self.key = nil
         }
 
-        init(localized key: LocalizedStringKey) {
-                self.keyText = nil
-                self.key = key
+        init(localized key: String) {
+                self.keyText = key
+                self.key = nil
         }
 
         private let keyText: String?
-        private let key: LocalizedStringKey?
+        private let key: Void?
 
         var body: some View {
                 let text: Text
-                if let key = key {
-                    text = Text(key)
+                if let keyText = keyText {
+                    text = Text(verbatim: keyText)
                 } else {
-                    text = Text(verbatim: keyText!)
+                    text = Text(verbatim: "")
                 }
                 return text
                         .lineLimit(1)
@@ -198,7 +198,7 @@ private struct KeyBlockView: View {
 
         static let control: KeyBlockView = KeyBlockView("Control ⌃")
         static let shift: KeyBlockView = KeyBlockView("Shift ⇧")
-        static let number: KeyBlockView = KeyBlockView(localized: "SettingsView.HelpView.Shortcut.ToggleOption.NumberKeys")
+        static let number: KeyBlockView = KeyBlockView(localized: "数字键")
         static let space: KeyBlockView = KeyBlockView("Space ␣")
         static let escape: KeyBlockView = KeyBlockView("esc ⎋")
         static let tab: KeyBlockView = KeyBlockView("Tab ⇥")
@@ -209,7 +209,7 @@ private struct KeyBlockView: View {
 }
 
 private extension Text {
-        static let separator: Text = Text("SettingsView.Colon").foregroundColor(.secondary)
+        static let separator: Text = Text("：").foregroundColor(.secondary)
         static let plus: Text = Text(verbatim: "＋")
-        static let or: Text = Text("SettingsView.HelpView.Disjunction")
+        static let or: Text = Text("或")
 }

@@ -40,13 +40,19 @@ struct DatabasePreparer {
                 guard sqlite3_prepare_v2(database, createTable, -1, &createStatement, nil) == SQLITE_OK else { sqlite3_finalize(createStatement); return }
                 guard sqlite3_step(createStatement) == SQLITE_DONE else { sqlite3_finalize(createStatement); return }
                 sqlite3_finalize(createStatement)
-                let entries: [String] = Hant2Hans.generate().map({ "(\($0.traditional), '\($0.simplified)'" })
-                let values: String = entries.joined(separator: ", ")
-                let insert: String = "INSERT INTO t2stable (traditional, simplified) VALUES \(values);"
+
+                let insert: String = "INSERT INTO t2stable (traditional, simplified) VALUES (?, ?);"
                 var insertStatement: OpaquePointer? = nil
                 defer { sqlite3_finalize(insertStatement) }
                 guard sqlite3_prepare_v2(database, insert, -1, &insertStatement, nil) == SQLITE_OK else { return }
-                guard sqlite3_step(insertStatement) == SQLITE_DONE else { return }
+
+                let entries = Hant2Hans.generate()
+                for entry in entries {
+                        sqlite3_reset(insertStatement)
+                        sqlite3_bind_int(insertStatement, 1, Int32(entry.traditional))
+                        sqlite3_bind_text(insertStatement, 2, entry.simplified, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+                        guard sqlite3_step(insertStatement) == SQLITE_DONE else { continue }
+                }
         }
 
         private static func createPinyinTable() {
@@ -66,33 +72,43 @@ struct DatabasePreparer {
 
                 print("Processing \(sourceLines.count) lines from pinyin.txt")
 
-                func insert(values: String) {
-                        let insert: String = "INSERT INTO pinyintable (word, pinyin, shortcut, ping) VALUES \(values);"
-                        var insertStatement: OpaquePointer? = nil
-                        defer { sqlite3_finalize(insertStatement) }
-                        guard sqlite3_prepare_v2(database, insert, -1, &insertStatement, nil) == SQLITE_OK else { return }
-                        guard sqlite3_step(insertStatement) == SQLITE_DONE else {
-                                print("Failed to insert: \(values)")
-                                return
-                        }
+                // Use transaction for better performance
+                sqlite3_exec(database, "BEGIN TRANSACTION", nil, nil, nil)
+
+                let insert: String = "INSERT INTO pinyintable (word, pinyin, shortcut, ping) VALUES (?, ?, ?, ?);"
+                var insertStatement: OpaquePointer? = nil
+                defer { sqlite3_finalize(insertStatement) }
+                guard sqlite3_prepare_v2(database, insert, -1, &insertStatement, nil) == SQLITE_OK else {
+                        sqlite3_exec(database, "ROLLBACK", nil, nil, nil)
+                        return
                 }
 
                 var insertedCount = 0
-                for number in 0..<sourceLines.count {
-                        let line = sourceLines[number]
+                for line in sourceLines {
                         let parts = line.split(separator: "\t").map({ String($0).trimmingCharacters(in: .whitespaces) })
-                        // Support both 3-column (old) and 4-column (new) formats
                         guard parts.count == 4 else { continue }
                         let word = parts[0]
                         let pinyin = parts[1]
-                        let shortcut = parts[2]
-                        let ping = parts[3]
-                        insert(values: "('\(word)', '\(pinyin)', \(shortcut), \(ping))")
+                        guard let shortcut = Int32(parts[2]), let ping = Int32(parts[3]) else { continue }
+
+                        sqlite3_reset(insertStatement)
+                        sqlite3_bind_text(insertStatement, 1, word, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+                        sqlite3_bind_text(insertStatement, 2, pinyin, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+                        sqlite3_bind_int(insertStatement, 3, shortcut)
+                        sqlite3_bind_int(insertStatement, 4, ping)
+
+                        guard sqlite3_step(insertStatement) == SQLITE_DONE else {
+                                print("Failed to insert line: \(line)")
+                                continue
+                        }
+
                         insertedCount += 1
                         if insertedCount % 100000 == 0 {
                                 print("Inserted \(insertedCount) records...")
                         }
                 }
+
+                sqlite3_exec(database, "COMMIT", nil, nil, nil)
                 print("Total inserted: \(insertedCount) records")
         }
 

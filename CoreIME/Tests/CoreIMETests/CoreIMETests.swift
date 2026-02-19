@@ -24,8 +24,9 @@ final class CoreIMETests: XCTestCase {
 
         func testPinyinSegmentor() throws {
                 let text: String = "putonghuapinyin"
-                let schemes: [[String]] = PinyinSegmentor.segment(text: text)
-                if let syllables = schemes.first {
+                let schemes: Segmentation = PinyinSegmentor.segment(text: text)
+                if let scheme = schemes.first {
+                        let syllables = scheme.map(\.text)
                         XCTAssertEqual(syllables, ["pu", "tong", "hua", "pin", "yin"])
                 } else {
                         XCTFail("No schemes")

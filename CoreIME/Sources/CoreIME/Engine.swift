@@ -2,73 +2,60 @@ import Foundation
 import SQLite3
 import os.log
 
-extension FileManager {
-        func appendFile(_ data: Data, toPath path: String) {
-                if FileManager.default.fileExists(atPath: path) {
-                        if let handle = FileHandle(forWritingAtPath: path) {
-                                defer { handle.closeFile() }
-                                handle.write(data)
-                        }
-                } else {
-                        FileManager.default.createFile(atPath: path, contents: data)
-                }
-        }
-}
-
 public struct Engine {
 
+        private static let logger = Logger(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Engine")
+
         public static func prepare() {
-                let debugLog = "/tmp/typeduck_debug.log"
-                if let msg = "Engine.prepare() called\n".data(using: .utf8) {
-                        FileManager.default.appendFile(msg, toPath: debugLog)
-                }
+                logger.debug("Engine.prepare() called")
                 let command: String = "SELECT rowid FROM pinyintable WHERE shortcut = 20 LIMIT 1;"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return }
                 guard sqlite3_step(statement) == SQLITE_ROW else { return }
-                if let msg = "Engine.prepare() succeeded\n".data(using: .utf8) {
-                        FileManager.default.appendFile(msg, toPath: debugLog)
-                }
+                logger.debug("Engine.prepare() succeeded")
         }
-        nonisolated(unsafe) static let database: OpaquePointer? = {
-                // Force write to a file to verify execution
-                let testPath = "/tmp/typeduck_init.txt"
-                FileManager.default.createFile(atPath: testPath, contents: "INIT_START\n".data(using: .utf8))
 
+        nonisolated(unsafe) static let database: OpaquePointer? = {
                 var db: OpaquePointer? = nil
                 guard let path: String = Bundle.module.path(forResource: "imedb", ofType: "sqlite3") else {
-                        FileManager.default.createFile(atPath: "/tmp/typeduck_error.txt", contents: "BUNDLE_PATH_FAILED\n".data(using: .utf8))
+                        logger.error("Failed to find database bundle path")
                         return nil
                 }
-                FileManager.default.createFile(atPath: testPath, contents: "PATH=\(path)\n".data(using: .utf8))
 
                 var storageDatabase: OpaquePointer? = nil
                 defer { sqlite3_close_v2(storageDatabase) }
                 guard sqlite3_open_v2(path, &storageDatabase, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
-                        FileManager.default.createFile(atPath: "/tmp/typeduck_error.txt", contents: "STORAGE_OPEN_FAILED\n".data(using: .utf8))
+                        logger.error("Failed to open storage database")
                         return nil
                 }
 
                 guard sqlite3_open_v2(":memory:", &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nil) == SQLITE_OK else {
-                        FileManager.default.createFile(atPath: "/tmp/typeduck_error.txt", contents: "MEMORY_OPEN_FAILED\n".data(using: .utf8))
+                        logger.error("Failed to open memory database")
                         return nil
                 }
 
                 let backup = sqlite3_backup_init(db, "main", storageDatabase, "main")
+                defer {
+                        if let backup = backup {
+                                sqlite3_backup_finish(backup)
+                        }
+                }
+
+                guard let backup = backup else {
+                        logger.error("Failed to initialize backup")
+                        return nil
+                }
+
                 guard sqlite3_backup_step(backup, -1) == SQLITE_DONE else {
-                        FileManager.default.createFile(atPath: "/tmp/typeduck_error.txt", contents: "BACKUP_STEP_FAILED\n".data(using: .utf8))
+                        logger.error("Failed to backup database")
                         return nil
                 }
 
-                guard sqlite3_backup_finish(backup) == SQLITE_OK else {
-                        FileManager.default.createFile(atPath: "/tmp/typeduck_error.txt", contents: "BACKUP_FINISH_FAILED\n".data(using: .utf8))
-                        return nil
-                }
-
-                FileManager.default.createFile(atPath: "/tmp/typeduck_success.txt", contents: "SUCCESS\n".data(using: .utf8))
+                logger.info("Database initialized successfully")
                 return db
         }()
+
 
 
         // MARK: - Suggestion
@@ -81,11 +68,8 @@ public struct Engine {
         ///   - asap: Should be fast, shouldn't go deep.
         /// - Returns: Candidates
         public static func suggest(text: String, segmentation: Segmentation, needsSymbols: Bool, asap: Bool = false) -> [Candidate] {
-                let debugLog = "/tmp/typeduck_debug.log"
                 let hash = text.deterministicHash
-                if let msg = "Engine.suggest: text='\(text)' count=\(text.count) hash=\(hash)\n".data(using: .utf8) {
-                        FileManager.default.appendFile(msg, toPath: debugLog)
-                }
+                logger.debug("Engine.suggest: text='\(text)' count=\(text.count) hash=\(hash)")
                 switch text.count {
                 case 0:
                         return []
@@ -209,19 +193,14 @@ public struct Engine {
         }
 
         private static func pinyinMatchInternal(text: String, input: String) -> [Candidate] {
-                let debugLog = "/tmp/typeduck_debug.log"
                 var candidates: [Candidate] = []
                 let code: Int = text.deterministicHash
-                if let msg = "pinyinMatchInternal: text='\(text)' code=\(code)\n".data(using: .utf8) {
-                        FileManager.default.appendFile(msg, toPath: debugLog)
-                }
+                logger.debug("pinyinMatchInternal: text='\(text)' code=\(code)")
                 let command: String = "SELECT rowid, word, pinyin FROM pinyintable WHERE ping = \(code) LIMIT 100;"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else {
-                        if let msg = "pinyinMatchInternal: SQL prepare failed\n".data(using: .utf8) {
-                                FileManager.default.appendFile(msg, toPath: debugLog)
-                        }
+                        logger.error("pinyinMatchInternal: SQL prepare failed")
                         return candidates
                 }
                 while sqlite3_step(statement) == SQLITE_ROW {
@@ -232,9 +211,7 @@ public struct Engine {
                         let candidate = Candidate(text: word, romanization: pinyin, input: input, mark: input, order: rowID)
                         candidates.append(candidate)
                 }
-                if let msg = "pinyinMatchInternal: found \(candidates.count) results\n".data(using: .utf8) {
-                        FileManager.default.appendFile(msg, toPath: debugLog)
-                }
+                logger.debug("pinyinMatchInternal: found \(candidates.count) results")
                 return candidates
         }
 

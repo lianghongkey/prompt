@@ -150,7 +150,7 @@ public struct FuzzyPinyinMapping {
 public struct FuzzyPinyinSettings {
 
         /// 默认启用的模糊音类型
-        nonisolated(unsafe) public static let defaultEnabledTypes: Set<FuzzyPinyinType> = []
+        public static let defaultEnabledTypes: Set<FuzzyPinyinType> = []
 
         /// 当前启用的模糊音类型
         nonisolated(unsafe) private(set) public static var enabledTypes: Set<FuzzyPinyinType> = {

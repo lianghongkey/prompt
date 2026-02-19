@@ -1,6 +1,6 @@
 extension StringProtocol {
         var charcode: Int? {
-                guard self.count < 10 else { return nil }
+                guard self.count < 19 else { return nil }
                 let codes: [Int] = self.compactMap(\.intercode)
                 guard codes.count == self.count else { return nil }
                 let code: Int = codes.combined()
@@ -17,7 +17,7 @@ extension StringProtocol {
 
 extension RandomAccessCollection where Element == Int {
         func combined() -> Int {
-                guard self.count < 10 else { return 0 }
+                guard self.count < 19 else { return 0 }
                 return reduce(0, { $0 * 100 + $1 })
         }
         func tenKeyCombined() -> Int {

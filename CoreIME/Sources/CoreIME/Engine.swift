@@ -138,9 +138,11 @@ public struct Engine {
                         allCandidates = uniqueCandidates
                 }
 
-                // If no exact match, try prefix matches
+                // If no exact match, try prefix matches using the standard pinyin
                 if allCandidates.isEmpty {
-                        return pinyinShortcutInternal(text: text, limit: 100)
+                        // Use the standard pinyin (spacedPinyin without spaces) for prefix matching
+                        let standardPinyin = bestScheme.map(\.origin).joined()
+                        return pinyinShortcutInternal(text: standardPinyin, limit: 100)
                 }
 
                 return allCandidates

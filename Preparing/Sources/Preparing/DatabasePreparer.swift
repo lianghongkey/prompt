@@ -89,13 +89,13 @@ struct DatabasePreparer {
                         guard parts.count == 4 else { continue }
                         let word = parts[0]
                         let pinyin = parts[1]
-                        guard let shortcut = Int32(parts[2]), let ping = Int32(parts[3]) else { continue }
+                        guard let shortcut = Int(parts[2]), let ping = Int(parts[3]) else { continue }
 
                         sqlite3_reset(insertStatement)
                         sqlite3_bind_text(insertStatement, 1, word, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
                         sqlite3_bind_text(insertStatement, 2, pinyin, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
-                        sqlite3_bind_int(insertStatement, 3, shortcut)
-                        sqlite3_bind_int(insertStatement, 4, ping)
+                        sqlite3_bind_int64(insertStatement, 3, Int64(shortcut))
+                        sqlite3_bind_int64(insertStatement, 4, Int64(ping))
 
                         guard sqlite3_step(insertStatement) == SQLITE_DONE else {
                                 print("Failed to insert line: \(line)")

@@ -16,7 +16,7 @@ struct GeneralSettingsView: View {
 
         var body: some View {
                 ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 16) {
                                 HStack {
                                         Picker("每页候选词数量", selection: $pageSize) {
                                                 ForEach(pageSizeRange, id: \.self) {
@@ -41,7 +41,7 @@ struct GeneralSettingsView: View {
                                         Spacer()
                                 }
                                 .block()
-                                VStack(spacing: 20) {
+                                VStack(alignment: .leading, spacing: 12) {
                                         HStack {
                                                 Toggle("输入记忆", isOn: $isInputMemoryOn)
                                                         .toggleStyle(.switch)
@@ -52,49 +52,47 @@ struct GeneralSettingsView: View {
                                                 Spacer()
                                         }
                                         HStack {
-                                                VStack(alignment: .leading, spacing: 1) {
-                                                        Button(role: .destructive) {
-                                                                isClearInputMemoryConfirmDialogPresented = true
-                                                        } label: {
-                                                                Text("清空输入记忆")
-                                                        }
-                                                        .buttonStyle(.plain)
-                                                        .padding(.horizontal, 8)
-                                                        .padding(.vertical, 4)
-                                                        .foregroundStyle(Color.red)
-                                                        .background(Material.thick, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                                        .confirmationDialog("清空输入记忆？", isPresented: $isClearInputMemoryConfirmDialogPresented) {
-                                                                Button("清空", role: .destructive) {
-                                                                        clearInputMemoryProgress = 0
-                                                                        isPerformingClearInputMemory = true
-                                                                        UserLexicon.deleteAll()
-                                                                }
-                                                                Button("取消", role: .cancel) {
-                                                                        isClearInputMemoryConfirmDialogPresented = false
-                                                                }
-                                                        }
-                                                        ProgressView(value: clearInputMemoryProgress).opacity(isPerformingClearInputMemory ? 1 : 0)
+                                                Button(role: .destructive) {
+                                                        isClearInputMemoryConfirmDialogPresented = true
+                                                } label: {
+                                                        Text("清空输入记忆")
                                                 }
-                                                .fixedSize()
-                                                .onReceive(timer) { _ in
-                                                        guard isPerformingClearInputMemory else { return }
-                                                        if clearInputMemoryProgress > 1 {
-                                                                isPerformingClearInputMemory = false
-                                                        } else {
-                                                                clearInputMemoryProgress += 0.1
+                                                .buttonStyle(.plain)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 6)
+                                                .foregroundStyle(Color.red)
+                                                .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                                .confirmationDialog("清空输入记忆？", isPresented: $isClearInputMemoryConfirmDialogPresented) {
+                                                        Button("清空", role: .destructive) {
+                                                                clearInputMemoryProgress = 0
+                                                                isPerformingClearInputMemory = true
+                                                                UserLexicon.deleteAll()
+                                                        }
+                                                        Button("取消", role: .cancel) {
+                                                                isClearInputMemoryConfirmDialogPresented = false
                                                         }
                                                 }
+                                                ProgressView(value: clearInputMemoryProgress)
+                                                        .frame(width: 100)
+                                                        .opacity(isPerformingClearInputMemory ? 1 : 0)
+                                                        .onReceive(timer) { _ in
+                                                                guard isPerformingClearInputMemory else { return }
+                                                                if clearInputMemoryProgress > 1 {
+                                                                        isPerformingClearInputMemory = false
+                                                                } else {
+                                                                        clearInputMemoryProgress += 0.1
+                                                                }
+                                                        }
                                                 Spacer()
                                         }
                                 }
-                                .padding(.horizontal, 12)
-                                .padding(.top, 12)
-                                .padding(.bottom, 1)
-                                .background(Color.textBackgroundColor, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .block()
                         }
                         .textSelection(.enabled)
                         .padding()
+                        .frame(minWidth: 300)
                 }
+                .frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .navigationTitle("设置")
         }
 }

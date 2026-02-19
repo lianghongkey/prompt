@@ -34,11 +34,12 @@ struct SettingsView: View {
                                         Label("帮助", systemImage: "keyboard").tag(SettingsSidebarRow.help)
                                         Label("关于", systemImage: "info.circle").tag(SettingsSidebarRow.about)
                                 }
-                                .frame(minWidth: 150)
+                                .frame(minWidth: 150, maxWidth: 200)
                         } detail: {
                                 detailView
                         }
                         .navigationSplitViewStyle(.balanced)
+                        .frame(minWidth: 600, minHeight: 400)
                 } else {
                         NavigationView {
                                 List {
@@ -56,27 +57,24 @@ struct SettingsView: View {
                                         }
                                 }
                                 .listStyle(.sidebar)
-                                .frame(minWidth: 150)
+                                .frame(minWidth: 150, maxWidth: 200)
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .frame(minWidth: 600, maxWidth: .infinity, minHeight: 400, maxHeight: .infinity, alignment: .topLeading)
                 }
         }
 
         @ViewBuilder
         private var detailView: some View {
-                ScrollView {
-                        switch selection {
-                        case .general:
-                                GeneralSettingsView()
-                        case .fuzzyPinyin:
-                                FuzzyPinyinSettingsView()
-                        case .help:
-                                HelpView()
-                        case .about:
-                                AboutView()
-                        }
+                switch selection {
+                case .general:
+                        GeneralSettingsView()
+                case .fuzzyPinyin:
+                        FuzzyPinyinSettingsView()
+                case .help:
+                        HelpView()
+                case .about:
+                        AboutView()
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
 }
 

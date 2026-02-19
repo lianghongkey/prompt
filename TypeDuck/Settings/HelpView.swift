@@ -3,213 +3,186 @@ import SwiftUI
 struct HelpView: View {
         var body: some View {
                 ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 16) {
-                                HStack(spacing: 4) {
-                                        LabelText("显示／隐藏快捷选项页面")
-                                        Text.separator
-                                        KeyBlockView.control
-                                        Text.plus
-                                        KeyBlockView.shift
-                                        Text.plus
-                                        KeyBlockView("`")
-                                        Spacer()
+                        VStack(alignment: .leading, spacing: 16) {
+                                HelpRow(
+                                        label: "显示／隐藏快捷选项页面",
+                                        keys: [.control, .shift, .key("`")]
+                                )
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                        HelpRow(
+                                                label: "直接切换特定快捷选项",
+                                                keys: [.control, .shift, .number]
+                                        )
+                                        Text("数字键：1, 2, 3, …, 8, 9, 0")
+                                                .font(.caption)
+                                                .foregroundStyle(Color.secondary)
+                                                .padding(.leading, 8)
                                 }
                                 .block()
-                                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                        LabelText("直接切换特定快捷选项")
-                                        Text.separator
-                                        VStack(spacing: 6) {
-                                                HStack(spacing: 4) {
-                                                        KeyBlockView.control
-                                                        Text.plus
-                                                        KeyBlockView.shift
-                                                        Text.plus
-                                                        KeyBlockView.number
-                                                        Spacer()
-                                                }
-                                                HStack(spacing: 0) {
-                                                        Text("数字键").fontWeight(.medium)
-                                                        Text("：").foregroundStyle(Color.secondary)
-                                                        Text(verbatim: "1, 2, 3, …, 8, 9, 0")
-                                                        Spacer()
-                                                }
-                                                .font(.subheadline)
-                                        }
-                                }
-                                .block()
+
                                 VStack(spacing: 8) {
-                                        HStack(spacing: 4) {
-                                                LabelText("清除当前预输入音节")
-                                                Text.separator
-                                                KeyBlockView.escape
-                                                Text.or
-                                                KeyBlockView.control
-                                                Text.plus
-                                                KeyBlockView.shift
-                                                Text.plus
-                                                KeyBlockView("U")
-                                                Spacer()
-                                        }
-                                        HStack(spacing: 4) {
-                                                LabelText("输入当前预输入音节")
-                                                Text.separator
-                                                KeyBlockView.returnKey
-                                                Spacer()
-                                        }
-                                        HStack(spacing: 4) {
-                                                LabelText("输入当前候选词拼音")
-                                                Text.separator
-                                                KeyBlockView.shift
-                                                Text.plus
-                                                KeyBlockView.returnKey
-                                                Spacer()
-                                        }
-                                        HStack(spacing: 4) {
-                                                LabelText("输入当前候选词")
-                                                Text.separator
-                                                KeyBlockView.space
-                                                Spacer()
-                                        }
-                                        HStack(spacing: 4) {
-                                                LabelText("输入当前候选词之首字")
-                                                Text.separator
-                                                KeyBlockView("[")
-                                                Spacer()
-                                        }
-                                        HStack(spacing: 4) {
-                                                LabelText("输入当前候选词之末字")
-                                                Text.separator
-                                                KeyBlockView("]")
-                                                Spacer()
-                                        }
-                                        HStack(spacing: 4) {
-                                                LabelText("从输入记忆删除当前候选词")
-                                                Text.separator
-                                                KeyBlockView.control
-                                                Text.plus
-                                                KeyBlockView.shift
-                                                Text.plus
-                                                KeyBlockView.backwardDelete
-                                                Spacer()
-                                        }
+                                        HelpRow(
+                                                label: "清除当前预输入音节",
+                                                keys: [.escape],
+                                                alternative: [.control, .shift, .key("U")]
+                                        )
+                                        HelpRow(
+                                                label: "输入当前预输入音节",
+                                                keys: [.returnKey]
+                                        )
+                                        HelpRow(
+                                                label: "输入当前候选词拼音",
+                                                keys: [.shift, .returnKey]
+                                        )
+                                        HelpRow(
+                                                label: "输入当前候选词",
+                                                keys: [.space]
+                                        )
+                                        HelpRow(
+                                                label: "输入当前候选词之首字",
+                                                keys: [.key("[")]
+                                        )
+                                        HelpRow(
+                                                label: "输入当前候选词之末字",
+                                                keys: [.key("]")]
+                                        )
+                                        HelpRow(
+                                                label: "从输入记忆删除当前候选词",
+                                                keys: [.control, .shift, .backwardDelete]
+                                        )
                                 }
                                 .block()
+
                                 VStack(spacing: 8) {
-                                        HStack(spacing: 4) {
-                                                LabelText("移至上一个候选词")
-                                                Text.separator
-                                                KeyBlockView("▲")
-                                                Text.or
-                                                KeyBlockView.shift
-                                                Text.plus
-                                                KeyBlockView.tab
-                                                Spacer()
-                                        }
-                                        HStack(spacing: 4) {
-                                                LabelText("移至下一个候选词")
-                                                Text.separator
-                                                KeyBlockView("▼")
-                                                Text.or
-                                                KeyBlockView.tab
-                                                Spacer()
-                                        }
-                                        HStack(spacing: 4) {
-                                                LabelText("移至上一页")
-                                                Text.separator
-                                                KeyBlockView("◀")
-                                                Text.or
-                                                KeyBlockView("-")
-                                                Text.or
-                                                KeyBlockView("Page Up ↑")
-                                                Spacer()
-                                        }
-                                        HStack(spacing: 4) {
-                                                LabelText("移至下一页")
-                                                Text.separator
-                                                KeyBlockView("▶")
-                                                Text.or
-                                                KeyBlockView("=")
-                                                Text.or
-                                                KeyBlockView("Page Down ↓")
-                                                Spacer()
-                                        }
-                                        HStack(spacing: 4) {
-                                                LabelText("返回第一页")
-                                                Text.separator
-                                                KeyBlockView("Home ⤒")
-                                                Spacer()
-                                        }
+                                        HelpRow(
+                                                label: "移至上一个候选词",
+                                                keys: [.key("▲")],
+                                                alternative: [.shift, .tab]
+                                        )
+                                        HelpRow(
+                                                label: "移至下一个候选词",
+                                                keys: [.key("▼")],
+                                                alternative: [.tab]
+                                        )
+                                        HelpRow(
+                                                label: "移至上一页",
+                                                keys: [.key("◀")],
+                                                alternative: [.key("-")],
+                                                alternative2: [.key("Page Up ↑")]
+                                        )
+                                        HelpRow(
+                                                label: "移至下一页",
+                                                keys: [.key("▶")],
+                                                alternative: [.key("=")],
+                                                alternative2: [.key("Page Down ↓")]
+                                        )
+                                        HelpRow(
+                                                label: "返回第一页",
+                                                keys: [.key("Home ⤒")]
+                                        )
                                 }
                                 .block()
                         }
                         .textSelection(.enabled)
                         .padding()
                 }
+                .frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .navigationTitle("帮助")
         }
 }
 
-#Preview {
-        HelpView()
+private struct HelpRow: View {
+        let label: String
+        let keys: [KeyType]
+        var alternative: [KeyType]? = nil
+        var alternative2: [KeyType]? = nil
+
+        var body: some View {
+                HStack(alignment: .top, spacing: 8) {
+                        Text(label)
+                                .frame(minWidth: 120, maxWidth: 200, alignment: .leading)
+                                .fixedSize(horizontal: false, vertical: true)
+
+                        Text("：")
+                                .foregroundStyle(Color.secondary)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                                HStack(spacing: 4) {
+                                        ForEach(Array(keys.enumerated()), id: \.offset) { index, key in
+                                                if index > 0 {
+                                                        Text("＋")
+                                                }
+                                                KeyBlockView(key: key)
+                                        }
+                                }
+
+                                if let alt = alternative {
+                                        HStack(spacing: 4) {
+                                                Text("或")
+                                                ForEach(Array(alt.enumerated()), id: \.offset) { index, key in
+                                                        if index > 0 {
+                                                                Text("＋")
+                                                        }
+                                                        KeyBlockView(key: key)
+                                                }
+                                        }
+                                }
+
+                                if let alt2 = alternative2 {
+                                        HStack(spacing: 4) {
+                                                Text("或")
+                                                ForEach(Array(alt2.enumerated()), id: \.offset) { index, key in
+                                                        if index > 0 {
+                                                                Text("＋")
+                                                        }
+                                                        KeyBlockView(key: key)
+                                                }
+                                        }
+                                }
+                        }
+
+                        Spacer(minLength: 0)
+                }
+        }
 }
 
-private struct LabelText: View {
-        init(_ title: String) {
-                self.title = title
-        }
-        private let title: String
-        var body: some View {
-                Text(title)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                        .frame(width: 250, alignment: .leading)
-        }
+private enum KeyType {
+        case control
+        case shift
+        case number
+        case space
+        case escape
+        case tab
+        case returnKey
+        case backwardDelete
+        case key(String)
 }
 
 private struct KeyBlockView: View {
-
-        init(_ keyText: String) {
-                self.keyText = keyText
-                self.key = nil
-        }
-
-        init(localized key: String) {
-                self.keyText = key
-                self.key = nil
-        }
-
-        private let keyText: String?
-        private let key: Void?
+        let key: KeyType
 
         var body: some View {
-                let text: Text
-                if let keyText = keyText {
-                    text = Text(verbatim: keyText)
-                } else {
-                    text = Text(verbatim: "")
-                }
-                return text
+                Text(keyText)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.4)
-                        .padding(.horizontal, 2)
-                        .frame(width: 80, height: 24)
+                        .minimumScaleFactor(0.5)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .frame(minWidth: 60, minHeight: 24)
                         .background(Material.regular, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
         }
 
-        static let control: KeyBlockView = KeyBlockView("Control ⌃")
-        static let shift: KeyBlockView = KeyBlockView("Shift ⇧")
-        static let number: KeyBlockView = KeyBlockView(localized: "数字键")
-        static let space: KeyBlockView = KeyBlockView("Space ␣")
-        static let escape: KeyBlockView = KeyBlockView("esc ⎋")
-        static let tab: KeyBlockView = KeyBlockView("Tab ⇥")
-        static let returnKey: KeyBlockView = KeyBlockView("Return ⏎")
-
-        /// Backspace. NOT Forward-Delete.
-        static let backwardDelete: KeyBlockView = KeyBlockView("Delete ⌫")
-}
-
-private extension Text {
-        static let separator: Text = Text("：").foregroundColor(.secondary)
-        static let plus: Text = Text(verbatim: "＋")
-        static let or: Text = Text("或")
+        private var keyText: String {
+                switch key {
+                case .control: return "Control ⌃"
+                case .shift: return "Shift ⇧"
+                case .number: return "数字键"
+                case .space: return "Space ␣"
+                case .escape: return "esc ⎋"
+                case .tab: return "Tab ⇥"
+                case .returnKey: return "Return ⏎"
+                case .backwardDelete: return "Delete ⌫"
+                case .key(let text): return text
+                }
+        }
 }

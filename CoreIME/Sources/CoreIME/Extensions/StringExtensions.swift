@@ -18,7 +18,7 @@ extension String {
 
         /// Remove all spaces
         /// - Returns: A subsequence that leaves off spaces.
-        func removedSpaces() -> String {
+        public func removedSpaces() -> String {
                 return self.filter({ !$0.isSpace })
         }
 

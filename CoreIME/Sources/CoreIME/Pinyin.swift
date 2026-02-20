@@ -53,7 +53,7 @@ public struct PinyinLexicon: Hashable, Comparable {
                 let newText: String = lhs.text + rhs.text
                 let newPinyin: String = lhs.pinyin + " " + rhs.pinyin
                 let newInput: String = lhs.input + rhs.input
-                let newMark: String = lhs.mark + " " + rhs.mark
+                let newMark: String = lhs.mark + rhs.mark
                 return PinyinLexicon(text: newText, pinyin: newPinyin, input: newInput, mark: newMark)
         }
 }
@@ -111,7 +111,7 @@ extension Engine {
                                 guard let lastAnchor = tail.first else { return [] }
                                 let schemeAnchors = scheme.compactMap({ $0.text.first })
                                 let anchors: String = String(schemeAnchors + [lastAnchor])
-                                let text2mark: String = scheme.map({ $0.origin }).joined(separator: " ") + " " + tail
+                                let text2mark: String = scheme.map({ $0.origin }).joined() + tail
                                 return pinyinShortcutQuery(pinyin: anchors, limit: limit)
                                         .filter({ $0.pinyin.hasPrefix(text2mark) })
                                         .map({ PinyinLexicon(text: $0.text, pinyin: $0.pinyin, input: text, mark: text2mark) })
@@ -172,7 +172,7 @@ extension Engine {
                         let rowID: Int = Int(sqlite3_column_int64(statement, 0))
                         let word: String = String(cString: sqlite3_column_text(statement, 1))
                         let pinyin: String = String(cString: sqlite3_column_text(statement, 2))
-                        let instance = PinyinLexicon(text: word, pinyin: pinyin, input: text, mark: pinyin, order: rowID)
+                        let instance = PinyinLexicon(text: word, pinyin: pinyin, input: text, mark: text, order: rowID)
                         items.append(instance)
                 }
                 return items

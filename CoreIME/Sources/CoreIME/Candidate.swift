@@ -167,7 +167,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 let newLexiconText: String = lhs.lexiconText + rhs.lexiconText
                 let newRomanization: String = lhs.romanization + " " + rhs.romanization
                 let newInput: String = lhs.input + rhs.input
-                let newMark: String = lhs.mark + " " + rhs.mark
+                let newMark: String = lhs.mark + rhs.mark
                 let step: Int = 1_000_000
                 let newOrder: Int = (lhs.order + step) + (rhs.order + step)
                 let newSubNotations: [Notation] = {
@@ -199,7 +199,7 @@ extension Array where Element == Candidate {
                 let lexiconText: String = map(\.lexiconText).joined()
                 let romanization: String = map(\.romanization).joined(separator: " ")
                 let input: String = map(\.input).joined()
-                let mark: String = map(\.mark).joined(separator: " ")
+                let mark: String = map(\.mark).joined()
                 let step: Int = 1_000_000
                 let order: Int = map(\.order).reduce(0, { $0 + $1 + step })
                 let subNotations: [Notation] = compactMap(\.notation)

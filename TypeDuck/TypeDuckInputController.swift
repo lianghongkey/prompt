@@ -379,10 +379,10 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                                 if let firstCandidate = suggestions.first, firstCandidate.input.count == userInputTextCount { return firstCandidate.mark }
                                                 guard let bestScheme else { return processingText.formattedForMark() }
                                                 let leadingLength: Int = bestScheme.length
-                                                let leadingText: String = bestScheme.map(\.text).joined(separator: String.space)
+                                                let leadingText: String = bestScheme.map(\.text).joined()
                                                 guard leadingLength != userInputTextCount else { return leadingText }
                                                 let tailText = processingText.dropFirst(leadingLength)
-                                                return leadingText + String.space + tailText
+                                                return leadingText + tailText
                                         }())
                                         self?.candidates = suggestions
                                         UserDefaults.standard.set(suggestions.count, forKey: "DEBUG_SUGGESTIONS_COUNT")
@@ -403,10 +403,10 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         if let firstCandidate = suggestions.first, firstCandidate.input.count == text.count { return firstCandidate.mark }
                         guard let bestScheme = schemes.first else { return text }
                         let leadingLength: Int = bestScheme.length
-                        let leadingText: String = bestScheme.map(\.origin).joined(separator: String.space)
+                        let leadingText: String = bestScheme.map(\.origin).joined()
                         guard leadingLength != text.count else { return leadingText }
                         let tailText = text.dropFirst(leadingLength)
-                        return leadingText + String.space + tailText
+                        return leadingText + tailText
                 }()
                 let head = bufferText.prefix(2) + String.space
                 let text2mark: String = head + tailText2Mark

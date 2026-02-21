@@ -12,7 +12,7 @@ struct CandidateContentView: View {
                 let latinComments = enabledTranslations.filter(\.language.isLatin)
                 let devanagariComments = enabledTranslations.filter(\.language.isDevanagari)
                 HStack(alignment: .lastTextBaseline, spacing: 12) {
-                        PinyinLabel(text: candidate.candidate.text, romanization: candidate.candidate.romanization, shouldDisplayRomanization: candidate.candidate.isMandarin)
+                        PinyinLabel(text: candidate.candidate.text, romanization: candidate.candidate.romanization, shouldDisplayRomanization: false)
                         if annotationComments.isNotEmpty {
                                 ForEach(0..<annotationComments.count, id: \.self) { index in
                                         let comment = annotationComments[index]

@@ -7,7 +7,7 @@ struct CandidateBoard: View {
 
         var body: some View {
                 let highlightedIndex = context.highlightedIndex
-                VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top, spacing: 4) {
                         ForEach(0..<context.displayCandidates.count, id: \.self) { index in
                                 let shouldHighlight: Bool = index == highlightedIndex
                                 let candidate: DisplayCandidate = context.displayCandidates[index]

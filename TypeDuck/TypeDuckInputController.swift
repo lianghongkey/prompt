@@ -900,7 +900,10 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                         insert(text)
                                         aftercareSelection(selectedItem)
                                 } else if isBuffering {
-                                        passBuffer()
+                                        let text: String = Options.characterForm == .halfWidth ? bufferText : bufferText.fullWidth()
+                                        let space: String = (isShifting || Options.characterForm.isFullWidth) ? String.fullWidthSpace : String.space
+                                        insert(text + space)
+                                        clearBufferText()
                                 } else {
                                         clearMarkedText()
                                         let text: String = (isShifting || Options.characterForm.isFullWidth) ? String.fullWidthSpace : String.space

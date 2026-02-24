@@ -198,7 +198,7 @@ public struct Engine {
                 var candidates: [Candidate] = []
                 let code: Int = text.deterministicHash
                 logger.debug("pinyinMatchInternal: text='\(text)' code=\(code)")
-                let command: String = "SELECT rowid, word, pinyin FROM pinyintable WHERE ping = \(code) LIMIT 100;"
+                let command: String = "SELECT rowid, word, pinyin FROM pinyintable WHERE ping = \(code) ORDER BY rowid LIMIT 100;"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else {
@@ -222,7 +222,7 @@ public struct Engine {
                 // Use first character's code as shortcut
                 guard let firstChar = text.first else { return candidates }
                 guard let code: Int = firstChar.intercode else { return candidates }
-                let command: String = "SELECT rowid, word, pinyin FROM pinyintable WHERE shortcut = \(code) LIMIT \(limit);"
+                let command: String = "SELECT rowid, word, pinyin FROM pinyintable WHERE shortcut = \(code) ORDER BY rowid LIMIT \(limit);"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return candidates }

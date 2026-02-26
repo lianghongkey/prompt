@@ -9,7 +9,8 @@ private extension Engine {
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, query, -1, &statement, nil) == SQLITE_OK else { return String(character) }
                 guard sqlite3_step(statement) == SQLITE_ROW else { return String(character) }
-                let simplified: String = String(cString: sqlite3_column_text(statement, 0))
+                guard let ptr = sqlite3_column_text(statement, 0) else { return String(character) }
+                let simplified: String = String(cString: ptr)
                 return simplified
         }
         static func charT2S(_ character: Character) -> Character {
@@ -19,7 +20,8 @@ private extension Engine {
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, query, -1, &statement, nil) == SQLITE_OK else { return character}
                 guard sqlite3_step(statement) == SQLITE_ROW else { return character }
-                let simplified: String = String(cString: sqlite3_column_text(statement, 0))
+                guard let ptr = sqlite3_column_text(statement, 0) else { return character }
+                let simplified: String = String(cString: ptr)
                 return simplified.first ?? character
         }
         static func textT2S(_ text: String) -> String {
@@ -29,7 +31,8 @@ private extension Engine {
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, query, -1, &statement, nil) == SQLITE_OK else { return text}
                 guard sqlite3_step(statement) == SQLITE_ROW else { return text }
-                let simplified: String = String(cString: sqlite3_column_text(statement, 0))
+                guard let ptr = sqlite3_column_text(statement, 0) else { return text }
+                let simplified: String = String(cString: ptr)
                 return simplified
         }
 }

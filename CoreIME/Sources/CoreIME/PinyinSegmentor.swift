@@ -121,7 +121,8 @@ public struct PinyinSegmentor {
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return nil }
                 guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
-                let syllable: String = String(cString: sqlite3_column_text(statement, 0))
+                guard let syllablePtr = sqlite3_column_text(statement, 0) else { return nil }
+                let syllable: String = String(cString: syllablePtr)
                 return SegmentToken(text: syllable, origin: syllable)
         }
 

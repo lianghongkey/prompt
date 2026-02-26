@@ -217,8 +217,10 @@ public struct Engine {
                 }
                 while sqlite3_step(statement) == SQLITE_ROW {
                         let rowID: Int = Int(sqlite3_column_int64(statement, 0))
-                        let word: String = String(cString: sqlite3_column_text(statement, 1))
-                        let pinyin: String = String(cString: sqlite3_column_text(statement, 2))
+                        guard let wordPtr = sqlite3_column_text(statement, 1) else { continue }
+                        guard let pinyinPtr = sqlite3_column_text(statement, 2) else { continue }
+                        let word: String = String(cString: wordPtr)
+                        let pinyin: String = String(cString: pinyinPtr)
                         // Use input as mark to display user's actual input, not the standard pinyin
                         let candidate = Candidate(text: word, romanization: pinyin, input: input, mark: input, order: rowID)
                         candidates.append(candidate)
@@ -238,8 +240,10 @@ public struct Engine {
                 guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return candidates }
                 while sqlite3_step(statement) == SQLITE_ROW {
                         let rowID: Int = Int(sqlite3_column_int64(statement, 0))
-                        let word: String = String(cString: sqlite3_column_text(statement, 1))
-                        let pinyin: String = String(cString: sqlite3_column_text(statement, 2))
+                        guard let wordPtr = sqlite3_column_text(statement, 1) else { continue }
+                        guard let pinyinPtr = sqlite3_column_text(statement, 2) else { continue }
+                        let word: String = String(cString: wordPtr)
+                        let pinyin: String = String(cString: pinyinPtr)
                         // Filter to only show results that match the input prefix
                         guard pinyin.hasPrefix(text) else { continue }
                         let candidate = Candidate(text: word, romanization: pinyin, input: text, mark: text, order: rowID)

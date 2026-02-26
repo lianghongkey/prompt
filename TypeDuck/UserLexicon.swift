@@ -102,8 +102,10 @@ struct UserLexicon: Sendable {
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return candidates }
                 while sqlite3_step(statement) == SQLITE_ROW {
-                        let word: String = String(cString: sqlite3_column_text(statement, 0))
-                        let romanization: String = String(cString: sqlite3_column_text(statement, 1))
+                        guard let wordPtr = sqlite3_column_text(statement, 0) else { continue }
+                        guard let romanizationPtr = sqlite3_column_text(statement, 1) else { continue }
+                        let word: String = String(cString: wordPtr)
+                        let romanization: String = String(cString: romanizationPtr)
                         let mark: String = mark ?? romanization.removedTones().removedSpaces()
                         let candidate: Candidate = Candidate(text: word, romanization: romanization, input: input, mark: mark, order: -1)
                         candidates.append(candidate)

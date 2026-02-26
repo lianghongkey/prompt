@@ -23,9 +23,12 @@ extension Engine {
                 var symbols: [SymbolEntry] = []
                 while sqlite3_step(statement) == SQLITE_ROW {
                         let categoryCode: Int = Int(sqlite3_column_int64(statement, 0))
-                        let codepoint: String = String(cString: sqlite3_column_text(statement, 1))
-                        let cantonese: String = String(cString: sqlite3_column_text(statement, 2))
-                        let romanization: String = String(cString: sqlite3_column_text(statement, 3))
+                        guard let codepointPtr = sqlite3_column_text(statement, 1) else { continue }
+                        guard let cantonesePtr = sqlite3_column_text(statement, 2) else { continue }
+                        guard let romanizationPtr = sqlite3_column_text(statement, 3) else { continue }
+                        let codepoint: String = String(cString: codepointPtr)
+                        let cantonese: String = String(cString: cantonesePtr)
+                        let romanization: String = String(cString: romanizationPtr)
                         let entry = SymbolEntry(categoryCode: categoryCode, codepoint: codepoint, cantonese: cantonese, romanization: romanization)
                         symbols.append(entry)
                 }
@@ -42,7 +45,8 @@ extension Engine {
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return nil }
                 guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
-                let target: String = String(cString: sqlite3_column_text(statement, 0))
+                guard let targetPtr = sqlite3_column_text(statement, 0) else { return nil }
+                let target: String = String(cString: targetPtr)
                 return target
         }
 

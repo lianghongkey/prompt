@@ -170,8 +170,10 @@ extension Engine {
                 guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return items }
                 while sqlite3_step(statement) == SQLITE_ROW {
                         let rowID: Int = Int(sqlite3_column_int64(statement, 0))
-                        let word: String = String(cString: sqlite3_column_text(statement, 1))
-                        let pinyin: String = String(cString: sqlite3_column_text(statement, 2))
+                        guard let wordPtr = sqlite3_column_text(statement, 1) else { continue }
+                        guard let pinyinPtr = sqlite3_column_text(statement, 2) else { continue }
+                        let word: String = String(cString: wordPtr)
+                        let pinyin: String = String(cString: pinyinPtr)
                         let instance = PinyinLexicon(text: word, pinyin: pinyin, input: text, mark: text, order: rowID)
                         items.append(instance)
                 }
@@ -187,8 +189,10 @@ extension Engine {
                 guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return items }
                 while sqlite3_step(statement) == SQLITE_ROW {
                         let rowID: Int = Int(sqlite3_column_int64(statement, 0))
-                        let word: String = String(cString: sqlite3_column_text(statement, 1))
-                        let pinyin: String = String(cString: sqlite3_column_text(statement, 2))
+                        guard let wordPtr = sqlite3_column_text(statement, 1) else { continue }
+                        guard let pinyinPtr = sqlite3_column_text(statement, 2) else { continue }
+                        let word: String = String(cString: wordPtr)
+                        let pinyin: String = String(cString: pinyinPtr)
                         let instance = PinyinLexicon(text: word, pinyin: pinyin, input: text, mark: text, order: rowID)
                         items.append(instance)
                 }

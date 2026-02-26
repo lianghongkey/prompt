@@ -99,44 +99,48 @@ public struct Engine {
                         }
                 }
 
-                // Try the best segmentation (first one, which is longest with fewest tokens)
                 guard let bestScheme = segmentation.first else {
-                        // Segmentation failed entirely: fall back to prefix shortcut lookup
                         return pinyinShortcutInternal(text: text, limit: 100)
                 }
 
-                // Build spaced pinyin from segmentation
-                let spacedPinyin = bestScheme.map(\.origin).joined(separator: " ")
+                // Try all schemes with the same max length (different segmentations may yield different candidates)
+                let maxLength = bestScheme.length
+                let topSchemes = segmentation.filter({ $0.length == maxLength })
 
-                // Also calculate the combined input text (without spaces) for Candidate
-                let combinedInput = bestScheme.map(\.text).joined()
+                var allCandidates: [Candidate] = []
+                var seen = Set<Int>()
 
-                // Query database with spaced pinyin (original match)
-                var allCandidates = pinyinMatchInternal(text: spacedPinyin, input: combinedInput)
+                for scheme in topSchemes {
+                        let spacedPinyin = scheme.map(\.origin).joined(separator: " ")
+                        let combinedInput = scheme.map(\.text).joined()
 
-                // Apply fuzzy pinyin if enabled
-                if FuzzyPinyinSettings.isAnyEnabled {
-                        let pinyinArray = bestScheme.map(\.origin)
-                        let expandedArrays = FuzzyPinyinExpander.expandArray(pinyinArray)
-
-                        // Query with all fuzzy variants
-                        for expandedArray in expandedArrays {
-                                let expandedSpacedPinyin = expandedArray.joined(separator: " ")
-                                let fuzzyCandidates = pinyinMatchInternal(text: expandedSpacedPinyin, input: combinedInput)
-                                allCandidates.append(contentsOf: fuzzyCandidates)
-                        }
-
-                        // Remove duplicates (keep first occurrence which has higher priority)
-                        var seen = Set<Int>()
-                        var uniqueCandidates: [Candidate] = []
-                        for candidate in allCandidates {
-                                if !seen.contains(candidate.order) {
-                                        seen.insert(candidate.order)
-                                        uniqueCandidates.append(candidate)
+                        // Query database with spaced pinyin
+                        let directCandidates = pinyinMatchInternal(text: spacedPinyin, input: combinedInput)
+                        for candidate in directCandidates {
+                                if seen.insert(candidate.order).inserted {
+                                        allCandidates.append(candidate)
                                 }
                         }
-                        allCandidates = uniqueCandidates
+
+                        // Apply fuzzy pinyin if enabled
+                        if FuzzyPinyinSettings.isAnyEnabled {
+                                let pinyinArray = scheme.map(\.origin)
+                                let expandedArrays = FuzzyPinyinExpander.expandArray(pinyinArray)
+                                for expandedArray in expandedArrays {
+                                        let expandedSpacedPinyin = expandedArray.joined(separator: " ")
+                                        let fuzzyCandidates = pinyinMatchInternal(text: expandedSpacedPinyin, input: combinedInput)
+                                        for candidate in fuzzyCandidates {
+                                                if seen.insert(candidate.order).inserted {
+                                                        allCandidates.append(candidate)
+                                                }
+                                        }
+                                }
+                        }
                 }
+
+                // Sort all candidates by rowid (lower = more common) so fuzzy matches
+                // with high frequency rank properly alongside direct matches
+                allCandidates.sort(by: { $0.order < $1.order })
 
                 // If no exact match, fall back progressively by dropping the last token
                 if allCandidates.isEmpty {
@@ -150,7 +154,6 @@ public struct Engine {
                                         return fallbackCandidates
                                 }
                         }
-                        // Last resort: shortcut lookup on the first token
                         let standardPinyin = bestScheme.map(\.origin).joined()
                         return pinyinShortcutInternal(text: standardPinyin, limit: 100)
                 }

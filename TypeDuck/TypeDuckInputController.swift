@@ -25,9 +25,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         return preferredValue
                 }()
                 window.level = NSWindow.Level(levelValue)
-                if window.contentViewController == nil {
-                        window.contentViewController = NSHostingController(rootView: MotherBoard().environmentObject(appContext))
-                }
+                window.contentViewController = NSHostingController(rootView: MotherBoard().environmentObject(appContext))
                 window.orderFrontRegardless()
         }
         private func updateWindowFrame(_ frame: CGRect? = nil) {

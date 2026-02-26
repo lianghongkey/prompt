@@ -4,11 +4,11 @@ extension String {
 
         var shortcut: Int {
                 let anchors = self.split(separator: Character.space).compactMap(\.first)
-                return String(anchors).hash
+                return String(anchors).deterministicHash
         }
 
         var ping: Int {
-                return self.removedSpacesTones().hash
+                return self.removedSpacesTones().deterministicHash
         }
 
         /// A subsequence that only contains tones (1-6)

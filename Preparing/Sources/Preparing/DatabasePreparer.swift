@@ -129,7 +129,7 @@ struct DatabasePreparer {
                         let romanization = parts[2]
                         let anchors = romanization.split(separator: " ").compactMap(\.first)
                         let shortcut = String(anchors).charcode ?? 47
-                        let ping = romanization.filter(\.isLetter).hash
+                        let ping = romanization.filter(\.isLetter).deterministicHash
                         return "(\(category), '\(codepoint)', '\(romanization)', \(shortcut), \(ping))"
                 }
                 let values: String = entries.compactMap({ $0 }).joined(separator: ", ")
@@ -194,8 +194,7 @@ struct DatabasePreparer {
                         "CREATE INDEX pinyinshortcutindex ON pinyintable(shortcut);",
                         "CREATE INDEX pinyinpingindex ON pinyintable(ping);",
                         "CREATE INDEX symbolshortcutindex ON symboltable(shortcut);",
-                        "CREATE INDEX symbolpingindex ON symboltable(ping);",
-                        "CREATE INDEX syllabletenkeyindex ON syllabletable(tenkey);"
+                        "CREATE INDEX symbolpingindex ON symboltable(ping);"
                 ]
                 for command in commands {
                         var statement: OpaquePointer? = nil

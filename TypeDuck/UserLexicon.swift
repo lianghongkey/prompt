@@ -36,7 +36,7 @@ struct UserLexicon: Sendable {
                 guard let candidate else { return }
                 let word: String = candidate.lexiconText
                 let romanization: String = candidate.romanization
-                let id: Int = (word + romanization).hash
+                let id: Int = (word + romanization).deterministicHash
                 if let frequency = find(by: id) {
                         update(id: id, frequency: frequency + 1)
                 } else {
@@ -95,7 +95,7 @@ struct UserLexicon: Sendable {
 
         private static func query(text: String, input: String, mark: String? = nil, isShortcut: Bool) -> [Candidate] {
                 var candidates: [Candidate] = []
-                let code: Int = isShortcut ? text.replacingOccurrences(of: "y", with: "j").hash : text.hash
+                let code: Int = isShortcut ? text.replacingOccurrences(of: "y", with: "j").deterministicHash : text.deterministicHash
                 let column: String = isShortcut ? "shortcut" : "ping"
                 let command: String = "SELECT word, romanization FROM userlexicontable WHERE \(column) = \(code) ORDER BY frequency DESC LIMIT 5;"
                 var statement: OpaquePointer? = nil
@@ -116,7 +116,7 @@ struct UserLexicon: Sendable {
 
         /// Delete one lexicon entry
         static func removeItem(candidate: Candidate) {
-                let id: Int = (candidate.lexiconText + candidate.romanization).hash
+                let id: Int = (candidate.lexiconText + candidate.romanization).deterministicHash
                 let command: String = "DELETE FROM userlexicontable WHERE id = \(id);"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }

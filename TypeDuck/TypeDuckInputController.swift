@@ -168,7 +168,6 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 super.deactivateServer(sender)
         }
         override func commitComposition(_ sender: Any!) {
-                guard !(inputStage.isBuffering) else { return }
                 nonisolated(unsafe) let client: InputClient? = (sender as? InputClient) ?? client()
                 Task { @MainActor in
                         suggestionTask?.cancel()

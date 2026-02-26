@@ -18,7 +18,7 @@ extension Engine {
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return [] }
-                let code = Int64(text.hash)
+                let code = Int64(String(text).deterministicHash)
                 guard sqlite3_bind_int64(statement, 1, code) == SQLITE_OK else { return [] }
                 var symbols: [SymbolEntry] = []
                 while sqlite3_step(statement) == SQLITE_ROW {

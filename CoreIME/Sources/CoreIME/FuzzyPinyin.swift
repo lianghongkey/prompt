@@ -125,7 +125,7 @@ public enum FuzzyPinyinType: String, CaseIterable, Identifiable, Sendable {
                 case .l_r: return FuzzyPinyinMapping(initials: ["l": ["r"], "r": ["l"]])
                 case .en_eng: return FuzzyPinyinMapping(finals: ["en": ["eng"], "eng": ["en"]])
                 case .in_ing: return FuzzyPinyinMapping(finals: ["in": ["ing"], "ing": ["in"]])
-                case .on_ong: return FuzzyPinyinMapping(finals: ["on": ["ong"]])
+                case .on_ong: return FuzzyPinyinMapping(finals: ["on": ["ong"], "ion": ["iong"]])
                 case .an_ang: return FuzzyPinyinMapping(finals: ["an": ["ang"], "ang": ["an"]])
                 case .ian_iang: return FuzzyPinyinMapping(finals: ["ian": ["iang"], "iang": ["ian"]])
                 case .uan_uang: return FuzzyPinyinMapping(finals: ["uan": ["uang"], "uang": ["uan"]])

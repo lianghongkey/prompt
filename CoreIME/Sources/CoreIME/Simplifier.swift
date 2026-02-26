@@ -99,9 +99,9 @@ struct Simplifier {
                 lazy var modified: String = text
                 lazy var matched: String = ""
                 for key in keys {
-                        if text.hasPrefix(key) {
+                        if text.hasPrefix(key), let value = phrases[key] {
                                 modified = text.replacingOccurrences(of: key, with: replacement)
-                                matched = phrases[key]!
+                                matched = value
                                 break
                         }
                 }
@@ -109,9 +109,9 @@ struct Simplifier {
                         return (modified, matched, replacement)
                 }
                 for key in keys {
-                        if text.contains(key) {
+                        if text.contains(key), let value = phrases[key] {
                                 modified = text.replacingOccurrences(of: key, with: replacement)
-                                matched = phrases[key]!
+                                matched = value
                                 break
                         }
                 }

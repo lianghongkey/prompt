@@ -25,7 +25,9 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         return preferredValue
                 }()
                 window.level = NSWindow.Level(levelValue)
-                window.contentViewController = NSHostingController(rootView: MotherBoard().environmentObject(appContext))
+                if window.contentViewController == nil {
+                        window.contentViewController = NSHostingController(rootView: MotherBoard().environmentObject(appContext))
+                }
                 window.orderFrontRegardless()
         }
         private func updateWindowFrame(_ frame: CGRect? = nil) {
@@ -131,6 +133,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                         screenOrigin = NSScreen.main?.visibleFrame.origin ?? window.screen?.visibleFrame.origin ?? .zero
                         screenSize = NSScreen.main?.visibleFrame.size ?? window.screen?.visibleFrame.size ?? CGSize(width: 1280, height: 800)
+                        currentCursorBlock = nil
                         currentClient = client
                         updateCurrentCursorBlock(to: client?.cursorBlock)
                         prepareWindow()
@@ -140,10 +143,10 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         override func deactivateServer(_ sender: Any!) {
                 nonisolated(unsafe) let client: InputClient? = (sender as? InputClient) ?? client()
                 Task { @MainActor in
-                        guard inputStage != .idle else { return }
                         suggestionTask?.cancel()
                         window.setFrame(.zero, display: true)
                         selectedCandidates = []
+                        guard inputStage != .idle else { return }
                         if inputStage.isBuffering {
                                 let text: String = bufferText
                                 clearBufferText()

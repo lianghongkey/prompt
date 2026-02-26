@@ -101,8 +101,8 @@ public struct Engine {
 
                 // Try the best segmentation (first one, which is longest with fewest tokens)
                 guard let bestScheme = segmentation.first else {
-                        // Fallback: try direct match with original text
-                        return pinyinMatchInternal(text: text, input: text)
+                        // Segmentation failed entirely: fall back to prefix shortcut lookup
+                        return pinyinShortcutInternal(text: text, limit: 100)
                 }
 
                 // Build spaced pinyin from segmentation
@@ -138,9 +138,19 @@ public struct Engine {
                         allCandidates = uniqueCandidates
                 }
 
-                // If no exact match, try prefix matches using the standard pinyin
+                // If no exact match, fall back progressively by dropping the last token
                 if allCandidates.isEmpty {
-                        // Use the standard pinyin (spacedPinyin without spaces) for prefix matching
+                        var scheme = bestScheme
+                        while scheme.count > 1 {
+                                scheme = Array(scheme.dropLast())
+                                let fallbackPinyin = scheme.map(\.origin).joined(separator: " ")
+                                let fallbackInput = scheme.map(\.text).joined()
+                                let fallbackCandidates = pinyinMatchInternal(text: fallbackPinyin, input: fallbackInput)
+                                if fallbackCandidates.isNotEmpty {
+                                        return fallbackCandidates
+                                }
+                        }
+                        // Last resort: shortcut lookup on the first token
                         let standardPinyin = bestScheme.map(\.origin).joined()
                         return pinyinShortcutInternal(text: standardPinyin, limit: 100)
                 }

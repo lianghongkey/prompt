@@ -33,49 +33,50 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         private func updateWindowFrame(_ frame: CGRect? = nil) {
                 window.setFrame(frame ?? windowFrame, display: true)
         }
+        private func isValidCursorBlock(_ rect: CGRect) -> Bool {
+                guard rect.height > 0 else { return false }
+                let origin = rect.origin
+                return (origin.x >= screenOrigin.x) && (origin.x < maxPointX) && (origin.y >= screenOrigin.y) && (origin.y < maxPointY)
+        }
+
         private var windowFrame: CGRect {
                 let quadrant = appContext.quadrant
                 let position: CGPoint = {
-                        guard let cursorBlock = currentCursorBlock ?? currentClient?.cursorBlock else { return screenOrigin }
+                        // Use cached position, or try fresh from client (after marked text is set)
+                        let cursorBlock: CGRect? = {
+                                if let cached = currentCursorBlock, isValidCursorBlock(cached) { return cached }
+                                if let fresh = currentClient?.cursorBlock, isValidCursorBlock(fresh) {
+                                        currentCursorBlock = fresh
+                                        return fresh
+                                }
+                                return nil
+                        }()
+                        guard let cursorBlock else {
+                                return NSEvent.mouseLocation
+                        }
                         let x: CGFloat = quadrant.isNegativeHorizontal ? cursorBlock.origin.x : cursorBlock.maxX
                         let y: CGFloat = quadrant.isNegativeVertical ? cursorBlock.origin.y : cursorBlock.maxY
-                        guard (x > screenOrigin.x) && (x < maxPointX) && (y > screenOrigin.y) && (y < maxPointY) else { return screenOrigin }
                         return CGPoint(x: x, y: y)
                 }()
-                let width: CGFloat = switch quadrant {
-                case .upperRight:
-                        CGFloat.zero
-                case .upperLeft:
-                        800
-                case .bottomLeft:
-                        800
-                case .bottomRight:
-                        44
-                }
-                let height: CGFloat = switch quadrant {
-                case .upperRight:
-                        CGFloat.zero
-                case .upperLeft:
-                        CGFloat.zero
-                case .bottomLeft:
-                        44
-                case .bottomRight:
-                        44
-                }
+                let width: CGFloat = 800
+                let height: CGFloat = 300
                 let x: CGFloat = quadrant.isNegativeHorizontal ? (position.x - width) : position.x
                 let y: CGFloat = quadrant.isNegativeVertical ? (position.y - height) : position.y
                 return CGRect(x: x, y: y, width: width, height: height)
         }
 
-        private lazy var screenOrigin: CGPoint = NSScreen.main?.visibleFrame.origin ?? window.screen?.visibleFrame.origin ?? .zero
-        private lazy var screenSize: CGSize = NSScreen.main?.visibleFrame.size ?? window.screen?.visibleFrame.size ?? CGSize(width: 1280, height: 800)
+        private var screenOrigin: CGPoint { NSScreen.main?.frame.origin ?? window.screen?.frame.origin ?? .zero }
+        private var screenSize: CGSize { NSScreen.main?.frame.size ?? window.screen?.frame.size ?? CGSize(width: 1280, height: 800) }
         private var maxPointX: CGFloat { screenOrigin.x + screenSize.width }
         private var maxPointY: CGFloat { screenOrigin.y + screenSize.height }
         private var maxPoint: CGPoint { CGPoint(x: maxPointX, y: maxPointY) }
         private lazy var currentCursorBlock: CGRect? = nil
         private func updateCurrentCursorBlock(to rect: CGRect?) {
-                guard let point = rect?.origin else { return }
-                guard (point.x > screenOrigin.x) && (point.x < maxPointX) && (point.y > screenOrigin.y) && (point.y < maxPointY) else { return }
+                guard let rect = rect, isValidCursorBlock(rect) else {
+                        UserDefaults.standard.set("rejected: \(rect.map { "(\(Int($0.origin.x)),\(Int($0.origin.y)))" } ?? "nil")", forKey: "DEBUG_CURSOR_BLOCK")
+                        return
+                }
+                UserDefaults.standard.set("accepted: (\(Int(rect.origin.x)),\(Int(rect.origin.y)))", forKey: "DEBUG_CURSOR_BLOCK")
                 currentCursorBlock = rect
         }
 
@@ -84,7 +85,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 didSet {
                         let position: CGPoint = {
                                 guard let point = currentClient?.cursorBlock.origin else { return screenOrigin }
-                                guard (point.x > screenOrigin.x) && (point.x < maxPointX) && (point.y > screenOrigin.y) && (point.y < maxPointY) else { return screenOrigin }
+                                guard (point.x >= screenOrigin.x) && (point.x < maxPointX) && (point.y >= screenOrigin.y) && (point.y < maxPointY) else { return screenOrigin }
                                 return point
                         }()
                         let isPositiveHorizontal: Bool = (maxPointX - position.x) > 300
@@ -121,7 +122,6 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 super.activateServer(sender)
                 nonisolated(unsafe) let client: InputClient? = (sender as? InputClient) ?? client()
                 Task { @MainActor in
-                        suggestionTask?.cancel()
                         UserLexicon.prepare()
                         Engine.prepare()
                         if inputStage.isBuffering {
@@ -131,11 +131,11 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         if inputForm.isOptions {
                                 updateInputForm()
                         }
-                        screenOrigin = NSScreen.main?.visibleFrame.origin ?? window.screen?.visibleFrame.origin ?? .zero
-                        screenSize = NSScreen.main?.visibleFrame.size ?? window.screen?.visibleFrame.size ?? CGSize(width: 1280, height: 800)
-                        currentCursorBlock = nil
                         currentClient = client
-                        updateCurrentCursorBlock(to: client?.cursorBlock)
+                        // Try to update cursor from new client; if invalid, keep last known good position
+                        if let block = client?.cursorBlock, isValidCursorBlock(block) {
+                                currentCursorBlock = block
+                        }
                         prepareWindow()
                         client?.overrideKeyboard(withKeyboardNamed: "com.apple.keylayout.ABC")
                 }
@@ -143,7 +143,6 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         override func deactivateServer(_ sender: Any!) {
                 nonisolated(unsafe) let client: InputClient? = (sender as? InputClient) ?? client()
                 Task { @MainActor in
-                        suggestionTask?.cancel()
                         window.setFrame(.zero, display: true)
                         selectedCandidates = []
                         guard inputStage != .idle else { return }
@@ -158,11 +157,8 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 updateInputForm()
                         }
                         let activatingWindowCount = NSApp.windows.count(where: { $0.windowNumber > 0 })
-                        if activatingWindowCount > 30 {
-                                logger.error("TypeDuck terminated due to it contained more than 30 windows")
-                                fatalError("TypeDuck terminated due to it contained more than 30 windows")
-                        } else if activatingWindowCount > 20 {
-                                logger.warning("TypeDuck containing more than 20 windows")
+                        if activatingWindowCount > 20 {
+                                logger.warning("TypeDuck containing more than 20 windows, closing extras")
                                 NSApp.windows.filter({ $0 != window }).forEach({ $0.close() })
                         } else if activatingWindowCount > 10 {
                                 logger.notice("TypeDuck containing more than 10 windows")
@@ -173,7 +169,6 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         override func commitComposition(_ sender: Any!) {
                 nonisolated(unsafe) let client: InputClient? = (sender as? InputClient) ?? client()
                 Task { @MainActor in
-                        suggestionTask?.cancel()
                         window.setFrame(.zero, display: true)
                         selectedCandidates = []
                         if inputStage.isBuffering {
@@ -237,7 +232,6 @@ final class TypeDuckInputController: IMKInputController, Sendable {
 
                         switch bufferText.first {
                         case .none:
-                                suggestionTask?.cancel()
                                 if AppSettings.isInputMemoryOn && selectedCandidates.isNotEmpty {
                                         let concatenated = selectedCandidates.joined()
                                         UserLexicon.handle(concatenated)
@@ -352,45 +346,28 @@ final class TypeDuckInputController: IMKInputController, Sendable {
 
         // MARK: - Candidate Suggestions
 
-        private lazy var suggestionTask: Task<Void, Never>? = nil
         private func suggest() {
-                // Debug output
-                let text = bufferText
-                logger.debug("suggest() called with bufferText: '\(text)'")
-                UserDefaults.standard.set("suggest called: \(text)", forKey: "DEBUG_SUGGEST_CALL")
-                UserDefaults.standard.set(Date(), forKey: "DEBUG_SUGGEST_TIME")
-
-                suggestionTask?.cancel()
                 let processingText: String = bufferText
                 let needsSymbols: Bool = Options.isEmojiSuggestionsOn && selectedCandidates.isEmpty
                 let isInputMemoryOn: Bool = AppSettings.isInputMemoryOn
-                suggestionTask = Task.detached(priority: .high) { [weak self] in
-                        let segmentation = PinyinSegmentor.segment(text: processingText)
-                        let bestScheme = segmentation.first
-                        async let userLexiconCandidates: [Candidate] = isInputMemoryOn ? UserLexicon.suggest(text: processingText, segmentation: segmentation) : []
-                        async let engineCandidates: [Candidate] = Engine.suggest(text: processingText, segmentation: segmentation, needsSymbols: needsSymbols)
-                        let results = await engineCandidates
-                        UserDefaults.standard.set(results.count, forKey: "DEBUG_ENGINE_COUNT")
-                        let suggestions = await (userLexiconCandidates + results).transformed(with: Options.characterStandard)
-                        if !(Task.isCancelled) {
-                                await MainActor.run { [weak self] in
-                                        self?.mark(text: {
-                                                let hasSeparatorsOrTones: Bool = processingText.contains(where: \.isSeparatorOrTone)
-                                                guard !hasSeparatorsOrTones else { return processingText.formattedForMark() }
-                                                let userInputTextCount: Int = processingText.count
-                                                if let firstCandidate = suggestions.first, firstCandidate.input.count == userInputTextCount { return firstCandidate.mark }
-                                                guard let bestScheme else { return processingText.formattedForMark() }
-                                                let leadingLength: Int = bestScheme.length
-                                                let leadingText: String = bestScheme.map(\.text).joined()
-                                                guard leadingLength != userInputTextCount else { return leadingText }
-                                                let tailText = processingText.dropFirst(leadingLength)
-                                                return leadingText + tailText
-                                        }())
-                                        self?.candidates = suggestions
-                                        UserDefaults.standard.set(suggestions.count, forKey: "DEBUG_SUGGESTIONS_COUNT")
-                                }
-                        }
-                }
+                let segmentation = PinyinSegmentor.segment(text: processingText)
+                let bestScheme = segmentation.first
+                let userLexiconCandidates: [Candidate] = isInputMemoryOn ? UserLexicon.suggest(text: processingText, segmentation: segmentation) : []
+                let engineCandidates: [Candidate] = Engine.suggest(text: processingText, segmentation: segmentation, needsSymbols: needsSymbols)
+                let suggestions = (userLexiconCandidates + engineCandidates).transformed(with: Options.characterStandard)
+                mark(text: {
+                        let hasSeparatorsOrTones: Bool = processingText.contains(where: \.isSeparatorOrTone)
+                        guard !hasSeparatorsOrTones else { return processingText.formattedForMark() }
+                        let userInputTextCount: Int = processingText.count
+                        if let firstCandidate = suggestions.first, firstCandidate.input.count == userInputTextCount { return firstCandidate.mark }
+                        guard let bestScheme else { return processingText.formattedForMark() }
+                        let leadingLength: Int = bestScheme.length
+                        let leadingText: String = bestScheme.map(\.text).joined()
+                        guard leadingLength != userInputTextCount else { return leadingText }
+                        let tailText = processingText.dropFirst(leadingLength)
+                        return leadingText + tailText
+                }())
+                candidates = suggestions
         }
         private func pinyinReverseLookup() {
                 let text: String = String(bufferText.dropFirst(2))
@@ -619,7 +596,13 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 UserDefaults.standard.set("InputForm: \(inputForm)", forKey: "DEBUG_INPUT_FORM")
                 UserDefaults.standard.set("IsMandarin: \(inputForm.isMandarin)", forKey: "DEBUG_IS_MANDARIN")
 
-                updateCurrentCursorBlock(to: client?.cursorBlock)
+                // Only update cursor position at the start of composition, not during active input
+                if !inputStage.isBuffering {
+                        updateCurrentCursorBlock(to: client?.cursorBlock)
+                        if currentCursorBlock == nil {
+                                updateCurrentCursorBlock(to: currentClient?.cursorBlock)
+                        }
+                }
                 let oldClientID = currentClient?.uniqueClientIdentifierString()
                 let clientID = client?.uniqueClientIdentifierString()
                 if clientID != oldClientID {

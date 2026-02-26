@@ -12,9 +12,10 @@ final class CandidateWindow: NSPanel {
                 worksWhenModal = true
                 hidesOnDeactivate = false
                 isReleasedWhenClosed = true
-                collectionBehavior = .moveToActiveSpace
-                isMovable = true
-                isMovableByWindowBackground = true
+                collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+                isMovable = false
+                isMovableByWindowBackground = false
+                ignoresMouseEvents = true
                 isOpaque = false
                 hasShadow = false
                 backgroundColor = .clear

@@ -14,7 +14,7 @@ extension Engine {
                 return regular + matches.flatMap({ $0 })
         }
         private static func match<T: StringProtocol>(text: T, input: String) -> [Candidate] {
-                let command: String = "SELECT category, codepoint, cantonese, romanization FROM symboltable WHERE ping = ?;"
+                let command: String = "SELECT category, codepoint, romanization FROM symboltable WHERE ping = ?;"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return [] }
@@ -24,18 +24,16 @@ extension Engine {
                 while sqlite3_step(statement) == SQLITE_ROW {
                         let categoryCode: Int = Int(sqlite3_column_int64(statement, 0))
                         guard let codepointPtr = sqlite3_column_text(statement, 1) else { continue }
-                        guard let cantonesePtr = sqlite3_column_text(statement, 2) else { continue }
-                        guard let romanizationPtr = sqlite3_column_text(statement, 3) else { continue }
+                        guard let romanizationPtr = sqlite3_column_text(statement, 2) else { continue }
                         let codepoint: String = String(cString: codepointPtr)
-                        let cantonese: String = String(cString: cantonesePtr)
                         let romanization: String = String(cString: romanizationPtr)
-                        let entry = SymbolEntry(categoryCode: categoryCode, codepoint: codepoint, cantonese: cantonese, romanization: romanization)
+                        let entry = SymbolEntry(categoryCode: categoryCode, codepoint: codepoint, romanization: romanization)
                         symbols.append(entry)
                 }
                 let candidates: [Candidate] = symbols.compactMap({ entry -> Candidate? in
                         let codePointText: String = (entry.categoryCode == 1 || entry.categoryCode == 4) ? (mapSkinTone(entry.codepoint) ?? entry.codepoint) : entry.codepoint
                         guard let symbolText = generateSymbol(from: codePointText) else { return nil }
-                        return Candidate(symbol: symbolText, mandarin: entry.cantonese, romanization: entry.romanization, input: input, isEmoji: entry.categoryCode != 9)
+                        return Candidate(symbol: symbolText, mandarin: entry.romanization, romanization: entry.romanization, input: input, isEmoji: entry.categoryCode != 9)
                 })
                 return candidates
         }
@@ -79,6 +77,5 @@ extension Engine {
 private struct SymbolEntry: Hashable {
         let categoryCode: Int
         let codepoint: String
-        let cantonese: String
         let romanization: String
 }

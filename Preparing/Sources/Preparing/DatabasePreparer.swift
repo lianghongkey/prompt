@@ -11,7 +11,6 @@ struct DatabasePreparer {
 
         static func prepare() {
                 // guard sqlite3_open_v2(":memory:", &database, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nil) == SQLITE_OK else { return }
-                createT2STable()
                 createPinyinTable()
                 createSymbolTable()
                 createEmojiSkinMappingTable()
@@ -32,27 +31,6 @@ struct DatabasePreparer {
                 let backup = sqlite3_backup_init(destination, "main", database, "main")
                 guard sqlite3_backup_step(backup, -1) == SQLITE_DONE else { return }
                 guard sqlite3_backup_finish(backup) == SQLITE_OK else { return }
-        }
-
-        private static func createT2STable() {
-                let createTable: String = "CREATE TABLE t2stable(traditional INTEGER NOT NULL PRIMARY KEY, simplified TEXT NOT NULL);"
-                var createStatement: OpaquePointer? = nil
-                guard sqlite3_prepare_v2(database, createTable, -1, &createStatement, nil) == SQLITE_OK else { sqlite3_finalize(createStatement); return }
-                guard sqlite3_step(createStatement) == SQLITE_DONE else { sqlite3_finalize(createStatement); return }
-                sqlite3_finalize(createStatement)
-
-                let insert: String = "INSERT INTO t2stable (traditional, simplified) VALUES (?, ?);"
-                var insertStatement: OpaquePointer? = nil
-                defer { sqlite3_finalize(insertStatement) }
-                guard sqlite3_prepare_v2(database, insert, -1, &insertStatement, nil) == SQLITE_OK else { return }
-
-                let entries = Hant2Hans.generate()
-                for entry in entries {
-                        sqlite3_reset(insertStatement)
-                        sqlite3_bind_int(insertStatement, 1, Int32(entry.traditional))
-                        sqlite3_bind_text(insertStatement, 2, entry.simplified, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
-                        guard sqlite3_step(insertStatement) == SQLITE_DONE else { continue }
-                }
         }
 
         private static func createPinyinTable() {

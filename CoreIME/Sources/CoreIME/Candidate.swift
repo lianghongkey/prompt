@@ -21,13 +21,9 @@ public struct Candidate: Hashable, Comparable, Sendable {
         public let type: CandidateType
 
         /// Candidate text for display.
-        ///
-        /// Corresponds to current CharacterStandard
         public let text: String
 
         /// Candidate text for UserLexicon.
-        ///
-        /// Always be traditional characters.
         public let lexiconText: String
 
         /// Pinyin
@@ -207,23 +203,6 @@ extension Array where Element == Candidate {
         }
 }
 
-extension Array where Element == Candidate {
-        public func transformed(with characterStandard: CharacterStandard) -> [Candidate] {
-                let hasUserLexicon: Bool = self.first?.isUserLexicon ?? false
-                if hasUserLexicon {
-                        return self.compactMap({ item -> Candidate? in
-                                if item.isCompound {
-                                        return nil
-                                } else {
-                                        return item.transformed(to: characterStandard)
-                                }
-                        })
-                        .uniqued()
-                } else {
-                        return self.map({ $0.transformed(to: characterStandard) }).uniqued()
-                }
-        }
-}
 
 #if DEBUG
 extension Candidate {

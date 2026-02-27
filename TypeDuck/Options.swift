@@ -1,25 +1,6 @@
 import Foundation
-import CoreIME
 
 struct Options: Sendable {
-
-        /// 字形標準
-        nonisolated(unsafe) private(set) static var characterStandard: CharacterStandard = {
-                let savedValue: Int = UserDefaults.standard.integer(forKey: OptionsKey.CharacterStandard)
-                switch savedValue {
-                case 1, 2, 3:
-                        return .traditional
-                case 0, 4:
-                        return .simplified
-                default:
-                        return .simplified
-                }
-        }()
-        static func updateCharacterStandard(to standard: CharacterStandard) {
-                characterStandard = standard
-                let value: Int = standard.rawValue
-                UserDefaults.standard.set(value, forKey: OptionsKey.CharacterStandard)
-        }
 
         /// 半形／全形數字、字母
         nonisolated(unsafe) private(set) static var characterForm: CharacterForm = {
@@ -96,7 +77,6 @@ struct Options: Sendable {
 }
 
 private struct OptionsKey {
-        static let CharacterStandard: String = "CharacterStandard"
         static let CharacterForm: String = "CharacterForm"
         static let PunctuationForm: String = "PunctuationForm"
         static let EmojiSuggestions: String = "EmojiSuggestions"

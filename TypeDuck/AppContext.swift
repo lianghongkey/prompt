@@ -1,5 +1,4 @@
 import Combine
-import CoreIME
 
 final class AppContext: ObservableObject {
 
@@ -76,7 +75,7 @@ final class AppContext: ObservableObject {
         // MARK: - OptionsView highlighted index
 
         func increaseOptionsHighlightedIndex() {
-                let optionsMaxIndex: Int = 9
+                let optionsMaxIndex: Int = 3
                 guard optionsHighlightedIndex < optionsMaxIndex else { return }
                 optionsHighlightedIndex += 1
         }

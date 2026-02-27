@@ -336,7 +336,15 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 let bestScheme = segmentation.first
                 let userLexiconCandidates: [Candidate] = isInputMemoryOn ? UserLexicon.suggest(text: processingText, segmentation: segmentation) : []
                 let engineCandidates: [Candidate] = Engine.suggest(text: processingText, segmentation: segmentation, needsSymbols: needsSymbols)
-                let suggestions = (userLexiconCandidates + engineCandidates).transformed(with: Options.characterStandard)
+                let suggestions: [Candidate] = {
+                        let combined = userLexiconCandidates + engineCandidates
+                        let hasUserLexicon = combined.first?.isUserLexicon ?? false
+                        if hasUserLexicon {
+                                return combined.compactMap({ $0.isCompound ? nil : $0 }).uniqued()
+                        } else {
+                                return combined.uniqued()
+                        }
+                }()
                 mark(text: {
                         let hasSeparatorsOrTones: Bool = processingText.contains(where: \.isSeparatorOrTone)
                         guard !hasSeparatorsOrTones else { return processingText.formattedForMark() }
@@ -372,7 +380,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 let head = bufferText.prefix(2) + String.space
                 let text2mark: String = head + tailText2Mark
                 mark(text: text2mark)
-                candidates = suggestions.map({ $0.transformed(to: Options.characterStandard) }).uniqued()
+                candidates = suggestions.uniqued()
         }
 
 
@@ -953,33 +961,17 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 switch selectedIndex {
                 case -1:
                         break
-                case 2:
+                case 0:
                         Options.updateCharacterForm(to: .halfWidth)
-                case 3:
+                case 1:
                         Options.updateCharacterForm(to: .fullWidth)
-                case 4:
+                case 2:
                         Options.updatePunctuationForm(to: .chinese)
-                case 5:
+                case 3:
                         Options.updatePunctuationForm(to: .english)
-                case 6:
-                        Options.updateEmojiSuggestions(to: true)
-                case 7:
-                        Options.updateEmojiSuggestions(to: false)
                 default:
                         break
                 }
-                let newVariant: CharacterStandard? = {
-                        switch selectedIndex {
-                        case 0:
-                                return .traditional
-                        case 1:
-                                return .simplified
-                        default:
-                                return nil
-                        }
-                }()
-                guard let newVariant, newVariant != Options.characterStandard else { return }
-                Options.updateCharacterStandard(to: newVariant)
         }
         private func aftercareSelection(_ selected: DisplayCandidate, shouldProcessUserLexicon: Bool = true) {
                 let candidate = candidates.fetch(selected.candidateIndex) ?? candidates.first(where: { $0 == selected.candidate })

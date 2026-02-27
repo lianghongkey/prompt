@@ -39,6 +39,9 @@ extension Segmentation {
 
 public struct PinyinSegmentor {
 
+        /// Cache for pinyinsyllabletable lookups (~400 entries, never changes)
+        nonisolated(unsafe) private static var syllableCache: [Int: String] = [:]
+
         public static func segment(text: String) -> Segmentation {
                 switch text.count {
                 case 0:
@@ -59,29 +62,34 @@ public struct PinyinSegmentor {
                 let leadingTokens: [SegmentToken] = splitLeading(text)
                 guard leadingTokens.isNotEmpty else { return [] }
                 let textCount = text.count
-                var segmentation: Segmentation = leadingTokens.map({ [$0] })
-                var previousSubelementCount = segmentation.subelementCount
+                var schemeSet: Set<SegmentScheme> = Set(leadingTokens.map({ [$0] }))
+                var previousCount = 0
                 var shouldContinue: Bool = true
                 while shouldContinue {
-                        for scheme in segmentation {
+                        var newSchemes: [SegmentScheme] = []
+                        for scheme in schemeSet {
                                 let schemeLength = scheme.length
                                 guard schemeLength < textCount else { continue }
                                 let tailText = String(text.dropFirst(schemeLength))
                                 let tailTokens = splitLeading(tailText)
                                 guard tailTokens.isNotEmpty else { continue }
-                                let newSegmentation: Segmentation = tailTokens.map({ scheme + [$0] })
-                                segmentation += newSegmentation
+                                for token in tailTokens {
+                                        let newScheme = scheme + [token]
+                                        newSchemes.append(newScheme)
+                                }
                         }
-                        segmentation = segmentation.uniqued()
-                        guard segmentation.count < 100 else { break }
-                        let currentSubelementCount = segmentation.subelementCount
-                        if currentSubelementCount != previousSubelementCount {
-                                previousSubelementCount = currentSubelementCount
+                        for scheme in newSchemes {
+                                schemeSet.insert(scheme)
+                        }
+                        guard schemeSet.count < 50 else { break }
+                        let currentCount = schemeSet.count
+                        if currentCount != previousCount {
+                                previousCount = currentCount
                         } else {
                                 shouldContinue = false
                         }
                 }
-                let sequences: Segmentation = segmentation.sorted(by: {
+                let sequences: Segmentation = schemeSet.sorted(by: {
                         let lhsLength: Int = $0.length
                         let rhsLength: Int = $1.length
                         if lhsLength == rhsLength {
@@ -114,16 +122,21 @@ public struct PinyinSegmentor {
                 return nil
         }
 
-        /// 直接匹配数据库中的音节
+        /// 直接匹配数据库中的音节（带缓存）
         private static func matchDirect<T: StringProtocol>(_ text: T) -> SegmentToken? {
                 guard let code: Int = text.charcode else { return nil }
-                let command: String = "SELECT syllable FROM pinyinsyllabletable WHERE code = \(code) LIMIT 1;"
+                if let cached = syllableCache[code] {
+                        return SegmentToken(text: cached, origin: cached)
+                }
+                let command: String = "SELECT syllable FROM pinyinsyllabletable WHERE code = ? LIMIT 1;"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return nil }
+                guard sqlite3_bind_int64(statement, 1, Int64(code)) == SQLITE_OK else { return nil }
                 guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
                 guard let syllablePtr = sqlite3_column_text(statement, 0) else { return nil }
                 let syllable: String = String(cString: syllablePtr)
+                syllableCache[code] = syllable
                 return SegmentToken(text: syllable, origin: syllable)
         }
 

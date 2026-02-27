@@ -2,6 +2,19 @@ import Foundation
 import SQLite3
 
 extension Engine {
+
+        nonisolated(unsafe) static let symbolPingStatement: OpaquePointer? = {
+                var stmt: OpaquePointer? = nil
+                sqlite3_prepare_v2(database, "SELECT category, codepoint, romanization FROM symboltable WHERE ping = ?;", -1, &stmt, nil)
+                return stmt
+        }()
+
+        nonisolated(unsafe) static let skinToneStatement: OpaquePointer? = {
+                var stmt: OpaquePointer? = nil
+                sqlite3_prepare_v2(database, "SELECT target FROM emojiskinmapping WHERE source = ?;", -1, &stmt, nil)
+                return stmt
+        }()
+
         static func searchSymbols(text: String, segmentation: Segmentation) -> [Candidate] {
                 let regular: [Candidate] = match(text: text, input: text)
                 let textCount = text.count
@@ -14,17 +27,15 @@ extension Engine {
                 return regular + matches.flatMap({ $0 })
         }
         private static func match<T: StringProtocol>(text: T, input: String) -> [Candidate] {
-                let command: String = "SELECT category, codepoint, romanization FROM symboltable WHERE ping = ?;"
-                var statement: OpaquePointer? = nil
-                defer { sqlite3_finalize(statement) }
-                guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return [] }
+                guard let stmt = symbolPingStatement else { return [] }
+                sqlite3_reset(stmt)
                 let code = Int64(String(text).deterministicHash)
-                guard sqlite3_bind_int64(statement, 1, code) == SQLITE_OK else { return [] }
+                guard sqlite3_bind_int64(stmt, 1, code) == SQLITE_OK else { return [] }
                 var symbols: [SymbolEntry] = []
-                while sqlite3_step(statement) == SQLITE_ROW {
-                        let categoryCode: Int = Int(sqlite3_column_int64(statement, 0))
-                        guard let codepointPtr = sqlite3_column_text(statement, 1) else { continue }
-                        guard let romanizationPtr = sqlite3_column_text(statement, 2) else { continue }
+                while sqlite3_step(stmt) == SQLITE_ROW {
+                        let categoryCode: Int = Int(sqlite3_column_int64(stmt, 0))
+                        guard let codepointPtr = sqlite3_column_text(stmt, 1) else { continue }
+                        guard let romanizationPtr = sqlite3_column_text(stmt, 2) else { continue }
                         let codepoint: String = String(cString: codepointPtr)
                         let romanization: String = String(cString: romanizationPtr)
                         let entry = SymbolEntry(categoryCode: categoryCode, codepoint: codepoint, romanization: romanization)
@@ -38,13 +49,11 @@ extension Engine {
                 return candidates
         }
         private static func mapSkinTone(_ source: String) -> String? {
-                let command: String = "SELECT target FROM emojiskinmapping WHERE source = ?;"
-                var statement: OpaquePointer? = nil
-                defer { sqlite3_finalize(statement) }
-                guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return nil }
-                guard sqlite3_bind_text(statement, 1, source, -1, nil) == SQLITE_OK else { return nil }
-                guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
-                guard let targetPtr = sqlite3_column_text(statement, 0) else { return nil }
+                guard let stmt = skinToneStatement else { return nil }
+                sqlite3_reset(stmt)
+                guard sqlite3_bind_text(stmt, 1, source, -1, nil) == SQLITE_OK else { return nil }
+                guard sqlite3_step(stmt) == SQLITE_ROW else { return nil }
+                guard let targetPtr = sqlite3_column_text(stmt, 0) else { return nil }
                 let target: String = String(cString: targetPtr)
                 return target
         }

@@ -56,6 +56,20 @@ public struct Engine {
                 return db
         }()
 
+        // MARK: - Prepared Statements
+
+        nonisolated(unsafe) static let pingStatement: OpaquePointer? = {
+                var stmt: OpaquePointer? = nil
+                sqlite3_prepare_v2(database, "SELECT rowid, word, pinyin FROM pinyintable WHERE ping = ? LIMIT ?;", -1, &stmt, nil)
+                return stmt
+        }()
+
+        nonisolated(unsafe) static let shortcutStatement: OpaquePointer? = {
+                var stmt: OpaquePointer? = nil
+                sqlite3_prepare_v2(database, "SELECT rowid, word, pinyin FROM pinyintable WHERE shortcut = ? ORDER BY rowid LIMIT ?;", -1, &stmt, nil)
+                return stmt
+        }()
+
 
 
         // MARK: - Suggestion
@@ -124,8 +138,11 @@ public struct Engine {
                         if FuzzyPinyinSettings.isAnyEnabled {
                                 let pinyinArray = scheme.map(\.origin)
                                 let expandedArrays = FuzzyPinyinExpander.expandArray(pinyinArray)
+                                var queriedHashes = Set<Int>()
                                 for expandedArray in expandedArrays {
                                         let expandedSpacedPinyin = expandedArray.joined(separator: " ")
+                                        let hash = expandedSpacedPinyin.deterministicHash
+                                        guard queriedHashes.insert(hash).inserted else { continue }
                                         let fuzzyCandidates = pinyinMatchInternal(text: expandedSpacedPinyin, input: combinedInput)
                                         for candidate in fuzzyCandidates {
                                                 if seen.insert(candidate.order).inserted {
@@ -174,14 +191,18 @@ public struct Engine {
                                         if text.contains(initial) {
                                                 let corrected = text.replacingOccurrences(of: initial, with: alternative)
                                                 results.insert(corrected)
+                                                if results.count >= 5 { break }
                                         }
                                         // Replace alternative with initial
                                         if text.contains(alternative) {
                                                 let corrected = text.replacingOccurrences(of: alternative, with: initial)
                                                 results.insert(corrected)
+                                                if results.count >= 5 { break }
                                         }
                                 }
+                                if results.count >= 5 { break }
                         }
+                        if results.count >= 5 { break }
 
                         // Handle final mappings (bidirectional: on <-> ong)
                         for (final, alternatives) in mapping.finals {
@@ -190,14 +211,18 @@ public struct Engine {
                                         if text.contains(final) {
                                                 let corrected = text.replacingOccurrences(of: final, with: alternative)
                                                 results.insert(corrected)
+                                                if results.count >= 5 { break }
                                         }
                                         // Replace alternative with final
                                         if text.contains(alternative) {
                                                 let corrected = text.replacingOccurrences(of: alternative, with: final)
                                                 results.insert(corrected)
+                                                if results.count >= 5 { break }
                                         }
                                 }
+                                if results.count >= 5 { break }
                         }
+                        if results.count >= 5 { break }
                 }
 
                 // Remove the original input
@@ -207,31 +232,42 @@ public struct Engine {
 
         private static func pinyinMatchInternal(text: String, input: String) -> [Candidate] {
                 let code: Int = text.deterministicHash
-                return queryPinyinTable(whereClause: "ping = \(code)", input: input)
-        }
-
-        private static func pinyinShortcutInternal(text: String, limit: Int) -> [Candidate] {
-                guard let firstChar = text.first else { return [] }
-                guard let code: Int = firstChar.intercode else { return [] }
-                return queryPinyinTable(whereClause: "shortcut = \(code)", input: text, limit: limit, filter: { $0.hasPrefix(text) })
-        }
-
-        private static func queryPinyinTable(whereClause: String, input: String, limit: Int = 100, filter: ((String) -> Bool)? = nil) -> [Candidate] {
+                guard let stmt = pingStatement else { return [] }
+                sqlite3_reset(stmt)
+                sqlite3_bind_int64(stmt, 1, Int64(code))
+                sqlite3_bind_int64(stmt, 2, 100)
                 var candidates: [Candidate] = []
-                let command: String = "SELECT rowid, word, pinyin FROM pinyintable WHERE \(whereClause) ORDER BY rowid LIMIT \(limit);"
-                var statement: OpaquePointer? = nil
-                defer { sqlite3_finalize(statement) }
-                guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return candidates }
-                while sqlite3_step(statement) == SQLITE_ROW {
-                        let rowID: Int = Int(sqlite3_column_int64(statement, 0))
-                        guard let wordPtr = sqlite3_column_text(statement, 1) else { continue }
-                        guard let pinyinPtr = sqlite3_column_text(statement, 2) else { continue }
+                while sqlite3_step(stmt) == SQLITE_ROW {
+                        let rowID: Int = Int(sqlite3_column_int64(stmt, 0))
+                        guard let wordPtr = sqlite3_column_text(stmt, 1) else { continue }
+                        guard let pinyinPtr = sqlite3_column_text(stmt, 2) else { continue }
                         let word: String = String(cString: wordPtr)
                         let pinyin: String = String(cString: pinyinPtr)
-                        if let filter = filter, !filter(pinyin) { continue }
                         let candidate = Candidate(text: word, romanization: pinyin, input: input, mark: input, order: rowID)
                         candidates.append(candidate)
                 }
                 return candidates
         }
+
+        private static func pinyinShortcutInternal(text: String, limit: Int) -> [Candidate] {
+                guard let firstChar = text.first else { return [] }
+                guard let code: Int = firstChar.intercode else { return [] }
+                guard let stmt = shortcutStatement else { return [] }
+                sqlite3_reset(stmt)
+                sqlite3_bind_int64(stmt, 1, Int64(code))
+                sqlite3_bind_int64(stmt, 2, Int64(limit))
+                var candidates: [Candidate] = []
+                while sqlite3_step(stmt) == SQLITE_ROW {
+                        let rowID: Int = Int(sqlite3_column_int64(stmt, 0))
+                        guard let wordPtr = sqlite3_column_text(stmt, 1) else { continue }
+                        guard let pinyinPtr = sqlite3_column_text(stmt, 2) else { continue }
+                        let word: String = String(cString: wordPtr)
+                        let pinyin: String = String(cString: pinyinPtr)
+                        guard pinyin.hasPrefix(text) else { continue }
+                        let candidate = Candidate(text: word, romanization: pinyin, input: text, mark: text, order: rowID)
+                        candidates.append(candidate)
+                }
+                return candidates
+        }
+
 }

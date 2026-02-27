@@ -11,64 +11,44 @@ public struct FuzzyPinyinExpander {
                         return [pinyin]
                 }
 
-                var results = Set<String>()
-                results.insert(pinyin)
-
                 // 分割拼音为声母和韵母
                 let components = splitPinyin(pinyin)
                 guard components.isValid else {
-                        // 如果不是有效的拼音结构，直接返回原拼音
                         return [pinyin]
                 }
 
                 let initial = components.initial
-                let final = components.final
+                let final_ = components.final
 
-                let mappings = FuzzyPinyinSettings.allMappings
-
-                // 收集所有可能的声母变体（包括原始声母）
+                // 用查找表直接获取变体
                 var initialVariants = Set<String>()
                 initialVariants.insert(initial)
-
-                // 收集所有可能的韵母变体（包括原始韵母）
-                var finalVariants = Set<String>()
-                finalVariants.insert(final)
-
-                // 尝试所有声母替换
-                for mapping in mappings {
-                        for (mappingInitial, alternatives) in mapping.initials {
-                                if initial == mappingInitial {
-                                        // 找到匹配的声母，添加所有替代声母
-                                        for alternative in alternatives {
-                                                initialVariants.insert(alternative)
-                                        }
-                                }
-                        }
-
-                        // 尝试所有韵母替换
-                        for (mappingFinal, alternatives) in mapping.finals {
-                                if final == mappingFinal {
-                                        // 找到匹配的韵母，添加所有替代韵母
-                                        for alternative in alternatives {
-                                                finalVariants.insert(alternative)
-                                        }
-                                }
-                        }
+                if let alternatives = FuzzyPinyinSettings.initialLookup[initial] {
+                        initialVariants.formUnion(alternatives)
                 }
 
-                // 生成所有可能的声母-韵母组合
+                var finalVariants = Set<String>()
+                finalVariants.insert(final_)
+                if let alternatives = FuzzyPinyinSettings.finalLookup[final_] {
+                        finalVariants.formUnion(alternatives)
+                }
+
+                // 如果没有任何变体，直接返回
+                guard initialVariants.count > 1 || finalVariants.count > 1 else {
+                        return [pinyin]
+                }
+
+                var results: [String] = [pinyin]
                 for initialVariant in initialVariants {
                         for finalVariant in finalVariants {
-                                // 组合声母和韵母
                                 let combined = initialVariant + finalVariant
-                                // 只有当组合不是原始拼音时才添加
                                 if combined != pinyin {
-                                        results.insert(combined)
+                                        results.append(combined)
                                 }
                         }
                 }
 
-                return Array(results).sorted()
+                return results
         }
 
         /// 扩展拼音数组，生成所有可能的组合
@@ -94,7 +74,7 @@ public struct FuzzyPinyinExpander {
                                 }
                         }
                         result = newResult
-                        guard result.count < 50 else { break }
+                        guard result.count < 20 else { break }
                 }
 
                 return result

@@ -92,6 +92,7 @@ extension Engine {
         }
 
         private static func pinyinProcessVerbatim(pinyin text: String, limit: Int? = nil) -> [PinyinLexicon] {
+                guard !text.isEmpty else { return [] }
                 let rounds = (0..<text.count).map({ number -> [PinyinLexicon] in
                         let leading: String = String(text.dropLast(number))
                         return pinyinMatchQuery(pinyin: leading, limit: limit) + pinyinShortcutQuery(pinyin: leading, limit: limit)
@@ -119,7 +120,7 @@ extension Engine {
                         return shortcuts.flatMap({ $0 })
                 }()
                 guard prefixes.isEmpty else { return prefixes + primary }
-                let headTexts = primary.map(\.input).uniqued()
+                let headTexts = primary.map(\.input).uniqued().prefix(3)
                 let concatenated = headTexts.compactMap { headText -> PinyinLexicon? in
                         let headInputCount = headText.count
                         let tailText = String(text.dropFirst(headInputCount))
@@ -164,14 +165,14 @@ extension Engine {
                 var items: [PinyinLexicon] = []
                 let code: Int = text.deterministicHash
                 let limit: Int = limit ?? -1
-                let command: String = "SELECT rowid, word, pinyin FROM pinyintable WHERE ping = \(code) LIMIT \(limit);"
-                var statement: OpaquePointer? = nil
-                defer { sqlite3_finalize(statement) }
-                guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return items }
-                while sqlite3_step(statement) == SQLITE_ROW {
-                        let rowID: Int = Int(sqlite3_column_int64(statement, 0))
-                        guard let wordPtr = sqlite3_column_text(statement, 1) else { continue }
-                        guard let pinyinPtr = sqlite3_column_text(statement, 2) else { continue }
+                guard let stmt = Engine.pingStatement else { return items }
+                sqlite3_reset(stmt)
+                sqlite3_bind_int64(stmt, 1, Int64(code))
+                sqlite3_bind_int64(stmt, 2, Int64(limit))
+                while sqlite3_step(stmt) == SQLITE_ROW {
+                        let rowID: Int = Int(sqlite3_column_int64(stmt, 0))
+                        guard let wordPtr = sqlite3_column_text(stmt, 1) else { continue }
+                        guard let pinyinPtr = sqlite3_column_text(stmt, 2) else { continue }
                         let word: String = String(cString: wordPtr)
                         let pinyin: String = String(cString: pinyinPtr)
                         let instance = PinyinLexicon(text: word, pinyin: pinyin, input: text, mark: text, order: rowID)
@@ -183,14 +184,14 @@ extension Engine {
                 guard let code: Int = text.charcode else { return [] }
                 var items: [PinyinLexicon] = []
                 let limit: Int = limit ?? 50
-                let command: String = "SELECT rowid, word, pinyin FROM pinyintable WHERE shortcut = \(code) LIMIT \(limit);"
-                var statement: OpaquePointer? = nil
-                defer { sqlite3_finalize(statement) }
-                guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return items }
-                while sqlite3_step(statement) == SQLITE_ROW {
-                        let rowID: Int = Int(sqlite3_column_int64(statement, 0))
-                        guard let wordPtr = sqlite3_column_text(statement, 1) else { continue }
-                        guard let pinyinPtr = sqlite3_column_text(statement, 2) else { continue }
+                guard let stmt = Engine.shortcutStatement else { return items }
+                sqlite3_reset(stmt)
+                sqlite3_bind_int64(stmt, 1, Int64(code))
+                sqlite3_bind_int64(stmt, 2, Int64(limit))
+                while sqlite3_step(stmt) == SQLITE_ROW {
+                        let rowID: Int = Int(sqlite3_column_int64(stmt, 0))
+                        guard let wordPtr = sqlite3_column_text(stmt, 1) else { continue }
+                        guard let pinyinPtr = sqlite3_column_text(stmt, 2) else { continue }
                         let word: String = String(cString: wordPtr)
                         let pinyin: String = String(cString: pinyinPtr)
                         let instance = PinyinLexicon(text: word, pinyin: pinyin, input: text, mark: text, order: rowID)

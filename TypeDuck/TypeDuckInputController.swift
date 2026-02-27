@@ -342,7 +342,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         if hasUserLexicon {
                                 return combined.compactMap({ $0.isCompound ? nil : $0 }).uniqued()
                         } else {
-                                return combined.uniqued()
+                                return combined
                         }
                 }()
                 mark(text: {

@@ -162,6 +162,45 @@ public struct FuzzyPinyinSettings {
                 return types
         }()
 
+        /// Cached lookup tables
+        nonisolated(unsafe) private static var _initialLookup: [String: Set<String>] = buildInitialLookup()
+        nonisolated(unsafe) private static var _finalLookup: [String: Set<String>] = buildFinalLookup()
+        nonisolated(unsafe) private static var _cachedMappings: [FuzzyPinyinMapping] = Array(enabledTypes.map(\.mappings))
+
+        /// Pre-built initial lookup: maps each initial to its fuzzy alternatives
+        public static var initialLookup: [String: Set<String>] { _initialLookup }
+
+        /// Pre-built final lookup: maps each final to its fuzzy alternatives
+        public static var finalLookup: [String: Set<String>] { _finalLookup }
+
+        private static func buildInitialLookup() -> [String: Set<String>] {
+                var lookup: [String: Set<String>] = [:]
+                for type in enabledTypes {
+                        let mapping = type.mappings
+                        for (key, values) in mapping.initials {
+                                lookup[key, default: []].formUnion(values)
+                        }
+                }
+                return lookup
+        }
+
+        private static func buildFinalLookup() -> [String: Set<String>] {
+                var lookup: [String: Set<String>] = [:]
+                for type in enabledTypes {
+                        let mapping = type.mappings
+                        for (key, values) in mapping.finals {
+                                lookup[key, default: []].formUnion(values)
+                        }
+                }
+                return lookup
+        }
+
+        private static func rebuildLookups() {
+                _initialLookup = buildInitialLookup()
+                _finalLookup = buildFinalLookup()
+                _cachedMappings = Array(enabledTypes.map(\.mappings))
+        }
+
         /// 更新模糊音类型启用状态
         public static func setType(_ type: FuzzyPinyinType, enabled: Bool) {
                 if enabled {
@@ -169,6 +208,7 @@ public struct FuzzyPinyinSettings {
                 } else {
                         enabledTypes.remove(type)
                 }
+                rebuildLookups()
                 saveTypes()
         }
 
@@ -192,6 +232,6 @@ public struct FuzzyPinyinSettings {
 
         /// 获取所有启用的映射
         public static var allMappings: [FuzzyPinyinMapping] {
-                return enabledTypes.map(\.mappings)
+                return _cachedMappings
         }
 }

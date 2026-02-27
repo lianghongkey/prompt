@@ -45,30 +45,35 @@ struct UserLexicon: Sendable {
                 }
         }
         private static func find(by id: Int) -> Int64? {
-                let command: String = "SELECT frequency FROM userlexicontable WHERE id = \(id) LIMIT 1;"
+                let command: String = "SELECT frequency FROM userlexicontable WHERE id = ? LIMIT 1;"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return nil }
+                guard sqlite3_bind_int64(statement, 1, Int64(id)) == SQLITE_OK else { return nil }
                 guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
                 let frequency: Int64 = sqlite3_column_int64(statement, 0)
                 return frequency
         }
         private static func update(id: Int, frequency: Int64) {
-                let command: String = "UPDATE userlexicontable SET frequency = \(frequency) WHERE id = \(id);"
+                let command: String = "UPDATE userlexicontable SET frequency = ? WHERE id = ?;"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return }
+                sqlite3_bind_int64(statement, 1, frequency)
+                sqlite3_bind_int64(statement, 2, Int64(id))
                 guard sqlite3_step(statement) == SQLITE_DONE else { return }
         }
         private static func insert(entry: LexiconEntry) {
-                // INSERT INTO userlexicontable (id, frequency, word, romanization, shortcut, ping) VALUES (?, ?, ?, ?, ?, ?);
-                let leading: String = "INSERT INTO userlexicontable (id, frequency, word, romanization, shortcut, ping) VALUES ("
-                let trailing: String = ");"
-                let values: String = "\(entry.id), \(entry.frequency), '\(entry.word)', '\(entry.romanization)', \(entry.shortcut), \(entry.ping)"
-                let command: String = leading + values + trailing
+                let command: String = "INSERT INTO userlexicontable (id, frequency, word, romanization, shortcut, ping) VALUES (?, ?, ?, ?, ?, ?);"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return }
+                sqlite3_bind_int64(statement, 1, Int64(entry.id))
+                sqlite3_bind_int64(statement, 2, entry.frequency)
+                sqlite3_bind_text(statement, 3, entry.word, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+                sqlite3_bind_text(statement, 4, entry.romanization, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+                sqlite3_bind_int64(statement, 5, Int64(entry.shortcut))
+                sqlite3_bind_int64(statement, 6, Int64(entry.ping))
                 guard sqlite3_step(statement) == SQLITE_DONE else { return }
         }
 
@@ -97,10 +102,11 @@ struct UserLexicon: Sendable {
                 var candidates: [Candidate] = []
                 let code: Int = isShortcut ? text.replacingOccurrences(of: "y", with: "j").deterministicHash : text.deterministicHash
                 let column: String = isShortcut ? "shortcut" : "ping"
-                let command: String = "SELECT word, romanization FROM userlexicontable WHERE \(column) = \(code) ORDER BY frequency DESC LIMIT 5;"
+                let command: String = "SELECT word, romanization FROM userlexicontable WHERE \(column) = ? ORDER BY frequency DESC LIMIT 5;"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return candidates }
+                guard sqlite3_bind_int64(statement, 1, Int64(code)) == SQLITE_OK else { return candidates }
                 while sqlite3_step(statement) == SQLITE_ROW {
                         guard let wordPtr = sqlite3_column_text(statement, 0) else { continue }
                         guard let romanizationPtr = sqlite3_column_text(statement, 1) else { continue }
@@ -119,10 +125,11 @@ struct UserLexicon: Sendable {
         /// Delete one lexicon entry
         static func removeItem(candidate: Candidate) {
                 let id: Int = (candidate.lexiconText + candidate.romanization).deterministicHash
-                let command: String = "DELETE FROM userlexicontable WHERE id = \(id);"
+                let command: String = "DELETE FROM userlexicontable WHERE id = ?;"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return }
+                guard sqlite3_bind_int64(statement, 1, Int64(id)) == SQLITE_OK else { return }
                 guard sqlite3_step(statement) == SQLITE_DONE else { return }
         }
 

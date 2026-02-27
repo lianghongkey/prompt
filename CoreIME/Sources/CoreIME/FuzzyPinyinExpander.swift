@@ -94,6 +94,7 @@ public struct FuzzyPinyinExpander {
                                 }
                         }
                         result = newResult
+                        guard result.count < 50 else { break }
                 }
 
                 return result

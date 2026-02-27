@@ -40,10 +40,11 @@ extension Engine {
                 return candidates
         }
         private static func mapSkinTone(_ source: String) -> String? {
-                let command: String = "SELECT target FROM emojiskinmapping WHERE source = '\(source)';"
+                let command: String = "SELECT target FROM emojiskinmapping WHERE source = ?;"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return nil }
+                guard sqlite3_bind_text(statement, 1, source, -1, nil) == SQLITE_OK else { return nil }
                 guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
                 guard let targetPtr = sqlite3_column_text(statement, 0) else { return nil }
                 let target: String = String(cString: targetPtr)

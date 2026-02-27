@@ -73,6 +73,7 @@ public struct PinyinSegmentor {
                                 segmentation += newSegmentation
                         }
                         segmentation = segmentation.uniqued()
+                        guard segmentation.count < 100 else { break }
                         let currentSubelementCount = segmentation.subelementCount
                         if currentSubelementCount != previousSubelementCount {
                                 previousSubelementCount = currentSubelementCount

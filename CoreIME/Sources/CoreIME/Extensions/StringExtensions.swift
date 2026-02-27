@@ -82,25 +82,6 @@ extension Sequence where Element == Character {
         }
 }
 
-extension Array where Element == String {
-
-        /// Character count
-        public var summedLength: Int {
-                return self.map(\.count).reduce(0, +)
-        }
-}
-
-extension String {
-        /// Occurrence count of pattern in this String
-        /// - Parameter pattern: Regular expression pattern
-        /// - Returns: Number of occurrences
-        func occurrenceCount(pattern: String) -> Int {
-                // return self.matches(of: Regex{substring}).count
-                guard let regex = try? NSRegularExpression(pattern: pattern) else { return 0 }
-                return regex.numberOfMatches(in: self, range: NSRange(self.startIndex..., in: self))
-        }
-}
-
 extension String {
         public var isValid: Bool {
                 return self != "X"

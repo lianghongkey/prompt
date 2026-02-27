@@ -68,8 +68,6 @@ public struct Engine {
         ///   - asap: Should be fast, shouldn't go deep.
         /// - Returns: Candidates
         public static func suggest(text: String, segmentation: Segmentation, needsSymbols: Bool, asap: Bool = false) -> [Candidate] {
-                let hash = text.deterministicHash
-                logger.debug("Engine.suggest: text='\(text)' count=\(text.count) hash=\(hash)")
                 switch text.count {
                 case 0:
                         return []
@@ -208,36 +206,19 @@ public struct Engine {
         }
 
         private static func pinyinMatchInternal(text: String, input: String) -> [Candidate] {
-                var candidates: [Candidate] = []
                 let code: Int = text.deterministicHash
-                logger.debug("pinyinMatchInternal: text='\(text)' code=\(code)")
-                let command: String = "SELECT rowid, word, pinyin FROM pinyintable WHERE ping = \(code) ORDER BY rowid LIMIT 100;"
-                var statement: OpaquePointer? = nil
-                defer { sqlite3_finalize(statement) }
-                guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else {
-                        logger.error("pinyinMatchInternal: SQL prepare failed")
-                        return candidates
-                }
-                while sqlite3_step(statement) == SQLITE_ROW {
-                        let rowID: Int = Int(sqlite3_column_int64(statement, 0))
-                        guard let wordPtr = sqlite3_column_text(statement, 1) else { continue }
-                        guard let pinyinPtr = sqlite3_column_text(statement, 2) else { continue }
-                        let word: String = String(cString: wordPtr)
-                        let pinyin: String = String(cString: pinyinPtr)
-                        // Use input as mark to display user's actual input, not the standard pinyin
-                        let candidate = Candidate(text: word, romanization: pinyin, input: input, mark: input, order: rowID)
-                        candidates.append(candidate)
-                }
-                logger.debug("pinyinMatchInternal: found \(candidates.count) results")
-                return candidates
+                return queryPinyinTable(whereClause: "ping = \(code)", input: input)
         }
 
         private static func pinyinShortcutInternal(text: String, limit: Int) -> [Candidate] {
+                guard let firstChar = text.first else { return [] }
+                guard let code: Int = firstChar.intercode else { return [] }
+                return queryPinyinTable(whereClause: "shortcut = \(code)", input: text, limit: limit, filter: { $0.hasPrefix(text) })
+        }
+
+        private static func queryPinyinTable(whereClause: String, input: String, limit: Int = 100, filter: ((String) -> Bool)? = nil) -> [Candidate] {
                 var candidates: [Candidate] = []
-                // Use first character's code as shortcut
-                guard let firstChar = text.first else { return candidates }
-                guard let code: Int = firstChar.intercode else { return candidates }
-                let command: String = "SELECT rowid, word, pinyin FROM pinyintable WHERE shortcut = \(code) ORDER BY rowid LIMIT \(limit);"
+                let command: String = "SELECT rowid, word, pinyin FROM pinyintable WHERE \(whereClause) ORDER BY rowid LIMIT \(limit);"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return candidates }
@@ -247,9 +228,8 @@ public struct Engine {
                         guard let pinyinPtr = sqlite3_column_text(statement, 2) else { continue }
                         let word: String = String(cString: wordPtr)
                         let pinyin: String = String(cString: pinyinPtr)
-                        // Filter to only show results that match the input prefix
-                        guard pinyin.hasPrefix(text) else { continue }
-                        let candidate = Candidate(text: word, romanization: pinyin, input: text, mark: text, order: rowID)
+                        if let filter = filter, !filter(pinyin) { continue }
+                        let candidate = Candidate(text: word, romanization: pinyin, input: input, mark: input, order: rowID)
                         candidates.append(candidate)
                 }
                 return candidates

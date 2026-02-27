@@ -225,6 +225,8 @@ extension Array where Element == Candidate {
         }
 }
 
+#if DEBUG
 extension Candidate {
-        public static let example: Candidate = Candidate(text: "举例", lexiconText: "举例", romanization: "ju3 li4", input: "juli", notation: .example)
+        public static let example: Candidate = Candidate(text: "举例", lexiconText: "举例", romanization: "ju3 li4", input: "juli")
 }
+#endif

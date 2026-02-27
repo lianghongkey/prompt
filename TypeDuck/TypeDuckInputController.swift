@@ -71,10 +71,8 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         private lazy var currentCursorBlock: CGRect? = nil
         private func updateCurrentCursorBlock(to rect: CGRect?) {
                 guard let rect = rect, isValidCursorBlock(rect) else {
-                        UserDefaults.standard.set("rejected: \(rect.map { "(\(Int($0.origin.x)),\(Int($0.origin.y)))" } ?? "nil")", forKey: "DEBUG_CURSOR_BLOCK")
                         return
                 }
-                UserDefaults.standard.set("accepted: (\(Int(rect.origin.x)),\(Int(rect.origin.y)))", forKey: "DEBUG_CURSOR_BLOCK")
                 currentCursorBlock = rect
         }
 
@@ -200,11 +198,6 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         private func clearBufferText() { bufferText = String.empty }
         private lazy var bufferText: String = .empty {
                 willSet {
-                        // Debug: store buffer text value to UserDefaults
-                        let oldValue = bufferText
-                        logger.debug("bufferText willSet: '\(oldValue)' -> '\(newValue)'")
-                        UserDefaults.standard.set(newValue, forKey: "DEBUG_BUFFER_TEXT")
-
                         switch (bufferText.isEmpty, newValue.isEmpty) {
                         case (true, true):
                                 inputStage = .standby
@@ -219,15 +212,6 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 }
                 didSet {
-                        // Debug: store buffer text info to UserDefaults
-                        let value = bufferText
-                        let firstChar = value.first?.description ?? "nil"
-                        let isLetter = value.first?.isBasicLatinLetter ?? false
-                        logger.debug("bufferText didSet: '\(value)', firstChar: '\(firstChar)', isLetter: \(isLetter)")
-                        UserDefaults.standard.set(value, forKey: "DEBUG_BUFFER_DIDSET")
-                        UserDefaults.standard.set(firstChar, forKey: "DEBUG_BUFFER_FIRST")
-                        UserDefaults.standard.set(isLetter, forKey: "DEBUG_BUFFER_IS_LETTER")
-
                         switch bufferText.first {
                         case .none:
                                 if AppSettings.isInputMemoryOn && selectedCandidates.isNotEmpty {
@@ -590,9 +574,6 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 return isEventHandled
         }
         private func process(keyCode: UInt16, client: InputClient?, hasControlShiftModifiers: Bool, isShifting: Bool) {
-                // Debug: log input method mode
-                UserDefaults.standard.set("InputForm: \(inputForm)", forKey: "DEBUG_INPUT_FORM")
-                UserDefaults.standard.set("IsMandarin: \(inputForm.isMandarin)", forKey: "DEBUG_IS_MANDARIN")
 
                 // Only update cursor position at the start of composition, not during active input
                 if !inputStage.isBuffering {

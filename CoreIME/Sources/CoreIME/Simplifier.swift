@@ -2,17 +2,6 @@ import Foundation
 import SQLite3
 
 private extension Engine {
-        static func t2s(_ character: Character) -> String {
-                guard let code: UInt32 = character.unicodeScalars.first?.value else { return String(character) }
-                let query: String = "SELECT simplified FROM t2stable WHERE traditional = \(code);"
-                var statement: OpaquePointer? = nil
-                defer { sqlite3_finalize(statement) }
-                guard sqlite3_prepare_v2(database, query, -1, &statement, nil) == SQLITE_OK else { return String(character) }
-                guard sqlite3_step(statement) == SQLITE_ROW else { return String(character) }
-                guard let ptr = sqlite3_column_text(statement, 0) else { return String(character) }
-                let simplified: String = String(cString: ptr)
-                return simplified
-        }
         static func charT2S(_ character: Character) -> Character {
                 guard let code: UInt32 = character.unicodeScalars.first?.value else { return character }
                 let query: String = "SELECT simplified FROM t2stable WHERE traditional = \(code);"
@@ -60,14 +49,14 @@ struct Simplifier {
 
                 let roundTwo = replace(roundOne.modified, replacement: "X")
                 guard roundTwo.matched.isNotEmpty else {
-                        let transformed: String = roundTwo.modified.map(Engine.t2s(_:)).joined()
+                        let transformed: String = String(roundTwo.modified.map(Engine.charT2S(_:)))
                         let reverted: String = transformed.replacingOccurrences(of: roundOne.replacement, with: roundOne.matched)
                         return reverted
                 }
 
                 let roundThree = replace(roundTwo.modified, replacement: "Y")
                 guard roundThree.matched.isNotEmpty else {
-                        let transformed: String = roundThree.modified.map(Engine.t2s(_:)).joined()
+                        let transformed: String = String(roundThree.modified.map(Engine.charT2S(_:)))
                         let reverted: String = transformed
                                 .replacingOccurrences(of: roundOne.replacement, with: roundOne.matched)
                                 .replacingOccurrences(of: roundTwo.replacement, with: roundTwo.matched)
@@ -76,7 +65,7 @@ struct Simplifier {
 
                 let roundFour = replace(roundThree.modified, replacement: "Z")
                 guard roundFour.matched.isNotEmpty else {
-                        let transformed: String = roundFour.modified.map(Engine.t2s(_:)).joined()
+                        let transformed: String = String(roundFour.modified.map(Engine.charT2S(_:)))
                         let reverted: String = transformed
                                 .replacingOccurrences(of: roundOne.replacement, with: roundOne.matched)
                                 .replacingOccurrences(of: roundTwo.replacement, with: roundTwo.matched)
@@ -84,7 +73,7 @@ struct Simplifier {
                         return reverted
                 }
 
-                let transformed: String = roundFour.modified.map(Engine.t2s(_:)).joined()
+                let transformed: String = String(roundFour.modified.map(Engine.charT2S(_:)))
                 let reverted: String = transformed
                         .replacingOccurrences(of: roundOne.replacement, with: roundOne.matched)
                         .replacingOccurrences(of: roundTwo.replacement, with: roundTwo.matched)
@@ -93,11 +82,13 @@ struct Simplifier {
                 return reverted
         }
 
+        private static let sortedPhraseKeys: [String] = phrases.keys.sorted(by: { $0.count > $1.count })
+
         private static func replace(_ text: String, replacement: String) -> (modified: String, matched: String, replacement: String) {
                 let textCount: Int = text.count
-                let keys: [String] = phrases.keys.filter({ $0.count <= textCount }).sorted(by: { $0.count > $1.count })
-                lazy var modified: String = text
-                lazy var matched: String = ""
+                let keys: [String] = sortedPhraseKeys.filter({ $0.count <= textCount })
+                var modified: String = text
+                var matched: String = ""
                 for key in keys {
                         if text.hasPrefix(key), let value = phrases[key] {
                                 modified = text.replacingOccurrences(of: key, with: replacement)

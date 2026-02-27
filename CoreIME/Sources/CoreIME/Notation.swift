@@ -31,6 +31,8 @@ public struct Notation: Hashable, Sendable {
         }
 }
 
+#if DEBUG
 extension Notation {
         public static let example: Notation = Notation(word: "举例", pinyin: "ju3 li3", frequency: 1000, pronunciationOrder: 1)
 }
+#endif

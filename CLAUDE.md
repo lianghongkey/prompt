@@ -96,6 +96,7 @@ To update the lexicon:
 - `CandidateWindow.swift` - Candidate selection panel
 - `AppContext.swift` - Shared application state
 - `Options.swift` - User preferences and settings
+- `UserLexicon.swift` - User dictionary management and word creation
 
 ### Input Flow
 1. User types pinyin → `TypeDuckInputController` receives keystrokes

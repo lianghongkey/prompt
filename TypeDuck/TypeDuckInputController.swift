@@ -195,7 +195,11 @@ final class TypeDuckInputController: IMKInputController, Sendable {
 
         private lazy var inputStage: InputStage = .standby
 
-        private func clearBufferText() { bufferText = String.empty }
+        private func clearBufferText() {
+                bufferText = String.empty
+                wordCreationCharacters = []
+                wordCreationPinyins = []
+        }
         private lazy var bufferText: String = .empty {
                 willSet {
                         switch (bufferText.isEmpty, newValue.isEmpty) {
@@ -282,6 +286,10 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         /// Cached Candidate sequence for UserLexicon
         private lazy var selectedCandidates: [Candidate] = []
 
+        /// Word creation state: tracks characters being composed
+        private lazy var wordCreationCharacters: [String] = []
+        private lazy var wordCreationPinyins: [String] = []
+
         private lazy var candidates: [Candidate] = [] {
                 didSet {
                         updateDisplayCandidates(.establish, highlight: .start)
@@ -345,11 +353,32 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 return combined
                         }
                 }()
+
+                // Add single-character candidates at the end for word creation
+                let suggestionsWithSingleChars: [Candidate] = {
+                        guard let scheme = bestScheme, scheme.count >= 2 else { return suggestions }
+
+                        // Get single character candidates for the first syllable
+                        let firstSyllable = scheme.first!
+                        let firstPinyin = firstSyllable.origin
+                        let singleChars = Engine.suggest(text: firstPinyin, segmentation: [[firstSyllable]], needsSymbols: false)
+                                .filter({ $0.text.count == 1 && $0.isMandarin })
+
+                        // Only add if not already present
+                        var result = suggestions
+                        for singleChar in singleChars {
+                                if !result.contains(where: { $0.text == singleChar.text && $0.romanization == singleChar.romanization }) {
+                                        result.append(singleChar)
+                                }
+                        }
+                        return result
+                }()
+
                 mark(text: {
                         let hasSeparatorsOrTones: Bool = processingText.contains(where: \.isSeparatorOrTone)
                         guard !hasSeparatorsOrTones else { return processingText.formattedForMark() }
                         let userInputTextCount: Int = processingText.count
-                        if let firstCandidate = suggestions.first, firstCandidate.input.count == userInputTextCount { return firstCandidate.mark }
+                        if let firstCandidate = suggestionsWithSingleChars.first, firstCandidate.input.count == userInputTextCount { return firstCandidate.mark }
                         guard let bestScheme else { return processingText.formattedForMark() }
                         let leadingLength: Int = bestScheme.length
                         let leadingText: String = bestScheme.map(\.text).joined()
@@ -357,7 +386,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         let tailText = processingText.dropFirst(leadingLength)
                         return leadingText + tailText
                 }())
-                candidates = suggestions
+                candidates = suggestionsWithSingleChars
         }
         private func pinyinReverseLookup() {
                 let text: String = String(bufferText.dropFirst(2))
@@ -996,11 +1025,99 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         selectedCandidates = []
                         clearBufferText()
                 default:
+                        // Check if we should enter or continue word creation mode
+                        let isInWordCreation = wordCreationCharacters.isNotEmpty
+                        let segmentation = PinyinSegmentor.segment(text: bufferText)
+                        let hasMultipleSyllables = segmentation.first?.count ?? 0 >= 2
+
+                        // If already in word creation mode, continue regardless of candidate length
+                        if isInWordCreation && shouldProcessUserLexicon {
+                                // Continue word creation with any candidate
+                                logger.debug("Continue word creation: candidate=\(candidate.text), romanization=\(candidate.romanization)")
+                                wordCreationCharacters.append(candidate.text)
+                                wordCreationPinyins.append(candidate.romanization)
+
+                                // Calculate how many syllables this candidate uses
+                                let syllableCount = candidate.romanization.split(separator: " ").count
+                                let currentBuffer = bufferText
+                                logger.debug("Syllable count: \(syllableCount), bufferText before: \(currentBuffer)")
+
+                                // Remove the used syllables from buffer based on segmentation
+                                if let scheme = segmentation.first, syllableCount <= scheme.count {
+                                        let usedTokens = scheme.prefix(syllableCount)
+                                        let usedLength = usedTokens.map(\.text).joined().count
+                                        logger.debug("Using segmentation: usedLength=\(usedLength)")
+                                        var tail = bufferText.dropFirst(usedLength)
+                                        while tail.hasPrefix("'") {
+                                                tail = tail.dropFirst()
+                                        }
+                                        bufferText = String(tail)
+                                } else {
+                                        // Fallback: use candidate.input length
+                                        let inputCount: Int = candidate.input.replacingOccurrences(of: "(4|5|6)", with: "RR", options: .regularExpression).count
+                                        logger.debug("Using fallback: inputCount=\(inputCount)")
+                                        var tail = bufferText.dropFirst(inputCount)
+                                        while tail.hasPrefix("'") {
+                                                tail = tail.dropFirst()
+                                        }
+                                        bufferText = String(tail)
+                                }
+
+                                let newBuffer = bufferText
+                                let currentChars = wordCreationCharacters
+                                logger.debug("bufferText after: \(newBuffer), wordCreationCharacters: \(currentChars)")
+
+                                // Check if we're done with word creation
+                                if bufferText.isEmpty && wordCreationCharacters.count >= 2 {
+                                        // Save the created word to UserLexicon
+                                        let newWord = wordCreationCharacters.joined()
+                                        let newPinyin = wordCreationPinyins.joined(separator: " ")
+                                        logger.debug("Word creation completed: word=\(newWord), pinyin=\(newPinyin)")
+                                        let newCandidate = Candidate(text: newWord, romanization: newPinyin, input: "", mark: "")
+                                        UserLexicon.handle(newCandidate)
+                                        logger.debug("Saved to UserLexicon")
+                                        wordCreationCharacters = []
+                                        wordCreationPinyins = []
+                                }
+                                return
+                        }
+
+                        // Enter word creation mode if: single char selected AND multiple syllables remain
+                        let isSingleCharSelected = candidate.text.count == 1
+                        if isSingleCharSelected && shouldProcessUserLexicon && hasMultipleSyllables {
+                                // Start word creation
+                                logger.debug("Enter word creation mode: candidate=\(candidate.text), romanization=\(candidate.romanization)")
+                                wordCreationCharacters.append(candidate.text)
+                                wordCreationPinyins.append(candidate.romanization)
+
+                                // Remove the used pinyin from buffer (single character = 1 syllable)
+                                if let scheme = segmentation.first, !scheme.isEmpty {
+                                        let usedLength = scheme.first!.text.count
+                                        var tail = bufferText.dropFirst(usedLength)
+                                        while tail.hasPrefix("'") {
+                                                tail = tail.dropFirst()
+                                        }
+                                        bufferText = String(tail)
+                                } else {
+                                        // Fallback
+                                        let inputCount: Int = candidate.input.replacingOccurrences(of: "(4|5|6)", with: "RR", options: .regularExpression).count
+                                        var tail = bufferText.dropFirst(inputCount)
+                                        while tail.hasPrefix("'") {
+                                                tail = tail.dropFirst()
+                                        }
+                                        bufferText = String(tail)
+                                }
+                                return
+                        }
+
+                        // Normal selection handling (not word creation)
                         if shouldProcessUserLexicon {
                                 selectedCandidates.append(candidate)
                         } else {
                                 selectedCandidates = []
                         }
+                        wordCreationCharacters = []
+                        wordCreationPinyins = []
                         let inputCount: Int = candidate.input.replacingOccurrences(of: "(4|5|6)", with: "RR", options: .regularExpression).count
                         var tail = bufferText.dropFirst(inputCount)
                         while tail.hasPrefix("'") {

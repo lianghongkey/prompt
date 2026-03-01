@@ -87,13 +87,42 @@ struct UserLexicon: Sendable {
                         let textCount = text.count
                         let schemes = segmentation.filter({ $0.length == textCount })
                         guard schemes.isNotEmpty else { return [] }
-                        return schemes.map({ scheme -> [Candidate] in
+
+                        var allCandidates: [Candidate] = []
+                        var seen = Set<String>() // Track word+romanization to avoid duplicates
+
+                        for scheme in schemes {
                                 let pingText = scheme.map(\.origin).joined()
                                 let matched = query(text: pingText, input: text, isShortcut: false)
                                 let text2mark = scheme.map(\.text).joined()
                                 let syllables = scheme.map(\.origin).joined()
-                                return matched.filter({ $0.mark == syllables }).map({ Candidate(text: $0.text, romanization: $0.romanization, input: $0.input, mark: text2mark, order: -1) })
-                        }).flatMap({ $0 })
+
+                                for candidate in matched {
+                                        if candidate.mark == syllables {
+                                                let key = candidate.text + candidate.romanization
+                                                if seen.insert(key).inserted {
+                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: candidate.input, mark: text2mark, order: -1))
+                                                }
+                                        }
+                                }
+
+                                // Also try fuzzy pinyin matching if enabled
+                                if FuzzyPinyinSettings.isAnyEnabled {
+                                        let expandedArrays = FuzzyPinyinExpander.expandArray(scheme.map(\.origin))
+                                        for expandedArray in expandedArrays {
+                                                let expandedPingText = expandedArray.joined()
+                                                let fuzzyMatched = query(text: expandedPingText, input: text, isShortcut: false)
+                                                for candidate in fuzzyMatched {
+                                                        let key = candidate.text + candidate.romanization
+                                                        if seen.insert(key).inserted {
+                                                                allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: candidate.input, mark: text2mark, order: -1))
+                                                        }
+                                                }
+                                        }
+                                }
+                        }
+
+                        return allCandidates
                 }()
                 return matches + shortcuts + searches
         }

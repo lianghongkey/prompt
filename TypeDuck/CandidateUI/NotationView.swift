@@ -72,6 +72,8 @@ struct NotationView: View {
         }
 }
 
+#if DEBUG
 #Preview {
         NotationView(notation: .example, comments: [])
 }
+#endif

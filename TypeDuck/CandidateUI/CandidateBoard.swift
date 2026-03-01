@@ -31,14 +31,16 @@ struct CandidateBoard: View {
         }
 }
 
+#if DEBUG
 #Preview {
         let context = AppContext()
         context.update(with: [.init(candidate: .example, candidateIndex: 0),
                               .init(candidate: .example, candidateIndex: 1),
                               .init(candidate: .example, candidateIndex: 2)],
                        highlight: .start)
-        return CandidateBoard().environmentObject(context)
+        CandidateBoard().environmentObject(context)
 }
+#endif
 
 private struct SubCandidatesView: View {
         let subCandidates: [DisplayCandidate]

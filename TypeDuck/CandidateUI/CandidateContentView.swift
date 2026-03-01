@@ -42,6 +42,8 @@ struct CandidateContentView: View {
         }
 }
 
+#if DEBUG
 #Preview {
         CandidateContentView(candidate: DisplayCandidate(candidate: .example, candidateIndex: 3), hasNotationDisplayButton: true)
 }
+#endif

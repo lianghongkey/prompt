@@ -233,7 +233,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 suggest()
                         case .some(_) where bufferText.count == 1:
                                 mark(text: bufferText)
-                                candidates = PunctuationKey.punctuationCandidates(of: bufferText)
+                                candidates = []
                         case .some(.backtick):
                                 switch bufferText.dropFirst().first {
                                 case .some("p"), .some("r"):
@@ -649,14 +649,9 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 } else if isShifting {
                                         switch Options.punctuationForm {
                                         case .chinese:
-                                                if let shiftingBufferText = PunctuationKey.shiftingBufferText(of: number) {
-                                                        insert(bufferText)
-                                                        bufferText = shiftingBufferText
-                                                } else {
-                                                        let symbol: String = PunctuationKey.numberKeyShiftingMandarinSymbol(of: number) ?? String.empty
-                                                        insert(bufferText + symbol)
-                                                        bufferText = String.empty
-                                                }
+                                                let symbol: String = PunctuationKey.numberKeyShiftingMandarinSymbol(of: number) ?? String.empty
+                                                insert(bufferText + symbol)
+                                                bufferText = String.empty
                                         case .english:
                                                 let symbol: String = PunctuationKey.numberKeyShiftingSymbol(of: number) ?? String.empty
                                                 insert(bufferText + symbol)
@@ -746,8 +741,8 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         guard currentInputForm.isMandarin else { return }
                         guard !isBuffering else { return }
                         guard Options.punctuationForm.isChineseMode else { return }
-                        let symbolText: String = isShifting ? PunctuationKey.backquote.shiftingKeyText : PunctuationKey.backquote.keyText
-                        bufferText = symbolText
+                        let symbol: String = isShifting ? PunctuationKey.backquote.instantShiftingSymbol ?? PunctuationKey.backquote.shiftingKeyText : PunctuationKey.backquote.instantSymbol ?? PunctuationKey.backquote.keyText
+                        insert(symbol)
                 case .punctuation(let punctuationKey):
                         guard currentInputForm.isMandarin else { return }
                         if isBuffering && !isShifting {

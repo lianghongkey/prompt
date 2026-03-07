@@ -38,7 +38,7 @@ struct CandidateBoard: View {
                               .init(candidate: .example, candidateIndex: 1),
                               .init(candidate: .example, candidateIndex: 2)],
                        highlight: .start)
-        CandidateBoard().environmentObject(context)
+        return CandidateBoard().environmentObject(context)
 }
 #endif
 

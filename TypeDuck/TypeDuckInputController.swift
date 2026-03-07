@@ -866,8 +866,6 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                         clearBufferText()
                                 } else {
                                         passBuffer()
-                                        Options.updateInputMethodMode(to: .abc)
-                                        updateInputForm()
                                 }
                         case .transparent:
                                 return

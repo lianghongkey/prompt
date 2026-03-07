@@ -866,6 +866,8 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                         clearBufferText()
                                 } else {
                                         passBuffer()
+                                        Options.updateInputMethodMode(to: .abc)
+                                        updateInputForm()
                                 }
                         case .transparent:
                                 return
@@ -925,10 +927,15 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                         insert(text)
                                         aftercareSelection(selectedItem)
                                 } else if isBuffering {
+                                        let hadNoCandidates: Bool = candidates.isEmpty
                                         let text: String = Options.characterForm == .halfWidth ? bufferText : bufferText.fullWidth()
                                         let space: String = (isShifting || Options.characterForm.isFullWidth) ? String.fullWidthSpace : String.space
                                         insert(text + space)
                                         clearBufferText()
+                                        if hadNoCandidates {
+                                                Options.updateInputMethodMode(to: .abc)
+                                                updateInputForm()
+                                        }
                                 } else {
                                         clearMarkedText()
                                         let text: String = (isShifting || Options.characterForm.isFullWidth) ? String.fullWidthSpace : String.space

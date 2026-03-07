@@ -123,3 +123,27 @@ These scripts process and expand the pinyin lexicon before database generation.
 - The app bundle identifier is `hk.eduhk.inputmethod.TypeDuck`
 - Database queries use the `pinyintable` table with `shortcut` column for lookups
 - Fuzzy pinyin settings are stored in user defaults and affect candidate generation
+
+## Input Mode Switching
+
+### Default Mode
+- Default mode is **English (ABC/transparent)** — keystrokes pass through directly to the app
+- Mandarin mode is opt-in via Shift tap
+
+### Shift Key Toggle
+Implemented in `TypeDuckInputController.swift`:
+- `recognizedEvents` registers both `.keyDown` and `.flagsChanged`
+- A bare Shift tap (press and release without any other key) toggles between Mandarin and English mode
+- Uses `shiftPressedAlone: Bool` flag to distinguish a tap from Shift-held-for-capitalization:
+  - `flagsChanged` Shift down → set `shiftPressedAlone = true`
+  - Any `keyDown` → clear `shiftPressedAlone = false`
+  - `flagsChanged` Shift up with `shiftPressedAlone == true` → toggle mode
+- Toggle is disabled while buffering input or in Options panel
+
+### Auto-switch to English After Return
+In Mandarin mode, pressing Return commits the buffer as raw text (pinyin) and **automatically switches to English mode**. This applies whether or not there are candidates.
+- Exception: Shift+Return inserts the romanization of the highlighted candidate and does NOT switch mode.
+
+### Auto-switch to English After Space (no candidates)
+In Mandarin mode, if the buffer has **no candidates** and the user presses Space, the buffer text + space is inserted and the mode **automatically switches to English**.
+- If there are candidates, Space selects the highlighted candidate and stays in Mandarin mode.

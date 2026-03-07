@@ -194,6 +194,8 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         }
 
         private lazy var inputStage: InputStage = .standby
+        /// Tracks whether Shift was pressed without any other key (for mode toggle)
+        private var shiftPressedAlone: Bool = false
 
         private func clearBufferText() {
                 bufferText = String.empty
@@ -416,17 +418,44 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         // MARK: - Handle Event
 
         override func recognizedEvents(_ sender: Any!) -> Int {
-                let masks: NSEvent.EventTypeMask = [.keyDown]
+                let masks: NSEvent.EventTypeMask = [.keyDown, .flagsChanged]
                 return Int(masks.rawValue)
         }
         override func handle(_ event: NSEvent!, client sender: Any!) -> Bool {
                 guard let event = event else { return false }
                 let modifiers = event.modifierFlags
+                let code: UInt16 = event.keyCode
+                // Handle flagsChanged: Shift-only tap toggles Mandarin/English mode
+                if event.type == .flagsChanged {
+                        let isShiftKey: Bool = (code == KeyCode.Modifier.VK_SHIFT_LEFT || code == KeyCode.Modifier.VK_SHIFT_RIGHT)
+                        let isShiftDown: Bool = modifiers.intersection(.deviceIndependentFlagsMask).contains(.shift)
+                        if isShiftKey {
+                                if isShiftDown {
+                                        shiftPressedAlone = true
+                                } else if shiftPressedAlone {
+                                        // Shift released without any other key — toggle mode
+                                        shiftPressedAlone = false
+                                        let currentInputForm: InputForm = inputForm
+                                        let isBuffering: Bool = inputStage.isBuffering
+                                        if !isBuffering && !currentInputForm.isOptions {
+                                                Task { @MainActor in
+                                                        let newMode: InputMethodMode = Options.inputMethodMode.isMandarin ? .abc : .mandarin
+                                                        Options.updateInputMethodMode(to: newMode)
+                                                        updateInputForm()
+                                                }
+                                        }
+                                } else {
+                                        shiftPressedAlone = false
+                                }
+                        }
+                        return false
+                }
+                // Any non-Shift keyDown clears the shiftPressedAlone flag
+                shiftPressedAlone = false
                 let shouldIgnoreCurrentEvent: Bool = modifiers.contains(.command) || modifiers.contains(.option)
                 guard !shouldIgnoreCurrentEvent else { return false }
                 let currentInputForm: InputForm = inputForm
                 let isBuffering: Bool = inputStage.isBuffering
-                let code: UInt16 = event.keyCode
                 lazy var hasControlShiftModifiers: Bool = false
                 lazy var isEventHandled: Bool = true
                 switch modifiers {

@@ -61,12 +61,12 @@ struct Options: Sendable {
         nonisolated(unsafe) private(set) static var inputMethodMode: InputMethodMode = {
                 let savedValue: Int = UserDefaults.standard.integer(forKey: OptionsKey.InputMethodMode)
                 switch savedValue {
-                case 0, 1:
+                case 1:
                         return .mandarin
-                case 2:
+                case 0, 2:
                         return .abc
                 default:
-                        return .mandarin
+                        return .abc
                 }
         }()
         static func updateInputMethodMode(to mode: InputMethodMode) {

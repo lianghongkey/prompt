@@ -835,12 +835,13 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 if shouldKeepBuffer {
                                         bufferText += "'"
                                 } else {
-                                        let text: String = isShifting ? PunctuationKey.quote.shiftingKeyText : PunctuationKey.quote.keyText
                                         switch Options.punctuationForm {
                                         case .chinese:
-                                                insert(bufferText)
-                                                bufferText = text
+                                                let symbol: String = isShifting ? PunctuationKey.quote.instantShiftingSymbol ?? PunctuationKey.quote.shiftingKeyText : PunctuationKey.quote.instantSymbol ?? PunctuationKey.quote.keyText
+                                                insert(bufferText + symbol)
+                                                bufferText = String.empty
                                         case .english:
+                                                let text: String = isShifting ? PunctuationKey.quote.shiftingKeyText : PunctuationKey.quote.keyText
                                                 insert(bufferText + text)
                                                 bufferText = String.empty
                                         }

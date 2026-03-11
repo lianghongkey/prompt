@@ -196,6 +196,8 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         private lazy var inputStage: InputStage = .standby
         /// Tracks whether Shift was pressed without any other key (for mode toggle)
         private var shiftPressedAlone: Bool = false
+        /// Tracks characters typed in transparent mode (for Shift-to-pinyin conversion)
+        private var transparentModeBuffer: String = ""
 
         private func clearBufferText() {
                 bufferText = String.empty
@@ -263,6 +265,12 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 let attributedText = NSAttributedString(string: text, attributes: markAttributes)
                 let selectionRange = NSRange(location: text.utf16.count, length: 0)
                 currentClient?.setMarkedText(attributedText, selectionRange: selectionRange, replacementRange: replacementRange())
+        }
+        /// Mark text with a custom replacement range (used to replace preceding text)
+        private func mark(text: String, replacingRange range: NSRange) {
+                let attributedText = NSAttributedString(string: text, attributes: markAttributes)
+                let selectionRange = NSRange(location: text.utf16.count, length: 0)
+                currentClient?.setMarkedText(attributedText, selectionRange: selectionRange, replacementRange: range)
         }
         private func clearMarkedText() {
                 let attributedText = NSAttributedString(string: String(), attributes: markAttributes)
@@ -440,8 +448,42 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                         if !isBuffering && !currentInputForm.isOptions {
                                                 Task { @MainActor in
                                                         let newMode: InputMethodMode = Options.inputMethodMode.isMandarin ? .abc : .mandarin
-                                                        Options.updateInputMethodMode(to: newMode)
-                                                        updateInputForm()
+                                                        // 从英文切换到中文时，使用 transparentModeBuffer 中记录的字母作为拼音
+                                                        if newMode == .mandarin && !self.transparentModeBuffer.isEmpty {
+                                                                let precedingText = self.transparentModeBuffer
+                                                                self.transparentModeBuffer = ""
+                                                                let pinyinText = precedingText.lowercased()
+                                                                let charCount = precedingText.count
+
+                                                                let selectedRange = self.currentClient?.selectedRange() ?? NSRange(location: NSNotFound, length: 0)
+
+                                                                // 先切换模式
+                                                                Options.updateInputMethodMode(to: newMode)
+                                                                self.updateInputForm()
+
+                                                                // 使用 setMarkedText 替换前面输入的字母
+                                                                if selectedRange.location != NSNotFound && selectedRange.location >= charCount {
+                                                                        let replaceRange = NSRange(location: selectedRange.location - charCount, length: charCount)
+                                                                        self.mark(text: pinyinText, replacingRange: replaceRange)
+                                                                } else {
+                                                                        self.mark(text: pinyinText)
+                                                                }
+
+                                                                // 设置 bufferText 触发候选词生成
+                                                                self.inputStage = .starting
+                                                                UserLexicon.prepare()
+                                                                Engine.prepare()
+                                                                self.bufferText = pinyinText
+                                                                self.prepareWindow()
+                                                                self.updateWindowFrame()
+                                                        } else {
+                                                                if newMode == .abc {
+                                                                        // 切换到英文模式时清空 buffer
+                                                                        self.transparentModeBuffer = ""
+                                                                }
+                                                                Options.updateInputMethodMode(to: newMode)
+                                                                self.updateInputForm()
+                                                        }
                                                 }
                                         }
                                 } else {
@@ -450,8 +492,11 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                         return false
                 }
-                // Any non-Shift keyDown clears the shiftPressedAlone flag
-                shiftPressedAlone = false
+                // Any non-Shift keyDown clears the shiftPressedAlone flag (only in non-transparent mode)
+                let currentInputFormForShift: InputForm = inputForm
+                if !currentInputFormForShift.isTransparent {
+                        shiftPressedAlone = false
+                }
                 let shouldIgnoreCurrentEvent: Bool = modifiers.contains(.command) || modifiers.contains(.option)
                 guard !shouldIgnoreCurrentEvent else { return false }
                 let currentInputForm: InputForm = inputForm
@@ -489,11 +534,17 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 }
                 let isShifting: Bool = (modifiers == .shift)
                 switch code.representative {
-                case .alphabet(_):
+                case .alphabet(let letter):
                         switch currentInputForm {
                         case .mandarin:
                                 isEventHandled = true
                         case .transparent:
+                                // 记录在 transparent 模式下输入的字母
+                                if isShifting {
+                                        transparentModeBuffer.append(letter.uppercased())
+                                } else {
+                                        transparentModeBuffer.append(letter)
+                                }
                                 return false
                         case .options:
                                 isEventHandled = true
@@ -503,6 +554,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         case .mandarin:
                                 isEventHandled = true
                         case .transparent:
+                                transparentModeBuffer = ""
                                 return false
                         case .options:
                                 isEventHandled = true
@@ -513,6 +565,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 guard isBuffering else { return false }
                                 isEventHandled = true
                         case .transparent:
+                                transparentModeBuffer = ""
                                 return false
                         case .options:
                                 isEventHandled = true
@@ -534,6 +587,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         case .mandarin:
                                 isEventHandled = true
                         case .transparent:
+                                transparentModeBuffer = ""
                                 return false
                         case .options:
                                 isEventHandled = true
@@ -543,6 +597,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         case .mandarin:
                                 isEventHandled = true
                         case .transparent:
+                                transparentModeBuffer = ""
                                 return false
                         case .options:
                                 isEventHandled = true
@@ -553,6 +608,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 guard isBuffering else { return false }
                                 isEventHandled = true
                         case .transparent:
+                                transparentModeBuffer = ""
                                 return false
                         case .options:
                                 isEventHandled = true
@@ -563,6 +619,10 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 guard isBuffering else { return false }
                                 isEventHandled = true
                         case .transparent:
+                                // 在 transparent 模式下删除 buffer 中的最后一个字符
+                                if !transparentModeBuffer.isEmpty {
+                                        transparentModeBuffer.removeLast()
+                                }
                                 return false
                         case .options:
                                 isEventHandled = true
@@ -584,6 +644,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 guard shouldHandle else { return false }
                                 isEventHandled = true
                         case .transparent:
+                                transparentModeBuffer = ""
                                 return false
                         case .options:
                                 isEventHandled = true

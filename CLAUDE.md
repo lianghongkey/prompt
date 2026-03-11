@@ -140,6 +140,16 @@ Implemented in `TypeDuckInputController.swift`:
   - `flagsChanged` Shift up with `shiftPressedAlone == true` → toggle mode
 - Toggle is disabled while buffering input or in Options panel
 
+### English-to-Pinyin Conversion on Shift
+When switching from English to Mandarin mode via Shift tap, any letters typed before the Shift will be converted to pinyin input:
+- In English mode, letters are tracked in `transparentModeBuffer`
+- Buffer is cleared on space, return, punctuation, or numbers (only the last "word" is tracked)
+- On Shift tap (English → Mandarin):
+  1. The tracked letters are removed from the text field
+  2. They become the pinyin input buffer (marked text with underline)
+  3. Candidate window shows matching Chinese characters
+- Example: Type "nihao" in English mode, tap Shift → "nihao" is replaced with pinyin input showing "你好" candidates
+
 ### Auto-switch to English After Space (no candidates)
 In Mandarin mode, if the buffer has **no candidates** and the user presses Space, the buffer text + space is inserted and the mode **automatically switches to English**.
 - If there are candidates, Space selects the highlighted candidate and stays in Mandarin mode.

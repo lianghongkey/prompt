@@ -126,8 +126,8 @@ public struct Engine {
                         let spacedPinyin = scheme.map(\.origin).joined(separator: " ")
                         let combinedInput = scheme.map(\.text).joined()
 
-                        // Query database with spaced pinyin
-                        let directCandidates = pinyinMatchInternal(text: spacedPinyin, input: combinedInput)
+                        // Query database with spaced pinyin (exact match)
+                        let directCandidates = pinyinMatchInternal(text: spacedPinyin, input: combinedInput, isFuzzyMatch: false)
                         for candidate in directCandidates {
                                 if seen.insert(candidate.order).inserted {
                                         allCandidates.append(candidate)
@@ -143,7 +143,9 @@ public struct Engine {
                                         let expandedSpacedPinyin = expandedArray.joined(separator: " ")
                                         let hash = expandedSpacedPinyin.deterministicHash
                                         guard queriedHashes.insert(hash).inserted else { continue }
-                                        let fuzzyCandidates = pinyinMatchInternal(text: expandedSpacedPinyin, input: combinedInput)
+                                        // Mark fuzzy match candidates
+                                        let isFuzzy = expandedSpacedPinyin != spacedPinyin
+                                        let fuzzyCandidates = pinyinMatchInternal(text: expandedSpacedPinyin, input: combinedInput, isFuzzyMatch: isFuzzy)
                                         for candidate in fuzzyCandidates {
                                                 if seen.insert(candidate.order).inserted {
                                                         allCandidates.append(candidate)
@@ -153,9 +155,8 @@ public struct Engine {
                         }
                 }
 
-                // Sort all candidates by rowid (lower = more common) so fuzzy matches
-                // with high frequency rank properly alongside direct matches
-                allCandidates.sort(by: { $0.order < $1.order })
+                // Sort candidates: exact matches first, then fuzzy matches, both sorted by order (rowid)
+                allCandidates.sort(by: <)
 
                 // If no exact match, fall back progressively by dropping the last token
                 if allCandidates.isEmpty {
@@ -230,7 +231,7 @@ public struct Engine {
                 return results
         }
 
-        private static func pinyinMatchInternal(text: String, input: String) -> [Candidate] {
+        private static func pinyinMatchInternal(text: String, input: String, isFuzzyMatch: Bool = false) -> [Candidate] {
                 let code: Int = text.deterministicHash
                 guard let stmt = pingStatement else { return [] }
                 sqlite3_reset(stmt)
@@ -243,7 +244,7 @@ public struct Engine {
                         guard let pinyinPtr = sqlite3_column_text(stmt, 2) else { continue }
                         let word: String = String(cString: wordPtr)
                         let pinyin: String = String(cString: pinyinPtr)
-                        let candidate = Candidate(text: word, romanization: pinyin, input: input, mark: input, order: rowID)
+                        let candidate = Candidate(text: word, romanization: pinyin, input: input, mark: input, order: rowID, isFuzzyMatch: isFuzzyMatch)
                         candidates.append(candidate)
                 }
                 return candidates

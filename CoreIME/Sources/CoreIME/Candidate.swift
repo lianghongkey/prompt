@@ -38,6 +38,9 @@ public struct Candidate: Hashable, Comparable, Sendable {
         /// Rank. Smaller is preferred.
         let order: Int
 
+        /// Whether this candidate is from fuzzy pinyin matching
+        public let isFuzzyMatch: Bool
+
         /// Lexicon detail information
         public let notation: Notation?
 
@@ -53,9 +56,10 @@ public struct Candidate: Hashable, Comparable, Sendable {
         ///   - input: User input for this Candidate.
         ///   - mark: Formatted user input for pre-edit display.
         ///   - order: Rank. Smaller is preferred.
+        ///   - isFuzzyMatch: Whether this candidate is from fuzzy pinyin matching.
         ///   - notation: Lexicon detail information.
         ///   - subNotations: For Compound Translations.
-        public init(type: CandidateType = .mandarin, text: String, lexiconText: String? = nil, romanization: String, input: String, mark: String? = nil, order: Int = 0, notation: Notation? = nil, subNotations: [Notation] = []) {
+        public init(type: CandidateType = .mandarin, text: String, lexiconText: String? = nil, romanization: String, input: String, mark: String? = nil, order: Int = 0, isFuzzyMatch: Bool = false, notation: Notation? = nil, subNotations: [Notation] = []) {
                 self.type = type
                 self.text = text
                 self.lexiconText = lexiconText ?? text
@@ -63,6 +67,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 self.input = input
                 self.mark = mark ?? input
                 self.order = order
+                self.isFuzzyMatch = isFuzzyMatch
                 self.notation = notation
                 self.subNotations = subNotations
         }
@@ -82,6 +87,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 self.input = input
                 self.mark = input
                 self.order = 0
+                self.isFuzzyMatch = false
                 self.notation = nil
                 self.subNotations = []
         }
@@ -100,6 +106,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 self.input = input
                 self.mark = input
                 self.order = 0
+                self.isFuzzyMatch = false
                 self.notation = nil
                 self.subNotations = []
         }
@@ -152,8 +159,30 @@ public struct Candidate: Hashable, Comparable, Sendable {
 
         // Comparable
         public static func < (lhs: Candidate, rhs: Candidate) -> Bool {
+                // 1. User lexicon (order < 0) always comes first, sorted by frequency (higher frequency = lower order value)
+                let lhsIsUser = lhs.order < 0
+                let rhsIsUser = rhs.order < 0
+                if lhsIsUser != rhsIsUser {
+                        return lhsIsUser  // user lexicon comes before system lexicon
+                }
+
+                // 2. Within user lexicon, sort by frequency (order is negative, so lower = higher frequency)
+                if lhsIsUser && rhsIsUser {
+                        return lhs.order > rhs.order  // higher frequency (less negative) comes first
+                }
+
+                // 3. Within system lexicon, prioritize exact matches over fuzzy matches
+                if lhs.isFuzzyMatch != rhs.isFuzzyMatch {
+                        return !lhs.isFuzzyMatch  // exact match (false) comes before fuzzy match (true)
+                }
+
+                // 4. Then by input length (longer input = more specific)
                 guard lhs.input.count == rhs.input.count else { return lhs.input.count > rhs.input.count }
+
+                // 5. Then by text length (shorter text = more common)
                 guard lhs.text.count == rhs.text.count else { return lhs.text.count < rhs.text.count }
+
+                // 6. Finally by database order (rowid, lower = more common)
                 return lhs.order < rhs.order
         }
 
@@ -166,6 +195,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 let newMark: String = lhs.mark + rhs.mark
                 let step: Int = 1_000_000
                 let newOrder: Int = (lhs.order + step) + (rhs.order + step)
+                let newIsFuzzyMatch: Bool = lhs.isFuzzyMatch || rhs.isFuzzyMatch
                 let newSubNotations: [Notation] = {
                         var items: [Notation] = []
                         if let lhsNotation = lhs.notation {
@@ -180,7 +210,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
                         }
                         return items.uniqued()
                 }()
-                return Candidate(text: newText, lexiconText: newLexiconText, romanization: newRomanization, input: newInput, mark: newMark, order: newOrder, subNotations: newSubNotations)
+                return Candidate(text: newText, lexiconText: newLexiconText, romanization: newRomanization, input: newInput, mark: newMark, order: newOrder, isFuzzyMatch: newIsFuzzyMatch, subNotations: newSubNotations)
         }
 }
 
@@ -198,8 +228,9 @@ extension Array where Element == Candidate {
                 let mark: String = map(\.mark).joined()
                 let step: Int = 1_000_000
                 let order: Int = map(\.order).reduce(0, { $0 + $1 + step })
+                let isFuzzyMatch: Bool = contains(where: \.isFuzzyMatch)
                 let subNotations: [Notation] = compactMap(\.notation)
-                return Candidate(text: text, lexiconText: lexiconText, romanization: romanization, input: input, mark: mark, order: order, subNotations: subNotations)
+                return Candidate(text: text, lexiconText: lexiconText, romanization: romanization, input: input, mark: mark, order: order, isFuzzyMatch: isFuzzyMatch, subNotations: subNotations)
         }
 }
 

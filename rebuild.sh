@@ -5,6 +5,8 @@ cd Preparing
 swift run -c release
 cd ..
 
+rm ~/Library/userlexicon.sqlite3 
+
 # Build TypeDuck
 echo "Building TypeDuck..."
 xcodebuild -project TypeDuck.xcodeproj -scheme TypeDuck -destination 'platform=macOS' build

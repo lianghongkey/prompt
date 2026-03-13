@@ -351,6 +351,14 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 let needsSymbols: Bool = Options.isEmojiSuggestionsOn && selectedCandidates.isEmpty
                 let isInputMemoryOn: Bool = AppSettings.isInputMemoryOn
                 let segmentation = PinyinSegmentor.segment(text: processingText)
+
+                // Debug: log segmentation
+                if let first = segmentation.first {
+                    let origins = first.map(\.origin).joined(separator: " ")
+                    let texts = first.map(\.text).joined(separator: " ")
+                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Segmentation"), "Input: %{public}@, Origins: %{public}@, Texts: %{public}@", processingText, origins, texts)
+                }
+
                 let bestScheme = segmentation.first
                 let userLexiconCandidates: [Candidate] = isInputMemoryOn ? UserLexicon.suggest(text: processingText, segmentation: segmentation) : []
                 let engineCandidates: [Candidate] = Engine.suggest(text: processingText, segmentation: segmentation, needsSymbols: needsSymbols)

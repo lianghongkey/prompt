@@ -1,9 +1,12 @@
 import Foundation
 import SQLite3
 import CoreIME
+import os.log
 
 @MainActor
 struct UserLexicon: Sendable {
+
+        private static let logger = Logger(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "UserLexicon")
 
         private static let database: OpaquePointer? = {
                 var db: OpaquePointer? = nil
@@ -35,12 +38,27 @@ struct UserLexicon: Sendable {
         static func handle(_ candidate: Candidate?) {
                 guard let candidate else { return }
                 let word: String = candidate.lexiconText
-                let romanization: String = candidate.romanization
+                // Use mark (user's actual input) instead of romanization (standard pinyin)
+                // This ensures we can match the same input next time
+                let userInput: String = candidate.mark.replacingOccurrences(of: " ", with: "")
+                let romanization: String = userInput.isEmpty ? candidate.romanization : userInput
                 let id: Int = (word + romanization).deterministicHash
+
+                let pingValue = romanization.removedSpacesTones()
+                let pingHash = pingValue.deterministicHash
+
+                logger.debug("UserLexicon.handle: word=\(word), mark=\(candidate.mark), romanization=\(candidate.romanization), using=\(romanization), pingHash=\(pingHash)")
+
                 if let frequency = find(by: id) {
-                        update(id: id, frequency: frequency + 1)
+                        // Aggressive frequency boost: double the frequency each time, with a minimum increment of 1000
+                        // This ensures that after 2 selections, the word will have very high priority
+                        let newFrequency = max(frequency * 2, frequency + 1000)
+                        logger.debug("UserLexicon.handle: updating frequency from \(frequency) to \(newFrequency)")
+                        update(id: id, frequency: newFrequency)
                 } else {
-                        let entry = LexiconEntry(id: id, frequency: 1, word: word, romanization: romanization, shortcut: romanization.shortcut, ping: romanization.ping)
+                        // Start with a high initial frequency (1000) so first selection already has good priority
+                        let entry = LexiconEntry(id: id, frequency: 1000, word: word, romanization: romanization, shortcut: romanization.shortcut, ping: romanization.ping)
+                        logger.debug("UserLexicon.handle: inserting new entry with frequency 1000")
                         insert(entry: entry)
                 }
         }
@@ -81,8 +99,14 @@ struct UserLexicon: Sendable {
         // MARK: - Suggestion
 
         static func suggest(text: String, segmentation: Segmentation) -> [Candidate] {
-                let matches = query(text: text, input: text, isShortcut: false)
-                let shortcuts = query(text: text, input: text, mark: text.spaceSeparated(), isShortcut: true)
+                logger.debug("UserLexicon.suggest: text=\(text), segmentation.count=\(segmentation.count)")
+
+                let matches = query(text: text, input: text, isShortcut: false, isFuzzyMatch: false)
+                logger.debug("UserLexicon.suggest: direct matches=\(matches.count)")
+
+                let shortcuts = query(text: text, input: text, mark: text.spaceSeparated(), isShortcut: true, isFuzzyMatch: false)
+                logger.debug("UserLexicon.suggest: shortcuts=\(shortcuts.count)")
+
                 let searches: [Candidate] = {
                         let textCount = text.count
                         let schemes = segmentation.filter({ $0.length == textCount })
@@ -93,15 +117,20 @@ struct UserLexicon: Sendable {
 
                         for scheme in schemes {
                                 let pingText = scheme.map(\.origin).joined()
-                                let matched = query(text: pingText, input: text, isShortcut: false)
+                                logger.debug("UserLexicon.suggest: scheme origins=\(scheme.map(\.origin)), pingText=\(pingText), pingHash=\(pingText.deterministicHash)")
+
+                                let matched = query(text: pingText, input: text, isShortcut: false, isFuzzyMatch: false)
+                                logger.debug("UserLexicon.suggest: matched \(matched.count) candidates for pingText=\(pingText)")
+
                                 let text2mark = scheme.map(\.text).joined()
                                 let syllables = scheme.map(\.origin).joined()
 
                                 for candidate in matched {
+                                        logger.debug("UserLexicon.suggest: checking candidate '\(candidate.text)', mark=\(candidate.mark), syllables=\(syllables), match=\(candidate.mark == syllables)")
                                         if candidate.mark == syllables {
                                                 let key = candidate.text + candidate.romanization
                                                 if seen.insert(key).inserted {
-                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: candidate.input, mark: text2mark, order: -1))
+                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: candidate.input, mark: text2mark, order: -1, isFuzzyMatch: false))
                                                 }
                                         }
                                 }
@@ -109,13 +138,16 @@ struct UserLexicon: Sendable {
                                 // Also try fuzzy pinyin matching if enabled
                                 if FuzzyPinyinSettings.isAnyEnabled {
                                         let expandedArrays = FuzzyPinyinExpander.expandArray(scheme.map(\.origin))
+                                        logger.debug("UserLexicon.suggest: fuzzy expanded to \(expandedArrays.count) variants")
                                         for expandedArray in expandedArrays {
                                                 let expandedPingText = expandedArray.joined()
-                                                let fuzzyMatched = query(text: expandedPingText, input: text, isShortcut: false)
+                                                let isFuzzy = expandedPingText != pingText
+                                                let fuzzyMatched = query(text: expandedPingText, input: text, isShortcut: false, isFuzzyMatch: isFuzzy)
+                                                logger.debug("UserLexicon.suggest: fuzzy matched \(fuzzyMatched.count) for \(expandedPingText)")
                                                 for candidate in fuzzyMatched {
                                                         let key = candidate.text + candidate.romanization
                                                         if seen.insert(key).inserted {
-                                                                allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: candidate.input, mark: text2mark, order: -1))
+                                                                allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: candidate.input, mark: text2mark, order: -1, isFuzzyMatch: isFuzzy))
                                                         }
                                                 }
                                         }
@@ -124,10 +156,14 @@ struct UserLexicon: Sendable {
 
                         return allCandidates
                 }()
+
+                logger.debug("UserLexicon.suggest: total searches=\(searches.count)")
+                logger.debug("UserLexicon.suggest: returning \(matches.count + shortcuts.count + searches.count) candidates")
+
                 return matches + shortcuts + searches
         }
 
-        private static func query(text: String, input: String, mark: String? = nil, isShortcut: Bool) -> [Candidate] {
+        private static func query(text: String, input: String, mark: String? = nil, isShortcut: Bool, isFuzzyMatch: Bool = false) -> [Candidate] {
                 var candidates: [Candidate] = []
                 let code: Int = isShortcut ? text.replacingOccurrences(of: "y", with: "j").deterministicHash : text.deterministicHash
                 let column: String = isShortcut ? "shortcut" : "ping"
@@ -142,7 +178,7 @@ struct UserLexicon: Sendable {
                         let word: String = String(cString: wordPtr)
                         let romanization: String = String(cString: romanizationPtr)
                         let mark: String = mark ?? romanization.removedTones().removedSpaces()
-                        let candidate: Candidate = Candidate(text: word, romanization: romanization, input: input, mark: mark, order: -1)
+                        let candidate: Candidate = Candidate(text: word, romanization: romanization, input: input, mark: mark, order: -1, isFuzzyMatch: isFuzzyMatch)
                         candidates.append(candidate)
                 }
                 return candidates

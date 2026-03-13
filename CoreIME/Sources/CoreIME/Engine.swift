@@ -126,6 +126,11 @@ public struct Engine {
                         let spacedPinyin = scheme.map(\.origin).joined(separator: " ")
                         let combinedInput = scheme.map(\.text).joined()
 
+                        // Track all queried pinyin hashes to avoid duplicate queries
+                        var queriedHashes = Set<Int>()
+                        let spacedPinyinHash = spacedPinyin.deterministicHash
+                        queriedHashes.insert(spacedPinyinHash)
+
                         // Query database with spaced pinyin (exact match)
                         let directCandidates = pinyinMatchInternal(text: spacedPinyin, input: combinedInput, isFuzzyMatch: false)
                         for candidate in directCandidates {
@@ -138,7 +143,6 @@ public struct Engine {
                         if FuzzyPinyinSettings.isAnyEnabled {
                                 let pinyinArray = scheme.map(\.origin)
                                 let expandedArrays = FuzzyPinyinExpander.expandArray(pinyinArray)
-                                var queriedHashes = Set<Int>()
                                 for expandedArray in expandedArrays {
                                         let expandedSpacedPinyin = expandedArray.joined(separator: " ")
                                         let hash = expandedSpacedPinyin.deterministicHash

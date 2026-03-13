@@ -158,9 +158,22 @@ struct UserLexicon: Sendable {
                 }()
 
                 logger.debug("UserLexicon.suggest: total searches=\(searches.count)")
-                logger.debug("UserLexicon.suggest: returning \(matches.count + shortcuts.count + searches.count) candidates")
 
-                return matches + shortcuts + searches
+                // Deduplicate across matches, shortcuts, and searches
+                // For user lexicon, deduplicate by text only (ignore romanization variations)
+                // This prevents showing multiple entries like "不是 (bushi)", "不是 (bu shi)", "不是 (busi)"
+                var seen = Set<String>()
+                var allResults: [Candidate] = []
+                for candidate in matches + shortcuts + searches {
+                        let key = candidate.text  // Only use text for deduplication
+                        if seen.insert(key).inserted {
+                                allResults.append(candidate)
+                        }
+                }
+
+                logger.debug("UserLexicon.suggest: returning \(allResults.count) candidates (before: \(matches.count + shortcuts.count + searches.count))")
+
+                return allResults
         }
 
         private static func query(text: String, input: String, mark: String? = nil, isShortcut: Bool, isFuzzyMatch: Bool = false) -> [Candidate] {

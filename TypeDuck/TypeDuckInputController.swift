@@ -362,13 +362,68 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 let bestScheme = segmentation.first
                 let userLexiconCandidates: [Candidate] = isInputMemoryOn ? UserLexicon.suggest(text: processingText, segmentation: segmentation) : []
                 let engineCandidates: [Candidate] = Engine.suggest(text: processingText, segmentation: segmentation, needsSymbols: needsSymbols)
+
+                // Debug logging
+                if processingText == "bushi" {
+                    NSLog("=== DEBUG: Input '\(processingText)' ===")
+                    NSLog("UserLexicon: \(userLexiconCandidates.count) candidates")
+                    for (i, c) in userLexiconCandidates.prefix(5).enumerated() {
+                        NSLog("  UL[\(i)] \(c.text) (\(c.romanization)) input=\(c.input) mark=\(c.mark) fuzzy=\(c.isFuzzyMatch)")
+                    }
+                    NSLog("Engine: \(engineCandidates.count) candidates")
+                    for (i, c) in engineCandidates.prefix(10).enumerated() {
+                        NSLog("  EN[\(i)] \(c.text) (\(c.romanization)) input=\(c.input) mark=\(c.mark) fuzzy=\(c.isFuzzyMatch)")
+                    }
+                }
+
+                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "=== Input: %{public}@ ===", processingText)
+                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "UserLexicon: %d candidates", userLexiconCandidates.count)
+                for (i, c) in userLexiconCandidates.prefix(5).enumerated() {
+                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "  UL[%d] %{public}@ (%{public}@) input=%{public}@ mark=%{public}@ fuzzy=%d", i, c.text, c.romanization, c.input, c.mark, c.isFuzzyMatch ? 1 : 0)
+                }
+                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "Engine: %d candidates", engineCandidates.count)
+                for (i, c) in engineCandidates.prefix(10).enumerated() {
+                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "  EN[%d] %{public}@ (%{public}@) input=%{public}@ mark=%{public}@ fuzzy=%d", i, c.text, c.romanization, c.input, c.mark, c.isFuzzyMatch ? 1 : 0)
+                }
+
                 let suggestions: [Candidate] = {
                         let combined = userLexiconCandidates + engineCandidates
+                        if processingText == "bushi" {
+                            NSLog("Combined: \(combined.count) candidates")
+                        }
+                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "Combined: %d candidates", combined.count)
                         let hasUserLexicon = combined.first?.isUserLexicon ?? false
                         if hasUserLexicon {
-                                return combined.compactMap({ $0.isCompound ? nil : $0 }).uniqued()
+                                // When user lexicon is present, deduplicate by text only to avoid showing
+                                // multiple entries like "不是 (bushi)" from user lexicon and "不是 (bu shi)" from engine
+                                var seen = Set<String>()
+                                let deduped = combined.compactMap({ candidate -> Candidate? in
+                                        guard !candidate.isCompound else { return nil }
+                                        let key = candidate.text
+                                        guard seen.insert(key).inserted else { return nil }
+                                        return candidate
+                                })
+                                if processingText == "bushi" {
+                                    NSLog("After text-only dedup: \(combined.count) -> \(deduped.count)")
+                                    for (i, c) in deduped.prefix(10).enumerated() {
+                                        NSLog("  DD[\(i)] \(c.text) (\(c.romanization))")
+                                    }
+                                }
+                                return deduped
                         } else {
-                                return combined
+                                // Always deduplicate to avoid showing duplicate candidates from different query paths
+                                let uniqued = combined.uniqued()
+                                if processingText == "bushi" {
+                                    NSLog("After uniqued: \(combined.count) -> \(uniqued.count)")
+                                    for (i, c) in uniqued.prefix(10).enumerated() {
+                                        NSLog("  UQ[\(i)] \(c.text) (\(c.romanization))")
+                                    }
+                                }
+                                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "After uniqued: %d -> %d", combined.count, uniqued.count)
+                                for (i, c) in uniqued.prefix(10).enumerated() {
+                                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "  UQ[%d] %{public}@ (%{public}@)", i, c.text, c.romanization)
+                                }
+                                return uniqued
                         }
                 }()
 
@@ -382,13 +437,18 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         let singleChars = Engine.suggest(text: firstPinyin, segmentation: [[firstSyllable]], needsSymbols: false)
                                 .filter({ $0.text.count == 1 && $0.isMandarin })
 
+                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "SingleChars for '%{public}@': %d candidates", firstPinyin, singleChars.count)
+
                         // Only add if not already present
                         var result = suggestions
                         for singleChar in singleChars {
                                 if !result.contains(where: { $0.text == singleChar.text && $0.romanization == singleChar.romanization }) {
                                         result.append(singleChar)
+                                } else {
+                                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "  Skipping duplicate: %{public}@ (%{public}@)", singleChar.text, singleChar.romanization)
                                 }
                         }
+                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "After adding single chars: %d -> %d", suggestions.count, result.count)
                         return result
                 }()
 
@@ -404,6 +464,19 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         let tailText = processingText.dropFirst(leadingLength)
                         return leadingText + tailText
                 }())
+
+                if processingText == "bushi" {
+                    NSLog("Final candidates: \(suggestionsWithSingleChars.count)")
+                    for (i, c) in suggestionsWithSingleChars.prefix(10).enumerated() {
+                        NSLog("  FINAL[\(i)] \(c.text) (\(c.romanization))")
+                    }
+                }
+
+                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "Final candidates: %d", suggestionsWithSingleChars.count)
+                for (i, c) in suggestionsWithSingleChars.prefix(10).enumerated() {
+                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "  FINAL[%d] %{public}@ (%{public}@)", i, c.text, c.romanization)
+                }
+
                 candidates = suggestionsWithSingleChars
         }
         private func pinyinReverseLookup() {

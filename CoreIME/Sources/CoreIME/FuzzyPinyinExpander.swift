@@ -53,30 +53,54 @@ public struct FuzzyPinyinExpander {
 
         /// 扩展拼音数组，生成所有可能的组合
         /// - Parameter pinyins: 拼音数组
-        /// - Returns: 所有可能的拼音数组组合
+        /// - Returns: 所有可能的拼音数组组合（原始拼音组合始终排在第一位）
         public static func expandArray(_ pinyins: [String]) -> [[String]] {
                 guard FuzzyPinyinSettings.isAnyEnabled else {
                         return [pinyins]
                 }
 
-                var result: [[String]] = [pinyins]
+                // 使用两个数组：一个存放原始拼音组合，一个存放模糊音变体
+                var exactMatches: [[String]] = [pinyins]
+                var fuzzyMatches: [[String]] = []
 
                 for (index, pinyin) in pinyins.enumerated() {
                         let expanded = expand(pinyin)
                         guard expanded.count > 1 else { continue }
 
-                        var newResult: [[String]] = []
-                        for existing in result {
+                        var newExactMatches: [[String]] = []
+                        var newFuzzyMatches: [[String]] = []
+
+                        // 处理精确匹配
+                        for existing in exactMatches {
                                 for variant in expanded {
                                         var newArray = existing
                                         newArray[index] = variant
-                                        newResult.append(newArray)
+                                        if variant == pinyin {
+                                                // 保持原始拼音
+                                                newExactMatches.append(newArray)
+                                        } else {
+                                                // 模糊音变体
+                                                newFuzzyMatches.append(newArray)
+                                        }
                                 }
                         }
-                        result = newResult
-                        guard result.count < 20 else { break }
+
+                        // 处理已有的模糊匹配
+                        for existing in fuzzyMatches {
+                                for variant in expanded {
+                                        var newArray = existing
+                                        newArray[index] = variant
+                                        newFuzzyMatches.append(newArray)
+                                }
+                        }
+
+                        exactMatches = newExactMatches
+                        fuzzyMatches = newFuzzyMatches
+
+                        guard (exactMatches.count + fuzzyMatches.count) < 20 else { break }
                 }
 
-                return result
+                // 精确匹配在前，模糊匹配在后
+                return exactMatches + fuzzyMatches
         }
 }

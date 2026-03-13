@@ -171,19 +171,22 @@ public struct Candidate: Hashable, Comparable, Sendable {
                         return lhs.order > rhs.order  // higher frequency (less negative) comes first
                 }
 
-                // 3. Within system lexicon, prioritize exact matches over fuzzy matches
+                // 3. Within system lexicon, sort by input length first (longer input = more specific)
+                guard lhs.input.count == rhs.input.count else { return lhs.input.count > rhs.input.count }
+
+                // 4. Then by text length (shorter text = more common)
+                guard lhs.text.count == rhs.text.count else { return lhs.text.count < rhs.text.count }
+
+                // 5. Then by database order (rowid, lower = more common)
+                // This ensures zi and zhi candidates are interleaved by frequency
+                guard lhs.order == rhs.order else { return lhs.order < rhs.order }
+
+                // 6. Finally, prioritize exact matches over fuzzy matches (as tiebreaker)
                 if lhs.isFuzzyMatch != rhs.isFuzzyMatch {
                         return !lhs.isFuzzyMatch  // exact match (false) comes before fuzzy match (true)
                 }
 
-                // 4. Then by input length (longer input = more specific)
-                guard lhs.input.count == rhs.input.count else { return lhs.input.count > rhs.input.count }
-
-                // 5. Then by text length (shorter text = more common)
-                guard lhs.text.count == rhs.text.count else { return lhs.text.count < rhs.text.count }
-
-                // 6. Finally by database order (rowid, lower = more common)
-                return lhs.order < rhs.order
+                return false
         }
 
         public static func +(lhs: Candidate, rhs: Candidate) -> Candidate? {

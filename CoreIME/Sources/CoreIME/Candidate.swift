@@ -174,14 +174,23 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 // 3. Within system lexicon, sort by input length first (longer input = more specific)
                 guard lhs.input.count == rhs.input.count else { return lhs.input.count > rhs.input.count }
 
-                // 4. Then by text length (shorter text = more common)
+                // 4. Prioritize candidates whose character count matches the estimated syllable count
+                // For input "liangh" (2 syllables), prefer 2-character words over 1-character words
+                let inputSyllableCount = PinyinSegmentor.maxSyllableCount(for: lhs.input)
+                let lhsMatchesSyllables = lhs.text.count == inputSyllableCount
+                let rhsMatchesSyllables = rhs.text.count == inputSyllableCount
+                if lhsMatchesSyllables != rhsMatchesSyllables {
+                        return lhsMatchesSyllables  // matching syllable count comes first
+                }
+
+                // 5. Then by text length (shorter text = more common, but only within same syllable-match group)
                 guard lhs.text.count == rhs.text.count else { return lhs.text.count < rhs.text.count }
 
-                // 5. Then by database order (rowid, lower = more common)
+                // 6. Then by database order (rowid, lower = more common)
                 // This ensures zi and zhi candidates are interleaved by frequency
                 guard lhs.order == rhs.order else { return lhs.order < rhs.order }
 
-                // 6. Finally, prioritize exact matches over fuzzy matches (as tiebreaker)
+                // 7. Finally, prioritize exact matches over fuzzy matches (as tiebreaker)
                 if lhs.isFuzzyMatch != rhs.isFuzzyMatch {
                         return !lhs.isFuzzyMatch  // exact match (false) comes before fuzzy match (true)
                 }

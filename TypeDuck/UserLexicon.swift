@@ -185,11 +185,19 @@ struct UserLexicon: Sendable {
                 defer { sqlite3_finalize(statement) }
                 guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return candidates }
                 guard sqlite3_bind_int64(statement, 1, Int64(code)) == SQLITE_OK else { return candidates }
+
+                // Calculate max syllable count from input
+                let maxSyllableCount = PinyinSegmentor.maxSyllableCount(for: input)
+
                 while sqlite3_step(statement) == SQLITE_ROW {
                         guard let wordPtr = sqlite3_column_text(statement, 0) else { continue }
                         guard let romanizationPtr = sqlite3_column_text(statement, 1) else { continue }
                         let word: String = String(cString: wordPtr)
                         let romanization: String = String(cString: romanizationPtr)
+
+                        // Filter: word character count must not exceed syllable count
+                        guard word.count <= maxSyllableCount else { continue }
+
                         let mark: String = mark ?? romanization.removedTones().removedSpaces()
                         let candidate: Candidate = Candidate(text: word, romanization: romanization, input: input, mark: mark, order: -1, isFuzzyMatch: isFuzzyMatch)
                         candidates.append(candidate)

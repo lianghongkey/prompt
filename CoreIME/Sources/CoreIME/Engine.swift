@@ -241,6 +241,10 @@ public struct Engine {
                 sqlite3_reset(stmt)
                 sqlite3_bind_int64(stmt, 1, Int64(code))
                 sqlite3_bind_int64(stmt, 2, 100)
+
+                // Calculate max syllable count from the input
+                let maxSyllableCount = PinyinSegmentor.maxSyllableCount(for: input)
+
                 var candidates: [Candidate] = []
                 while sqlite3_step(stmt) == SQLITE_ROW {
                         let rowID: Int = Int(sqlite3_column_int64(stmt, 0))
@@ -248,6 +252,10 @@ public struct Engine {
                         guard let pinyinPtr = sqlite3_column_text(stmt, 2) else { continue }
                         let word: String = String(cString: wordPtr)
                         let pinyin: String = String(cString: pinyinPtr)
+
+                        // Filter: word character count must not exceed syllable count
+                        guard word.count <= maxSyllableCount else { continue }
+
                         let candidate = Candidate(text: word, romanization: pinyin, input: input, mark: input, order: rowID, isFuzzyMatch: isFuzzyMatch)
                         candidates.append(candidate)
                 }
@@ -255,12 +263,24 @@ public struct Engine {
         }
 
         private static func pinyinShortcutInternal(text: String, limit: Int) -> [Candidate] {
-                guard let firstChar = text.first else { return [] }
-                guard let code: Int = firstChar.intercode else { return [] }
+                guard !text.isEmpty else { return [] }
+
+                // Calculate max syllable count from input
+                let maxSyllableCount = PinyinSegmentor.maxSyllableCount(for: text)
+
+                // Extract initials from the input for shortcut matching
+                // For "lh", we want to match words with pinyin starting with "l" and "h"
+                // For "lianh", we want to match "liang h..." so initials are "l" and "h"
+                let initials = extractInitials(from: text, maxCount: maxSyllableCount)
+                guard !initials.isEmpty else { return [] }
+
+                // Query using the first initial
+                guard let firstInitialCode = initials.first?.intercode else { return [] }
                 guard let stmt = shortcutStatement else { return [] }
                 sqlite3_reset(stmt)
-                sqlite3_bind_int64(stmt, 1, Int64(code))
-                sqlite3_bind_int64(stmt, 2, Int64(limit))
+                sqlite3_bind_int64(stmt, 1, Int64(firstInitialCode))
+                sqlite3_bind_int64(stmt, 2, Int64(limit * 2))  // Get more results to filter
+
                 var candidates: [Candidate] = []
                 while sqlite3_step(stmt) == SQLITE_ROW {
                         let rowID: Int = Int(sqlite3_column_int64(stmt, 0))
@@ -268,11 +288,125 @@ public struct Engine {
                         guard let pinyinPtr = sqlite3_column_text(stmt, 2) else { continue }
                         let word: String = String(cString: wordPtr)
                         let pinyin: String = String(cString: pinyinPtr)
-                        guard pinyin.hasPrefix(text) else { continue }
+
+                        // Filter: word character count must not exceed syllable count
+                        guard word.count <= maxSyllableCount else { continue }
+
+                        // For multi-initial input (like "lh"), check if pinyin initials match
+                        if initials.count > 1 {
+                                let pinyinInitials = extractPinyinInitials(from: pinyin)
+                                guard pinyinInitials.count >= initials.count else { continue }
+                                // Check if the initials match
+                                var matches = true
+                                for (i, initial) in initials.enumerated() {
+                                        if i < pinyinInitials.count && pinyinInitials[i] != initial {
+                                                matches = false
+                                                break
+                                        }
+                                }
+                                guard matches else { continue }
+                        } else {
+                                // Single initial: check if pinyin starts with the input
+                                guard pinyin.hasPrefix(text) else { continue }
+                        }
+
                         let candidate = Candidate(text: word, romanization: pinyin, input: text, mark: text, order: rowID)
                         candidates.append(candidate)
                 }
                 return candidates
         }
 
+        /// Extract initials from input text based on syllable structure
+        /// For "lh" -> ["l", "h"]
+        /// For "lianh" -> ["l", "h"] (lian + h)
+        /// For "liang" -> ["l"]
+        private static func extractInitials(from text: String, maxCount: Int) -> [Character] {
+                guard !text.isEmpty else { return [] }
+
+                var initials: [Character] = []
+                let segmentation = PinyinSegmentor.segment(text: text)
+
+                if let bestScheme = segmentation.first, bestScheme.length > 0 {
+                        // Add initials from segmented syllables
+                        for token in bestScheme {
+                                if let firstChar = token.origin.first {
+                                        initials.append(firstChar)
+                                }
+                        }
+
+                        // Check for remaining text after segmentation
+                        let coveredLength = bestScheme.length
+                        if coveredLength < text.count {
+                                let remaining = String(text.dropFirst(coveredLength))
+                                // Add initials from remaining text
+                                initials.append(contentsOf: extractInitialsFromUnsegmented(remaining))
+                        }
+                } else {
+                        // No segmentation, extract initials directly
+                        initials = extractInitialsFromUnsegmented(text)
+                }
+
+                return Array(initials.prefix(maxCount))
+        }
+
+        /// Extract initials from text that couldn't be segmented
+        private static func extractInitialsFromUnsegmented(_ text: String) -> [Character] {
+                let singleLetterInitials: Set<Character> = [
+                        "b", "p", "m", "f", "d", "t", "n", "l", "g", "k", "h",
+                        "j", "q", "x", "r", "z", "c", "s", "y", "w"
+                ]
+                let zeroInitialVowels: Set<Character> = ["a", "o", "e"]
+
+                var initials: [Character] = []
+                var i = text.startIndex
+                var isAtStart = true
+
+                while i < text.endIndex {
+                        let char = text[i]
+
+                        // Check for two-letter initials (zh, ch, sh)
+                        let nextIndex = text.index(after: i)
+                        if nextIndex < text.endIndex {
+                                let twoChars = String(text[i...nextIndex])
+                                if twoChars == "zh" || twoChars == "ch" || twoChars == "sh" {
+                                        initials.append(char)  // Use first letter as initial
+                                        isAtStart = false
+                                        i = text.index(after: nextIndex)
+                                        while i < text.endIndex && !singleLetterInitials.contains(text[i]) {
+                                                i = text.index(after: i)
+                                        }
+                                        continue
+                                }
+                        }
+
+                        if singleLetterInitials.contains(char) {
+                                initials.append(char)
+                                isAtStart = false
+                                i = text.index(after: i)
+                                while i < text.endIndex && !singleLetterInitials.contains(text[i]) {
+                                        i = text.index(after: i)
+                                }
+                        } else if zeroInitialVowels.contains(char) && isAtStart {
+                                initials.append(char)
+                                isAtStart = false
+                                i = text.index(after: i)
+                                while i < text.endIndex && !singleLetterInitials.contains(text[i]) {
+                                        i = text.index(after: i)
+                                }
+                        } else {
+                                isAtStart = false
+                                i = text.index(after: i)
+                        }
+                }
+
+                return initials
+        }
+
+        /// Extract initials from a pinyin string (space-separated syllables)
+        /// "liang hong" -> ["l", "h"]
+        private static func extractPinyinInitials(from pinyin: String) -> [Character] {
+                return pinyin.split(separator: " ").compactMap { syllable in
+                        syllable.first
+                }
+        }
 }

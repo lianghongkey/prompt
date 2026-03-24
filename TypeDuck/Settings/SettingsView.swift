@@ -22,7 +22,6 @@ struct SettingsView: View {
         // macOS 12
         @State private var isGeneralSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .general
         @State private var isFuzzyPinyinSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .fuzzyPinyin
-        @State private var isHelpViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .help
         @State private var isAboutViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .about
 
         var body: some View {
@@ -31,7 +30,6 @@ struct SettingsView: View {
                                 List(selection: $selection) {
                                         Label("设置", systemImage: "gear").tag(SettingsSidebarRow.general)
                                         Label("模糊音", systemImage: "speaker.wave.2").tag(SettingsSidebarRow.fuzzyPinyin)
-                                        Label("帮助", systemImage: "keyboard").tag(SettingsSidebarRow.help)
                                         Label("关于", systemImage: "info.circle").tag(SettingsSidebarRow.about)
                                 }
                                 .frame(minWidth: 150, maxWidth: 200)
@@ -48,9 +46,6 @@ struct SettingsView: View {
                                         }
                                         NavigationLink(destination: FuzzyPinyinSettingsView(), isActive: $isFuzzyPinyinSettingsViewActive) {
                                                 Label("模糊音", systemImage: "speaker.wave.2")
-                                        }
-                                        NavigationLink(destination: HelpView(), isActive: $isHelpViewActive) {
-                                                Label("帮助", systemImage: "keyboard")
                                         }
                                         NavigationLink(destination: AboutView(), isActive: $isAboutViewActive) {
                                                 Label("关于", systemImage: "info.circle")
@@ -70,8 +65,6 @@ struct SettingsView: View {
                         GeneralSettingsView()
                 case .fuzzyPinyin:
                         FuzzyPinyinSettingsView()
-                case .help:
-                        HelpView()
                 case .about:
                         AboutView()
                 }
@@ -85,7 +78,6 @@ struct SettingsView: View {
 enum SettingsSidebarRow: Int, Hashable, Identifiable, CaseIterable {
         case general
         case fuzzyPinyin
-        case help
         case about
         var id: Int {
                 return rawValue

@@ -1308,10 +1308,6 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 _ = NSMenuItem(title: checkForUpdatesTitle, action: #selector(openSettings), keyEquivalent: "")
                 // menu.addItem(checkForUpdates)
 
-                let helpTitle: String = String(localized: "Menu.Help")
-                let help = NSMenuItem(title: helpTitle, action: #selector(openHelp), keyEquivalent: "")
-                menu.addItem(help)
-
                 let aboutTitle: String = String(localized: "Menu.About")
                 let about = NSMenuItem(title: aboutTitle, action: #selector(openAbout), keyEquivalent: "")
                 menu.addItem(about)
@@ -1320,10 +1316,6 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         }
         @objc private func openSettings() {
                 AppSettings.updateSelectedSettingsSidebarRow(to: .general)
-                displaySettingsWindow()
-        }
-        @objc private func openHelp() {
-                AppSettings.updateSelectedSettingsSidebarRow(to: .help)
                 displaySettingsWindow()
         }
         @objc private func openAbout() {

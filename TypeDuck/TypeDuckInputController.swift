@@ -923,17 +923,9 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 case .period, .equal:
                                         updateDisplayCandidates(.nextPage, highlight: .unchanged)
                                 case .bracketLeft:
-                                        let index = appContext.highlightedIndex
-                                        guard let displayCandidate = appContext.displayCandidates.fetch(index) else { return }
-                                        guard let firstCharacter = displayCandidate.candidate.text.first else { return }
-                                        insert(String(firstCharacter))
-                                        aftercareSelection(displayCandidate, shouldProcessUserLexicon: false)
+                                        updateDisplayCandidates(.previousPage, highlight: .unchanged)
                                 case .bracketRight:
-                                        let index = appContext.highlightedIndex
-                                        guard let displayCandidate = appContext.displayCandidates.fetch(index) else { return }
-                                        guard let lastCharacter = displayCandidate.candidate.text.last else { return }
-                                        insert(String(lastCharacter))
-                                        aftercareSelection(displayCandidate, shouldProcessUserLexicon: false)
+                                        updateDisplayCandidates(.nextPage, highlight: .unchanged)
                                 default:
                                         switch Options.punctuationForm {
                                         case .chinese:

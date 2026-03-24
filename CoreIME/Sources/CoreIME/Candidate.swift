@@ -41,6 +41,9 @@ public struct Candidate: Hashable, Comparable, Sendable {
         /// Whether this candidate is from fuzzy pinyin matching
         public let isFuzzyMatch: Bool
 
+        /// Cached syllable count of input, used for sorting
+        let syllableCount: Int
+
         /// Lexicon detail information
         public let notation: Notation?
 
@@ -68,6 +71,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 self.mark = mark ?? input
                 self.order = order
                 self.isFuzzyMatch = isFuzzyMatch
+                self.syllableCount = PinyinSegmentor.maxSyllableCount(for: input)
                 self.notation = notation
                 self.subNotations = subNotations
         }
@@ -88,6 +92,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 self.mark = input
                 self.order = 0
                 self.isFuzzyMatch = false
+                self.syllableCount = PinyinSegmentor.maxSyllableCount(for: input)
                 self.notation = nil
                 self.subNotations = []
         }
@@ -107,6 +112,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 self.mark = input
                 self.order = 0
                 self.isFuzzyMatch = false
+                self.syllableCount = PinyinSegmentor.maxSyllableCount(for: input)
                 self.notation = nil
                 self.subNotations = []
         }
@@ -176,9 +182,8 @@ public struct Candidate: Hashable, Comparable, Sendable {
 
                 // 4. Prioritize candidates whose character count matches the estimated syllable count
                 // For input "liangh" (2 syllables), prefer 2-character words over 1-character words
-                let inputSyllableCount = PinyinSegmentor.maxSyllableCount(for: lhs.input)
-                let lhsMatchesSyllables = lhs.text.count == inputSyllableCount
-                let rhsMatchesSyllables = rhs.text.count == inputSyllableCount
+                let lhsMatchesSyllables = lhs.text.count == lhs.syllableCount
+                let rhsMatchesSyllables = rhs.text.count == rhs.syllableCount
                 if lhsMatchesSyllables != rhsMatchesSyllables {
                         return lhsMatchesSyllables  // matching syllable count comes first
                 }

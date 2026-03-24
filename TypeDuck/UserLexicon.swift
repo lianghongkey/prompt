@@ -32,6 +32,26 @@ struct UserLexicon: Sendable {
                 guard sqlite3_step(statement) == SQLITE_DONE else { return }
         }
 
+        // MARK: - Prepared Statements
+
+        private static let pingQueryStatement: OpaquePointer? = {
+                var stmt: OpaquePointer? = nil
+                sqlite3_prepare_v2(database, "SELECT word, romanization FROM userlexicontable WHERE ping = ? ORDER BY frequency DESC LIMIT 5;", -1, &stmt, nil)
+                return stmt
+        }()
+
+        private static let shortcutQueryStatement: OpaquePointer? = {
+                var stmt: OpaquePointer? = nil
+                sqlite3_prepare_v2(database, "SELECT word, romanization FROM userlexicontable WHERE shortcut = ? ORDER BY frequency DESC LIMIT 5;", -1, &stmt, nil)
+                return stmt
+        }()
+
+        private static let findStatement: OpaquePointer? = {
+                var stmt: OpaquePointer? = nil
+                sqlite3_prepare_v2(database, "SELECT frequency FROM userlexicontable WHERE id = ? LIMIT 1;", -1, &stmt, nil)
+                return stmt
+        }()
+
 
         // MARK: - Handle Candidate
 
@@ -63,13 +83,12 @@ struct UserLexicon: Sendable {
                 }
         }
         private static func find(by id: Int) -> Int64? {
-                let command: String = "SELECT frequency FROM userlexicontable WHERE id = ? LIMIT 1;"
-                var statement: OpaquePointer? = nil
-                defer { sqlite3_finalize(statement) }
-                guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return nil }
-                guard sqlite3_bind_int64(statement, 1, Int64(id)) == SQLITE_OK else { return nil }
-                guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
-                let frequency: Int64 = sqlite3_column_int64(statement, 0)
+                guard let stmt = findStatement else { return nil }
+                sqlite3_reset(stmt)
+                guard sqlite3_bind_int64(stmt, 1, Int64(id)) == SQLITE_OK else { return nil }
+                guard sqlite3_step(stmt) == SQLITE_ROW else { return nil }
+                let frequency = sqlite3_column_int64(stmt, 0)
+                sqlite3_reset(stmt)  // Release cursor before any subsequent write
                 return frequency
         }
         private static func update(id: Int, frequency: Int64) {
@@ -179,19 +198,16 @@ struct UserLexicon: Sendable {
         private static func query(text: String, input: String, mark: String? = nil, isShortcut: Bool, isFuzzyMatch: Bool = false) -> [Candidate] {
                 var candidates: [Candidate] = []
                 let code: Int = isShortcut ? text.replacingOccurrences(of: "y", with: "j").deterministicHash : text.deterministicHash
-                let column: String = isShortcut ? "shortcut" : "ping"
-                let command: String = "SELECT word, romanization FROM userlexicontable WHERE \(column) = ? ORDER BY frequency DESC LIMIT 5;"
-                var statement: OpaquePointer? = nil
-                defer { sqlite3_finalize(statement) }
-                guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return candidates }
-                guard sqlite3_bind_int64(statement, 1, Int64(code)) == SQLITE_OK else { return candidates }
+                guard let stmt = isShortcut ? shortcutQueryStatement : pingQueryStatement else { return candidates }
+                sqlite3_reset(stmt)
+                guard sqlite3_bind_int64(stmt, 1, Int64(code)) == SQLITE_OK else { return candidates }
 
                 // Calculate max syllable count from input
                 let maxSyllableCount = PinyinSegmentor.maxSyllableCount(for: input)
 
-                while sqlite3_step(statement) == SQLITE_ROW {
-                        guard let wordPtr = sqlite3_column_text(statement, 0) else { continue }
-                        guard let romanizationPtr = sqlite3_column_text(statement, 1) else { continue }
+                while sqlite3_step(stmt) == SQLITE_ROW {
+                        guard let wordPtr = sqlite3_column_text(stmt, 0) else { continue }
+                        guard let romanizationPtr = sqlite3_column_text(stmt, 1) else { continue }
                         let word: String = String(cString: wordPtr)
                         let romanization: String = String(cString: romanizationPtr)
 

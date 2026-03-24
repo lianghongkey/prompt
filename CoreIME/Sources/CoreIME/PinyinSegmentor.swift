@@ -42,14 +42,17 @@ public struct PinyinSegmentor {
         /// Cache for pinyinsyllabletable lookups (~400 entries, never changes)
         nonisolated(unsafe) private static var syllableCache: [Int: String] = [:]
 
+        /// Cache for maxSyllableCount results (keyed by input string)
+        nonisolated(unsafe) private static var syllableCountCache: [String: Int] = [:]
+
         /// Valid pinyin initials (声母) - single letter
-        private static let singleLetterInitials: Set<Character> = [
+        public static let singleLetterInitials: Set<Character> = [
                 "b", "p", "m", "f", "d", "t", "n", "l", "g", "k", "h",
                 "j", "q", "x", "r", "z", "c", "s", "y", "w"
         ]
 
         /// Vowels that can start zero-initial syllables (零声母)
-        private static let zeroInitialVowels: Set<Character> = ["a", "o", "e"]
+        public static let zeroInitialVowels: Set<Character> = ["a", "o", "e"]
 
         /// Calculate the maximum number of syllables that the input could represent.
         /// This counts both complete syllables and potential syllable prefixes.
@@ -64,23 +67,23 @@ public struct PinyinSegmentor {
         /// - "nihao" → 2 (ni + hao)
         public static func maxSyllableCount(for text: String) -> Int {
                 guard !text.isEmpty else { return 0 }
+                if let cached = syllableCountCache[text] { return cached }
 
                 // Find the best partial segmentation (covers as many characters as possible)
                 let (coveredLength, syllableCount) = findBestPartialSegmentation(text)
 
-                if coveredLength == text.count {
-                        // Complete coverage
-                        return syllableCount
-                }
-
-                if coveredLength > 0 {
-                        // Partial coverage: segmented syllables + remaining potential syllables
-                        let remaining = String(text.dropFirst(coveredLength))
-                        return syllableCount + countPotentialSyllables(remaining)
-                }
-
-                // No segmentation possible, count potential syllables
-                return countPotentialSyllables(text)
+                let result: Int = {
+                        if coveredLength == text.count {
+                                return syllableCount
+                        }
+                        if coveredLength > 0 {
+                                let remaining = String(text.dropFirst(coveredLength))
+                                return syllableCount + countPotentialSyllables(remaining)
+                        }
+                        return countPotentialSyllables(text)
+                }()
+                syllableCountCache[text] = result
+                return result
         }
 
         /// Find the best partial segmentation that covers the most characters.

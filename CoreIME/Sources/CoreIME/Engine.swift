@@ -351,11 +351,8 @@ public struct Engine {
 
         /// Extract initials from text that couldn't be segmented
         private static func extractInitialsFromUnsegmented(_ text: String) -> [Character] {
-                let singleLetterInitials: Set<Character> = [
-                        "b", "p", "m", "f", "d", "t", "n", "l", "g", "k", "h",
-                        "j", "q", "x", "r", "z", "c", "s", "y", "w"
-                ]
-                let zeroInitialVowels: Set<Character> = ["a", "o", "e"]
+                let singleLetterInitials = PinyinSegmentor.singleLetterInitials
+                let zeroInitialVowels = PinyinSegmentor.zeroInitialVowels
 
                 var initials: [Character] = []
                 var i = text.startIndex

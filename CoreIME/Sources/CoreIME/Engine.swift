@@ -274,11 +274,13 @@ public struct Engine {
                 let initials = extractInitials(from: text, maxCount: maxSyllableCount)
                 guard !initials.isEmpty else { return [] }
 
-                // Query using the first initial
-                guard let firstInitialCode = initials.first?.intercode else { return [] }
+                // Query using the combined shortcut code of all initials
+                // e.g. "wsm" -> ['w','s','m'] -> 423832, which directly matches 为什么
+                let combinedCode = initials.compactMap(\.intercode).combined()
+                guard combinedCode > 0 else { return [] }
                 guard let stmt = shortcutStatement else { return [] }
                 sqlite3_reset(stmt)
-                sqlite3_bind_int64(stmt, 1, Int64(firstInitialCode))
+                sqlite3_bind_int64(stmt, 1, Int64(combinedCode))
                 sqlite3_bind_int64(stmt, 2, Int64(limit * 2))  // Get more results to filter
 
                 var candidates: [Candidate] = []
@@ -292,20 +294,7 @@ public struct Engine {
                         // Filter: word character count must not exceed syllable count
                         guard word.count <= maxSyllableCount else { continue }
 
-                        // For multi-initial input (like "lh"), check if pinyin initials match
-                        if initials.count > 1 {
-                                let pinyinInitials = extractPinyinInitials(from: pinyin)
-                                guard pinyinInitials.count >= initials.count else { continue }
-                                // Check if the initials match
-                                var matches = true
-                                for (i, initial) in initials.enumerated() {
-                                        if i < pinyinInitials.count && pinyinInitials[i] != initial {
-                                                matches = false
-                                                break
-                                        }
-                                }
-                                guard matches else { continue }
-                        } else {
+                        if initials.count == 1 {
                                 // Single initial: check if pinyin starts with the input
                                 guard pinyin.hasPrefix(text) else { continue }
                         }

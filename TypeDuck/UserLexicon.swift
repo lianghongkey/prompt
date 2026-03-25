@@ -70,9 +70,26 @@ struct UserLexicon: Sendable {
                 logger.debug("UserLexicon.handle: word=\(word), mark=\(candidate.mark), romanization=\(candidate.romanization), using=\(romanization), pingHash=\(pingHash)")
 
                 if let frequency = find(by: id) {
-                        // Aggressive frequency boost: double the frequency each time, with a minimum increment of 1000
-                        // This ensures that after 2 selections, the word will have very high priority
-                        let newFrequency = max(frequency * 2, frequency + 1000)
+                        // Overflow protection: limit maximum frequency value
+                        let maxFrequency: Int64 = 1_000_000_000  // 1 billion
+                        guard frequency > 0 && frequency < maxFrequency else {
+                                // Abnormal frequency value, reset to initial value
+                                logger.warning("UserLexicon.handle: frequency \(frequency) is abnormal, resetting to 1000")
+                                update(id: id, frequency: 1000)
+                                return
+                        }
+
+                        // Use overflow-safe calculation
+                        let doubled = frequency.multipliedReportingOverflow(by: 2)
+                        let newFrequency: Int64
+                        if doubled.overflow {
+                                // Overflow occurred, use max frequency
+                                logger.warning("UserLexicon.handle: frequency \(frequency) would overflow, capping at \(maxFrequency)")
+                                newFrequency = maxFrequency
+                        } else {
+                                newFrequency = max(doubled.partialValue, frequency + 1000)
+                        }
+
                         logger.debug("UserLexicon.handle: updating frequency from \(frequency) to \(newFrequency)")
                         update(id: id, frequency: newFrequency)
                 } else {
@@ -83,12 +100,30 @@ struct UserLexicon: Sendable {
                 }
         }
         private static func find(by id: Int) -> Int64? {
-                guard let stmt = findStatement else { return nil }
+                logger.debug("UserLexicon.find: id=\(id), findStatement=\(findStatement != nil)")
+                guard let stmt = findStatement else {
+                        logger.debug("UserLexicon.find: findStatement is nil")
+                        return nil
+                }
+                logger.debug("UserLexicon.find: calling sqlite3_reset")
                 sqlite3_reset(stmt)
-                guard sqlite3_bind_int64(stmt, 1, Int64(id)) == SQLITE_OK else { return nil }
-                guard sqlite3_step(stmt) == SQLITE_ROW else { return nil }
+                logger.debug("UserLexicon.find: calling sqlite3_bind_int64")
+                guard sqlite3_bind_int64(stmt, 1, Int64(id)) == SQLITE_OK else {
+                        logger.debug("UserLexicon.find: sqlite3_bind_int64 failed")
+                        return nil
+                }
+                logger.debug("UserLexicon.find: calling sqlite3_step")
+                let stepResult = sqlite3_step(stmt)
+                logger.debug("UserLexicon.find: sqlite3_step returned \(stepResult)")
+                guard stepResult == SQLITE_ROW else {
+                        logger.debug("UserLexicon.find: no row found")
+                        return nil
+                }
+                logger.debug("UserLexicon.find: calling sqlite3_column_int64")
                 let frequency = sqlite3_column_int64(stmt, 0)
+                logger.debug("UserLexicon.find: frequency=\(frequency), calling sqlite3_reset")
                 sqlite3_reset(stmt)  // Release cursor before any subsequent write
+                logger.debug("UserLexicon.find: returning frequency=\(frequency)")
                 return frequency
         }
         private static func update(id: Int, frequency: Int64) {

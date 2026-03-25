@@ -165,15 +165,15 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         override func commitComposition(_ sender: Any!) {
                 nonisolated(unsafe) let client: InputClient? = (sender as? InputClient) ?? client()
                 Task { @MainActor in
+                        // Guard: if a new composition has already started (e.g. user typed next char
+                        // before this Task ran), do not interfere. Some apps spuriously call
+                        // commitComposition after insertText/setMarkedText, which races with the
+                        // next process() Task and would otherwise clear the freshly-started buffer.
+                        // deactivateServer handles the legitimate mid-composition commit case.
+                        guard !inputStage.isBuffering else { return }
                         window.setFrame(.zero, display: true)
                         selectedCandidates = []
-                        if inputStage.isBuffering {
-                                let text: String = bufferText
-                                clearBufferText()
-                                client?.insertText(text as NSString, replacementRange: replacementRange())
-                        } else {
-                                clearMarkedText()
-                        }
+                        clearMarkedText()
                         if inputForm.isOptions {
                                 updateInputForm()
                         }
@@ -189,6 +189,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         private lazy var inputForm: InputForm = InputForm.matchInputMethodMode()
         func updateInputForm(to form: InputForm? = nil) {
                 let newForm = form ?? InputForm.matchInputMethodMode()
+                logger.debug("updateInputForm: old=\(String(describing: self.inputForm)), new=\(String(describing: newForm)), Options.inputMethodMode=\(String(describing: Options.inputMethodMode))")
                 inputForm = newForm
                 appContext.updateInputForm(to: newForm)
         }
@@ -216,15 +217,23 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                 }
                 didSet {
+                        logger.debug("bufferText.didSet: '\(self.bufferText)' (was '\(oldValue)'), inputStage=\(String(describing: self.inputStage))")
                         switch bufferText.first {
                         case .none:
+                                logger.debug("bufferText.didSet: case .none, selectedCandidates.count=\(self.selectedCandidates.count)")
                                 if AppSettings.isInputMemoryOn && selectedCandidates.isNotEmpty {
+                                        logger.debug("bufferText.didSet: calling UserLexicon.handle")
                                         let concatenated = selectedCandidates.joined()
                                         UserLexicon.handle(concatenated)
+                                        logger.debug("bufferText.didSet: UserLexicon.handle completed")
                                 }
+                                logger.debug("bufferText.didSet: clearing selectedCandidates")
                                 selectedCandidates = []
+                                logger.debug("bufferText.didSet: calling clearMarkedText")
                                 clearMarkedText()
+                                logger.debug("bufferText.didSet: clearMarkedText completed, clearing candidates")
                                 candidates = []
+                                logger.debug("bufferText.didSet: case .none completed")
                         case .some(let character) where character.isInvalidAnchor:
                                 mark(text: bufferText)
                                 selectedCandidates = []
@@ -514,6 +523,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 guard !shouldIgnoreCurrentEvent else { return false }
                 let currentInputForm: InputForm = inputForm
                 let isBuffering: Bool = inputStage.isBuffering
+                logger.debug("handle: keyCode=\(code), inputForm=\(String(describing: currentInputForm)), isBuffering=\(isBuffering)")
                 lazy var hasControlShiftModifiers: Bool = false
                 lazy var isEventHandled: Bool = true
                 switch modifiers {
@@ -698,6 +708,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 return isEventHandled
         }
         private func process(keyCode: UInt16, client: InputClient?, hasControlShiftModifiers: Bool, isShifting: Bool) {
+                logger.debug("process: keyCode=\(keyCode), inputForm=\(String(describing: self.inputForm)), inputStage=\(String(describing: self.inputStage))")
 
                 // Only update cursor position at the start of composition, not during active input
                 if !inputStage.isBuffering {

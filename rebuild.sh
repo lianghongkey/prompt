@@ -5,7 +5,10 @@ cd Preparing
 swift run -c release
 cd ..
 
-rm ~/Library/userlexicon.sqlite3 
+# 删除用户词库数据库（沙盒容器内）
+rm -f ~/Library/Containers/hk.eduhk.inputmethod.TypeDuck/Data/Library/userlexicon.sqlite3
+# 清理旧的数据库文件（如果存在）
+rm -f ~/Library/userlexicon.sqlite3 
 
 # Build TypeDuck
 echo "Building TypeDuck..."
@@ -21,3 +24,7 @@ osascript -e 'tell application id "hk.eduhk.inputmethod.TypeDuck" to quit'
 open ~/Library/Input\ Methods/TypeDuck.app
 
 echo "Build and install complete!"
+
+## 打开日志
+
+# log stream --predicate 'subsystem == "hk.eduhk.inputmethod.TypeDuck"' --level debug --style compact

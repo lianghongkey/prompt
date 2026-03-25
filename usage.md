@@ -55,7 +55,7 @@ open ~/Library/Input\ Methods/TypeDuck.app
 
 3. **查看日志**：
 ```bash
-log stream --predicate 'subsystem == "hk.eduhk.inputmethod.TypeDuck"' --level debug
+log stream --predicate 'subsystem == "hk.eduhk.inputmethod.TypeDuck"' --level debug --style compact
 ```
 
 查找以下日志：

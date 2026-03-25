@@ -28,3 +28,7 @@ echo "Build and install complete!"
 ## 打开日志
 
 # log stream --predicate 'subsystem == "hk.eduhk.inputmethod.TypeDuck"' --level debug --style compact
+
+## 录音文件存储
+
+# ~/Library/Containers/hk.eduhk.inputmethod.TypeDuck/Data/Documents/typeduck_recording.wav

@@ -1,5 +1,6 @@
 import SwiftUI
 import InputMethodKit
+import AVFoundation
 import os.log
 import CoreIME
 
@@ -183,6 +184,8 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 // Do NOT use this line or it will freeze the entire IME
                 // super.commitComposition(sender)
         }
+
+        private lazy var voiceRecorder: VoiceRecorder = VoiceRecorder()
 
         private lazy var appContext: AppContext = AppContext()
 
@@ -512,15 +515,39 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         // MARK: - Handle Event
 
         override func recognizedEvents(_ sender: Any!) -> Int {
-                let masks: NSEvent.EventTypeMask = [.keyDown]
+                let masks: NSEvent.EventTypeMask = [.keyDown, .keyUp, .flagsChanged]
                 return Int(masks.rawValue)
         }
         override func handle(_ event: NSEvent!, client sender: Any!) -> Bool {
                 guard let event = event else { return false }
+                // keyUp: stop recording when Space is released
+                if event.type == .keyUp {
+                        if event.keyCode == KeyCode.Special.VK_SPACE {
+                                voiceRecorder.stopRecording()
+                                return true  // consume Space keyUp to prevent apps acting on it
+                        }
+                        return false
+                }
+                // flagsChanged: stop recording when Shift is released (IMK always delivers this)
+                if event.type == .flagsChanged {
+                        if !event.modifierFlags.contains(.shift) {
+                                voiceRecorder.stopRecording()
+                        }
+                        return false
+                }
                 let modifiers = event.modifierFlags
                 let code: UInt16 = event.keyCode
                 let shouldIgnoreCurrentEvent: Bool = modifiers.contains(.command) || modifiers.contains(.option)
                 guard !shouldIgnoreCurrentEvent else { return false }
+                // Shift+Space (not buffering, not auto-repeat): start voice recording
+                if modifiers == .shift && code == KeyCode.Special.VK_SPACE && !inputStage.isBuffering && !event.isARepeat {
+                        voiceRecorder.startRecording()
+                        return true
+                }
+                // While recording, consume all Space key events (including auto-repeat) without input
+                if voiceRecorder.isRecording && code == KeyCode.Special.VK_SPACE {
+                        return true
+                }
                 let currentInputForm: InputForm = inputForm
                 let isBuffering: Bool = inputStage.isBuffering
                 logger.debug("handle: keyCode=\(code), inputForm=\(String(describing: currentInputForm)), isBuffering=\(isBuffering)")

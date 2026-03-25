@@ -2,13 +2,17 @@
 # Rebuild database with latest pinyin.txt
 echo "Building database..."
 cd Preparing
-swift run -c release
-cd ..
 
 # 删除用户词库数据库（沙盒容器内）
 rm -f ~/Library/Containers/hk.eduhk.inputmethod.TypeDuck/Data/Library/userlexicon.sqlite3
 # 清理旧的数据库文件（如果存在）
 rm -f ~/Library/userlexicon.sqlite3 
+
+xcodebuild -project TypeDuck.xcodeproj -scheme TypeDuck clean 
+
+swift run -c release
+cd ..
+
 
 # Build TypeDuck
 echo "Building TypeDuck..."

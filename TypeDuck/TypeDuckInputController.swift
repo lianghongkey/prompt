@@ -1150,31 +1150,15 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 wordCreationCharacters.append(candidate.text)
                                 wordCreationPinyins.append(candidate.romanization)
 
-                                // Calculate how many syllables this candidate uses
-                                let syllableCount = candidate.romanization.split(separator: " ").count
+                                // Remove the used input from buffer using candidate.input length
+                                let inputCount: Int = candidate.input.replacingOccurrences(of: "(4|5|6)", with: "RR", options: .regularExpression).count
                                 let currentBuffer = bufferText
-                                logger.debug("Syllable count: \(syllableCount), bufferText before: \(currentBuffer)")
-
-                                // Remove the used syllables from buffer based on segmentation
-                                if let scheme = segmentation.first, syllableCount <= scheme.count {
-                                        let usedTokens = scheme.prefix(syllableCount)
-                                        let usedLength = usedTokens.map(\.text).joined().count
-                                        logger.debug("Using segmentation: usedLength=\(usedLength)")
-                                        var tail = bufferText.dropFirst(usedLength)
-                                        while tail.hasPrefix("'") {
-                                                tail = tail.dropFirst()
-                                        }
-                                        bufferText = String(tail)
-                                } else {
-                                        // Fallback: use candidate.input length
-                                        let inputCount: Int = candidate.input.replacingOccurrences(of: "(4|5|6)", with: "RR", options: .regularExpression).count
-                                        logger.debug("Using fallback: inputCount=\(inputCount)")
-                                        var tail = bufferText.dropFirst(inputCount)
-                                        while tail.hasPrefix("'") {
-                                                tail = tail.dropFirst()
-                                        }
-                                        bufferText = String(tail)
+                                logger.debug("inputCount=\(inputCount), bufferText before: \(currentBuffer)")
+                                var tail = bufferText.dropFirst(inputCount)
+                                while tail.hasPrefix("'") {
+                                        tail = tail.dropFirst()
                                 }
+                                bufferText = String(tail)
 
                                 let newBuffer = bufferText
                                 let currentChars = wordCreationCharacters

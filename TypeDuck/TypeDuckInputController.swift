@@ -142,6 +142,8 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 Task { @MainActor in
                         window.setFrame(.zero, display: true)
                         selectedCandidates = []
+                        isIntendingToRecord = false
+                        voiceRecorder.stopRecording()
                         guard inputStage != .idle else { return }
                         if inputStage.isBuffering {
                                 let text: String = bufferText
@@ -186,6 +188,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
         }
 
         private lazy var voiceRecorder: VoiceRecorder = VoiceRecorder()
+        private var isIntendingToRecord: Bool = false
 
         private lazy var appContext: AppContext = AppContext()
 
@@ -523,12 +526,15 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 // keyUp: stop recording when Space is released
                 if event.type == .keyUp {
                         if event.keyCode == KeyCode.Special.VK_SPACE {
+                                isIntendingToRecord = false
                                 voiceRecorder.stopRecording()
                                 return true  // consume Space keyUp to prevent apps acting on it
                         }
                         return false
                 }
                 // flagsChanged: stop recording when Shift is released (IMK always delivers this)
+                // Note: do NOT reset isIntendingToRecord here — Space key may still be physically held.
+                // We keep blocking Space events until the Space keyUp arrives.
                 if event.type == .flagsChanged {
                         if !event.modifierFlags.contains(.shift) {
                                 voiceRecorder.stopRecording()
@@ -541,11 +547,12 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 guard !shouldIgnoreCurrentEvent else { return false }
                 // Shift+Space (not buffering, not auto-repeat): start voice recording
                 if modifiers == .shift && code == KeyCode.Special.VK_SPACE && !inputStage.isBuffering && !event.isARepeat {
+                        isIntendingToRecord = true
                         voiceRecorder.startRecording()
                         return true
                 }
-                // While recording, consume all Space key events (including auto-repeat) without input
-                if voiceRecorder.isRecording && code == KeyCode.Special.VK_SPACE {
+                // While recording (or intending to record), consume all Space key events (including auto-repeat) without input
+                if (isIntendingToRecord || voiceRecorder.isRecording) && code == KeyCode.Special.VK_SPACE {
                         return true
                 }
                 let currentInputForm: InputForm = inputForm

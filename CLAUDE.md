@@ -44,8 +44,9 @@ log stream --predicate 'subsystem == "hk.eduhk.inputmethod.TypeDuck"' --level de
 ```
 
 ### User Lexicon Database
+The app is sandboxed, so the database lives in the container:
 ```bash
-sqlite3 ~/Library/userlexicon.sqlite3 "SELECT * FROM userlexicontable ORDER BY frequency DESC LIMIT 20;"
+sqlite3 ~/Library/Containers/hk.eduhk.inputmethod.TypeDuck/Data/Library/userlexicon.sqlite3 "SELECT * FROM userlexicontable ORDER BY frequency DESC LIMIT 20;"
 ```
 
 ### Switch Character Standard

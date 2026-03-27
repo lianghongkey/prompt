@@ -58,40 +58,38 @@ struct UserLexicon: Sendable {
         static func handle(_ candidate: Candidate?) {
                 guard let candidate else { return }
                 let word: String = candidate.lexiconText
-                // Use mark (user's actual input) instead of romanization (standard pinyin)
-                // This ensures we can match the same input next time
-                let userInput: String = candidate.mark.replacingOccurrences(of: " ", with: "")
-                let romanization: String = userInput.isEmpty ? candidate.romanization : userInput
-                let id: Int = (word + romanization).deterministicHash
+                let romanization: String = candidate.romanization
+                // Use the ping form (no spaces/tones) as the stable id key,
+                // so re-selections always find the same entry regardless of how
+                // mark vs romanization differ (e.g. word-creation stores "mei zhi dao"
+                // but subsequent selections compute mark as "meizhidao").
+                let pingForm: String = romanization.removedSpacesTones()
+                let id: Int = (word + pingForm).deterministicHash
 
-                let pingValue = romanization.removedSpacesTones()
-                let pingHash = pingValue.deterministicHash
-
-                logger.debug("UserLexicon.handle: word=\(word), mark=\(candidate.mark), romanization=\(candidate.romanization), using=\(romanization), pingHash=\(pingHash)")
+                logger.debug("UserLexicon.handle: word=\(word), romanization=\(romanization), pingForm=\(pingForm)")
 
                 if let frequency = find(by: id) {
-                        // Overflow protection: limit maximum frequency value
-                        let maxFrequency: Int64 = 1_000_000_000  // 1 billion
-                        guard frequency > 0 && frequency < maxFrequency else {
-                                // Abnormal frequency value, reset to initial value
+                        guard frequency > 0 else {
                                 logger.warning("UserLexicon.handle: frequency \(frequency) is abnormal, resetting to 1000")
                                 update(id: id, frequency: 1000)
                                 return
                         }
-
-                        // Use overflow-safe calculation
                         let doubled = frequency.multipliedReportingOverflow(by: 2)
-                        let newFrequency: Int64
-                        if doubled.overflow {
-                                // Overflow occurred, use max frequency
-                                logger.warning("UserLexicon.handle: frequency \(frequency) would overflow, capping at \(maxFrequency)")
-                                newFrequency = maxFrequency
-                        } else {
-                                newFrequency = max(doubled.partialValue, frequency + 1000)
-                        }
+                        let newFrequency: Int64 = doubled.overflow
+                                ? frequency  // no meaningful gain; normalization below handles headroom
+                                : max(doubled.partialValue, frequency + 1000)
 
-                        logger.debug("UserLexicon.handle: updating frequency from \(frequency) to \(newFrequency)")
-                        update(id: id, frequency: newFrequency)
+                        // When any entry would overflow the threshold, halve ALL entries so
+                        // relative order is preserved and there is room to keep growing.
+                        let threshold: Int64 = 1_000_000_000
+                        if newFrequency > threshold {
+                                normalizeFrequencies()
+                                // After halving, double the normalized value to reward this selection.
+                                update(id: id, frequency: max(frequency / 2 * 2, frequency / 2 + 1000))
+                        } else {
+                                update(id: id, frequency: newFrequency)
+                        }
+                        logger.debug("UserLexicon.handle: updated frequency from \(frequency) to \(newFrequency)")
                 } else {
                         // Start with a high initial frequency (1000) so first selection already has good priority
                         let entry = LexiconEntry(id: id, frequency: 1000, word: word, romanization: romanization, shortcut: romanization.shortcut, ping: romanization.ping)
@@ -125,6 +123,14 @@ struct UserLexicon: Sendable {
                 sqlite3_reset(stmt)  // Release cursor before any subsequent write
                 logger.debug("UserLexicon.find: returning frequency=\(frequency)")
                 return frequency
+        }
+        private static func normalizeFrequencies() {
+                let command: String = "UPDATE userlexicontable SET frequency = MAX(frequency / 2, 1);"
+                var statement: OpaquePointer? = nil
+                defer { sqlite3_finalize(statement) }
+                guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return }
+                sqlite3_step(statement)
+                logger.debug("UserLexicon.normalizeFrequencies: all frequencies halved")
         }
         private static func update(id: Int, frequency: Int64) {
                 let command: String = "UPDATE userlexicontable SET frequency = ? WHERE id = ?;"
@@ -261,7 +267,7 @@ struct UserLexicon: Sendable {
 
         /// Delete one lexicon entry
         static func removeItem(candidate: Candidate) {
-                let id: Int = (candidate.lexiconText + candidate.romanization).deterministicHash
+                let id: Int = (candidate.lexiconText + candidate.romanization.removedSpacesTones()).deterministicHash
                 let command: String = "DELETE FROM userlexicontable WHERE id = ?;"
                 var statement: OpaquePointer? = nil
                 defer { sqlite3_finalize(statement) }

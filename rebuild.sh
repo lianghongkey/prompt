@@ -4,9 +4,7 @@ echo "Building database..."
 cd Preparing
 
 # 删除用户词库数据库（沙盒容器内）
-rm -f ~/Library/Containers/hk.eduhk.inputmethod.TypeDuck/Data/Library/userlexicon.sqlite3
-# 清理旧的数据库文件（如果存在）
-rm -f ~/Library/userlexicon.sqlite3 
+# rm -f ~/Library/Containers/hk.eduhk.inputmethod.TypeDuck/Data/Library/userlexicon.sqlite3
 
 xcodebuild -project TypeDuck.xcodeproj -scheme TypeDuck clean 
 
@@ -37,7 +35,9 @@ echo "Build and install complete!"
 
 # ~/Library/Containers/hk.eduhk.inputmethod.TypeDuck/Data/Documents/typeduck_recording.wav
 
+## 词频数据保存的位置
 
+# ~/Library/Containers/hk.eduhk.inputmethod.TypeDuck/Data/Library/userlexicon.sqlite3
 
 
 

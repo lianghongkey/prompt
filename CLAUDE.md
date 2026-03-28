@@ -102,13 +102,33 @@ insert(candidate.text) → aftercareSelection() → updates bufferText
 - `FuzzyPinyin.swift` / `FuzzyPinyinExpander.swift` — zh↔z, ch↔c, sh↔s, n↔l, etc. Settings stored in UserDefaults.
 
 **TypeDuck App** (`TypeDuck/`)
-- `TypeDuckInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`, `inputStage`, `inputForm`.
+- `TypeDuckInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder` and `static var whisperModelObserver`.
 - `UserLexicon.swift` — Stores at `~/Library/userlexicon.sqlite3`. Has prepared statements for ping/shortcut/find queries. `handle(_:)` inserts or doubles frequency (min +1000). Initial frequency: 1000.
 - `AppContext.swift` — `@MainActor ObservableObject` holding `displayCandidates`, `highlightedIndex`, `inputForm`, `quadrant`. The SwiftUI environment object for the candidate window.
 - `CandidateWindow.swift` — `NSPanel` with `ignoresMouseEvents = true`; all selection is keyboard-driven.
 - `Options.swift` — Runtime character form (half/full width) and punctuation form settings.
-- `AppSettings.swift` — Persistent settings in UserDefaults (page size, input memory on/off, etc.).
-- `VoiceRecorder.swift` — Records audio to `~/Documents/typeduck_*.wav`. Triggered by Shift+Space during buffering.
+- `AppSettings.swift` — Persistent settings in UserDefaults (page size, input memory on/off, etc.). Also holds `whisperModelPath` (persisted) and `whisperModelLoadState` (runtime, updated by `VoiceRecorder`).
+- `VoiceRecorder.swift` — Captures 16kHz mono Float32 PCM audio via `AVAudioEngine` (`AudioCapture`) and transcribes using a whisper GGML model (`.bin`) via `whisper.cpp`. Model path is configured as `.mlmodelc` in Settings; the `.bin` sibling is derived automatically. Transcription result is inserted as text via `onTranscription` callback.
+
+### Voice Recognition Feature
+
+Triggered by **Shift+Space when NOT buffering** (idle/standby in Mandarin mode) and only if the whisper model is loaded.
+
+**Key flow:**
+1. `Shift+Space` keyDown → sets `isIntendingToRecord = true`, calls `sharedVoiceRecorder.startRecording()` (plays "Tink" sound)
+2. Audio is streamed in real time via `AVAudioEngine`; samples accumulate in memory
+3. `Space` keyUp (or Shift release + subsequent Space keyUp) → `stopRecording()` (plays "Pop" sound), runs whisper transcription on `whisperQueue`
+4. Transcription result → `insertTranscribedText()` → committed directly to the input client
+
+**State management:**
+- `VoiceRecorder` is a `static let sharedVoiceRecorder` (shared across all controller instances, avoiding reload on focus switch)
+- `isIntendingToRecord` is a per-instance var; cleared on deactivation and when recording has already stopped (safety guard against missed keyUp)
+- `AppSettings.whisperModelLoadState: WhisperModelLoadState` (`.notConfigured` / `.loading` / `.loaded` / `.failed`) is updated by `VoiceRecorder` and observed by `GeneralSettingsView` via `NotificationCenter`
+- Model reload is triggered by `whisperModelPathDidChange` notification (posted when user clicks "应用" in Settings)
+
+**Whisper model setup:**
+- User pastes `.mlmodelc` path in General Settings; the `.bin` GGML file must be a sibling with the same base name (minus `-encoder` suffix if present)
+- Model loading runs on `whisperQueue` to avoid blocking the main thread
 
 ### Word Creation Feature
 

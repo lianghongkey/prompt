@@ -184,11 +184,13 @@ final class VoiceRecorder {
                 samples = []
                 guard buffer.count > 8000 else {
                         logger.info("Recording too short (\(buffer.count) samples), skipping transcription")
+                        onTranscription?("")
                         return
                 }
                 let rms = sqrt(buffer.reduce(0) { $0 + $1 * $1 } / Float(buffer.count))
                 guard rms > 0.001 else {
                         logger.info("Audio too quiet (RMS=\(rms)), skipping transcription")
+                        onTranscription?("")
                         return
                 }
                 logger.info("Transcribing \(buffer.count / 16000) sec of audio, RMS=\(rms)...")
@@ -228,9 +230,7 @@ final class VoiceRecorder {
                         let finalText = text.trimmingCharacters(in: .whitespacesAndNewlines)
                         DispatchQueue.main.async {
                                 self.logger.info("Transcription: \(finalText)")
-                                if !finalText.isEmpty {
-                                        self.onTranscription?(finalText)
-                                }
+                                self.onTranscription?(finalText)
                         }
                 }
         }

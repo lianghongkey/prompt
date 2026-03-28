@@ -219,7 +219,12 @@ final class TypeDuckInputController: IMKInputController, Sendable {
 
         private func insertTranscribedText(_ text: String) {
                 let client = currentClient ?? client()
-                client?.insertText(text as NSString, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
+                guard !text.isEmpty else {
+                        clearMarkedText()
+                        return
+                }
+                let simplified = text.applyingTransform(StringTransform("Traditional-Simplified"), reverse: false) ?? text
+                client?.insertText(simplified as NSString, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
         }
 
         private lazy var appContext: AppContext = AppContext()
@@ -581,6 +586,9 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 if modifiers == .shift && code == KeyCode.Special.VK_SPACE && !inputStage.isBuffering && !event.isARepeat && Self.sharedVoiceRecorder.isModelLoaded {
                         isIntendingToRecord = true
                         Self.sharedVoiceRecorder.startRecording()
+                        let recordingClient = sender as? InputClient
+                        let indicatorText = NSAttributedString(string: "🎙", attributes: markAttributes)
+                        recordingClient?.setMarkedText(indicatorText, selectionRange: NSRange(location: 1, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
                         return true
                 }
                 // While actively recording, consume all Space key events (including auto-repeat) without input

@@ -583,9 +583,13 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         Self.sharedVoiceRecorder.startRecording()
                         return true
                 }
-                // While recording (or intending to record), consume all Space key events (including auto-repeat) without input
-                if (isIntendingToRecord || Self.sharedVoiceRecorder.isRecording) && code == KeyCode.Special.VK_SPACE {
+                // While actively recording, consume all Space key events (including auto-repeat) without input
+                if Self.sharedVoiceRecorder.isRecording && code == KeyCode.Special.VK_SPACE {
                         return true
+                }
+                // Safety: clear stale isIntendingToRecord if recording already stopped
+                if isIntendingToRecord && !Self.sharedVoiceRecorder.isRecording {
+                        isIntendingToRecord = false
                 }
                 let currentInputForm: InputForm = inputForm
                 let isBuffering: Bool = inputStage.isBuffering

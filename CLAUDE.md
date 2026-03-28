@@ -115,10 +115,16 @@ insert(candidate.text) → aftercareSelection() → updates bufferText
 Triggered by **Shift+Space when NOT buffering** (idle/standby in Mandarin mode) and only if the whisper model is loaded.
 
 **Key flow:**
-1. `Shift+Space` keyDown → sets `isIntendingToRecord = true`, calls `sharedVoiceRecorder.startRecording()` (plays "Tink" sound)
+1. `Shift+Space` keyDown → sets `isIntendingToRecord = true`, calls `sharedVoiceRecorder.startRecording()` (plays "Tink" sound), shows `🎙` as marked text at cursor via `setMarkedText`
 2. Audio is streamed in real time via `AVAudioEngine`; samples accumulate in memory
 3. `Space` keyUp (or Shift release + subsequent Space keyUp) → `stopRecording()` (plays "Pop" sound), runs whisper transcription on `whisperQueue`
-4. Transcription result → `insertTranscribedText()` → committed directly to the input client
+4. `onTranscription` always fires (empty string if skipped/no result) → `insertTranscribedText()`:
+   - Non-empty: `insertText` commits text and replaces the `🎙` marked text; Traditional→Simplified conversion applied first
+   - Empty: `clearMarkedText()` removes the `🎙` indicator
+
+**Hallucination filtering** (per segment, both conditions required to keep):
+- `noSpeechProb < 0.4` (stricter than whisper default 0.6)
+- avg token `plog > -1.0` (computed from non-special tokens via `whisper_full_get_token_data`; below -1.0 is whisper's standard hallucination indicator)
 
 **State management:**
 - `VoiceRecorder` is a `static let sharedVoiceRecorder` (shared across all controller instances, avoiding reload on focus switch)

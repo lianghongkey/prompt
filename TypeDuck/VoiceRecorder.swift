@@ -218,10 +218,27 @@ final class VoiceRecorder {
                         }
                         var text = ""
                         if result == 0 {
+                                let eot = whisper_token_eot(ctx)
                                 let n = whisper_full_n_segments(ctx)
                                 for i in 0 ..< n {
+                                        // Filter 1: high no-speech probability
                                         let noSpeechProb = whisper_full_get_segment_no_speech_prob(ctx, i)
-                                        guard noSpeechProb < 0.6 else { continue }
+                                        guard noSpeechProb < 0.4 else { continue }
+                                        // Filter 2: low avg token log-prob (hallucination indicator)
+                                        let nTokens = Int(whisper_full_n_tokens(ctx, i))
+                                        var logProbSum: Float = 0
+                                        var logProbCount = 0
+                                        for j in 0 ..< Int32(nTokens) {
+                                                let td = whisper_full_get_token_data(ctx, i, j)
+                                                if td.id < eot {
+                                                        logProbSum += td.plog
+                                                        logProbCount += 1
+                                                }
+                                        }
+                                        if logProbCount > 0 {
+                                                let avgLogProb = logProbSum / Float(logProbCount)
+                                                guard avgLogProb > -1.0 else { continue }
+                                        }
                                         if let seg = whisper_full_get_segment_text(ctx, i) {
                                                 text += String(cString: seg)
                                         }

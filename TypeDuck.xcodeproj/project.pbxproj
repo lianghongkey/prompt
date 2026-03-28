@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA000002AA000002AA000002 /* whisper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA000001AA000001AA000001 /* whisper.framework */; };
+		AA000003AA000003AA000003 /* whisper.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AA000001AA000001AA000001 /* whisper.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		370C646F2BFEC3A5006F2ABA /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370C646E2BFEC3A5006F2ABA /* GeneralSettingsView.swift */; };
 		9BB8EFEC10CC4E9E9AD90926 /* FuzzyPinyinSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A029780BDA94DD4BB45D8D2 /* FuzzyPinyinSettingsView.swift */; };
 		370F5B312BB59B2200F0A65C /* ColorExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370F5B302BB59B2200F0A65C /* ColorExtensions.swift */; };
@@ -140,6 +142,7 @@
 		379DBF992C8EA79900D041C8 /* CandidateWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidateWindow.swift; sourceTree = "<group>"; };
 		37A619AF2BAE2F5900A0C7F9 /* typeduck@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "typeduck@2x.png"; sourceTree = "<group>"; };
 		37A619B02BAE2F5A00A0C7F9 /* typeduck.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = typeduck.png; sourceTree = "<group>"; };
+		AA000001AA000001AA000001 /* whisper.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = whisper.framework; path = Frameworks/whisper.framework; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -148,7 +151,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				371B27A42B3EB8F100EC1271 /* CoreIME in Frameworks */,
+				AA000002AA000002AA000002 /* whisper.framework in Frameworks */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA000004AA000004AA000004 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				AA000003AA000003AA000003 /* whisper.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		371B27812B3EB66A00EC1271 /* Frameworks */ = {
@@ -255,6 +270,7 @@
 		371B27A22B3EB8F100EC1271 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				AA000001AA000001AA000001 /* whisper.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -331,6 +347,7 @@
 				371B276F2B3EB66800EC1271 /* Sources */,
 				371B27702B3EB66800EC1271 /* Frameworks */,
 				371B27712B3EB66800EC1271 /* Resources */,
+				AA000004AA000004AA000004 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -698,6 +715,10 @@
 				INFOPLIST_KEY_LSBackgroundOnly = NO;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© The Education University of Hong Kong";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SOURCE_ROOT)/Frameworks",
+				);
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -734,6 +755,10 @@
 				INFOPLIST_KEY_LSBackgroundOnly = NO;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© The Education University of Hong Kong";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SOURCE_ROOT)/Frameworks",
+				);
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

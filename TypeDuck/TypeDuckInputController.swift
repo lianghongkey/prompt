@@ -135,6 +135,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                         prepareWindow()
                         client?.overrideKeyboard(withKeyboardNamed: "com.apple.keylayout.ABC")
+                        setupWhisperModelObserver()
                 }
         }
         override func deactivateServer(_ sender: Any!) {
@@ -187,8 +188,39 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 // super.commitComposition(sender)
         }
 
-        private lazy var voiceRecorder: VoiceRecorder = VoiceRecorder()
+        private lazy var voiceRecorder: VoiceRecorder = {
+                let recorder = VoiceRecorder()
+                recorder.onTranscription = { [weak self] text in
+                        self?.insertTranscribedText(text)
+                }
+                if !AppSettings.whisperModelPath.isEmpty {
+                        recorder.loadModel(fromMlmodelc: AppSettings.whisperModelPath)
+                }
+                return recorder
+        }()
         private var isIntendingToRecord: Bool = false
+        private var whisperModelObserver: NSObjectProtocol?
+
+        private func setupWhisperModelObserver() {
+                guard whisperModelObserver == nil else { return }
+                whisperModelObserver = NotificationCenter.default.addObserver(
+                        forName: .whisperModelPathDidChange,
+                        object: nil,
+                        queue: .main
+                ) { [weak self] _ in
+                        let path = AppSettings.whisperModelPath
+                        if path.isEmpty {
+                                self?.voiceRecorder.isModelLoaded = false
+                        } else {
+                                self?.voiceRecorder.loadModel(fromMlmodelc: path)
+                        }
+                }
+        }
+
+        private func insertTranscribedText(_ text: String) {
+                let client = currentClient ?? client()
+                client?.insertText(text as NSString, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
+        }
 
         private lazy var appContext: AppContext = AppContext()
 
@@ -545,8 +577,8 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 let code: UInt16 = event.keyCode
                 let shouldIgnoreCurrentEvent: Bool = modifiers.contains(.command) || modifiers.contains(.option)
                 guard !shouldIgnoreCurrentEvent else { return false }
-                // Shift+Space (not buffering, not auto-repeat): start voice recording
-                if modifiers == .shift && code == KeyCode.Special.VK_SPACE && !inputStage.isBuffering && !event.isARepeat {
+                // Shift+Space (not buffering, not auto-repeat): start voice recording (only if model is loaded)
+                if modifiers == .shift && code == KeyCode.Special.VK_SPACE && !inputStage.isBuffering && !event.isARepeat && voiceRecorder.isModelLoaded {
                         isIntendingToRecord = true
                         voiceRecorder.startRecording()
                         return true

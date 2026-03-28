@@ -84,6 +84,15 @@ struct AppSettings: Sendable {
                 return marketingVersion + " (" + currentProjectVersion + ")"
         }()
 
+        /// Whisper model path (.mlmodelc). Empty string means voice recognition is disabled.
+        private(set) static var whisperModelPath: String = {
+                UserDefaults.standard.string(forKey: SettingsKey.WhisperModelPath) ?? ""
+        }()
+        static func updateWhisperModelPath(to path: String) {
+                whisperModelPath = path
+                UserDefaults.standard.set(path, forKey: SettingsKey.WhisperModelPath)
+        }
+
         /// Settings Window
         private(set) static var selectedSettingsSidebarRow: SettingsSidebarRow = .general
         static func updateSelectedSettingsSidebarRow(to row: SettingsSidebarRow) {
@@ -98,6 +107,19 @@ struct SettingsKey {
         static let EnabledCommentLanguages: String = "EnabledCommentLanguages"
         static let PrimaryCommentLanguage: String = "PrimaryCommentLanguage"
         static let UserLexiconInputMemory: String = "UserLexiconInputMemory"
+        static let WhisperModelPath: String = "WhisperModelPath"
+}
+
+extension Notification.Name {
+        static let whisperModelPathDidChange = Notification.Name("hk.eduhk.inputmethod.TypeDuck.whisperModelPathDidChange")
+        static let whisperModelLoadStateDidChange = Notification.Name("hk.eduhk.inputmethod.TypeDuck.whisperModelLoadStateDidChange")
+}
+
+enum WhisperModelLoadState: String {
+        case notConfigured
+        case loading
+        case loaded
+        case failed
 }
 
 extension Language {

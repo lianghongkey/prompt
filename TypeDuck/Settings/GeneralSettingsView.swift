@@ -15,7 +15,7 @@ struct GeneralSettingsView: View {
         private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
         @State private var whisperModelPath: String = AppSettings.whisperModelPath
-        @State private var whisperModelLoadState: WhisperModelLoadState = AppSettings.whisperModelPath.isEmpty ? .notConfigured : .loading
+        @State private var whisperModelLoadState: WhisperModelLoadState = AppSettings.whisperModelLoadState
 
         @ViewBuilder
         private var whisperStatusDot: some View {
@@ -124,45 +124,45 @@ struct GeneralSettingsView: View {
                                         }
                                 }
                                 .block()
-                        }
-                        VStack(alignment: .leading, spacing: 8) {
-                                HStack(spacing: 6) {
-                                        Text("语音识别模型路径（.mlmodelc）")
-                                                .font(.headline)
-                                        whisperStatusDot
-                                        Text(whisperStatusText)
+                                VStack(alignment: .leading, spacing: 8) {
+                                        HStack(spacing: 6) {
+                                                Text("语音识别模型路径（.mlmodelc）")
+                                                        .font(.headline)
+                                                whisperStatusDot
+                                                Text(whisperStatusText)
+                                                        .font(.caption)
+                                                        .foregroundStyle(Color.secondary)
+                                        }
+                                        NativeTextField(placeholder: "粘贴 .mlmodelc 文件路径", text: $whisperModelPath)
+                                                .frame(height: 22)
+                                        HStack {
+                                                Button("应用") {
+                                                        applyWhisperModelPath()
+                                                }
+                                                if !whisperModelPath.isEmpty {
+                                                        Button("清除") {
+                                                                whisperModelPath = ""
+                                                                AppSettings.updateWhisperModelPath(to: "")
+                                                                whisperModelLoadState = .notConfigured
+                                                                NotificationCenter.default.post(name: .whisperModelPathDidChange, object: nil)
+                                                        }
+                                                        .foregroundStyle(Color.red)
+                                                }
+                                                Spacer()
+                                        }
+                                        Text("在 Finder 中 Option+右键 → 「将 XX 拷贝为路径名」，粘贴后点应用")
                                                 .font(.caption)
                                                 .foregroundStyle(Color.secondary)
                                 }
-                                NativeTextField(placeholder: "粘贴 .mlmodelc 文件路径", text: $whisperModelPath)
-                                        .frame(height: 22)
-                                HStack {
-                                        Button("应用") {
-                                                applyWhisperModelPath()
+                                .block()
+                                .onReceive(NotificationCenter.default.publisher(for: .whisperModelLoadStateDidChange)) { notification in
+                                        if let raw = notification.userInfo?["state"] as? String,
+                                           let state = WhisperModelLoadState(rawValue: raw) {
+                                                whisperModelLoadState = state
                                         }
-                                        if !whisperModelPath.isEmpty {
-                                                Button("清除") {
-                                                        whisperModelPath = ""
-                                                        AppSettings.updateWhisperModelPath(to: "")
-                                                        whisperModelLoadState = .notConfigured
-                                                        NotificationCenter.default.post(name: .whisperModelPathDidChange, object: nil)
-                                                }
-                                                .foregroundStyle(Color.red)
-                                        }
-                                        Spacer()
                                 }
-                                Text("在 Finder 中 Option+右键 → 「将 XX 拷贝为路径名」，粘贴后点应用")
-                                        .font(.caption)
-                                        .foregroundStyle(Color.secondary)
+                                .textSelection(.enabled)
                         }
-                        .block()
-                        .onReceive(NotificationCenter.default.publisher(for: .whisperModelLoadStateDidChange)) { notification in
-                                if let raw = notification.userInfo?["state"] as? String,
-                                   let state = WhisperModelLoadState(rawValue: raw) {
-                                        whisperModelLoadState = state
-                                }
-                        }
-                        .textSelection(.enabled)
                         .padding()
                         .frame(minWidth: 300)
                 }

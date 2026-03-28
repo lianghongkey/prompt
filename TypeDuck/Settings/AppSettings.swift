@@ -93,6 +93,11 @@ struct AppSettings: Sendable {
                 UserDefaults.standard.set(path, forKey: SettingsKey.WhisperModelPath)
         }
 
+        /// Current whisper model load state. Updated by VoiceRecorder; read by GeneralSettingsView on init.
+        static var whisperModelLoadState: WhisperModelLoadState = {
+                whisperModelPath.isEmpty ? .notConfigured : .loading
+        }()
+
         /// Settings Window
         private(set) static var selectedSettingsSidebarRow: SettingsSidebarRow = .general
         static func updateSelectedSettingsSidebarRow(to row: SettingsSidebarRow) {

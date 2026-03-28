@@ -116,6 +116,7 @@ final class VoiceRecorder {
         }
 
         private static func postLoadState(_ state: WhisperModelLoadState) {
+                AppSettings.whisperModelLoadState = state
                 NotificationCenter.default.post(
                         name: .whisperModelLoadStateDidChange,
                         object: nil,

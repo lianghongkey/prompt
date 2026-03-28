@@ -136,6 +136,14 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         prepareWindow()
                         client?.overrideKeyboard(withKeyboardNamed: "com.apple.keylayout.ABC")
                         setupWhisperModelObserver()
+                        // Set up transcription callback for the currently active controller
+                        Self.sharedVoiceRecorder.onTranscription = { [weak self] text in
+                                self?.insertTranscribedText(text)
+                        }
+                        // Trigger model loading if not already loaded
+                        if !AppSettings.whisperModelPath.isEmpty && !Self.sharedVoiceRecorder.isModelLoaded {
+                                Self.sharedVoiceRecorder.loadModel(fromMlmodelc: AppSettings.whisperModelPath)
+                        }
                 }
         }
         override func deactivateServer(_ sender: Any!) {
@@ -144,7 +152,10 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         window.setFrame(.zero, display: true)
                         selectedCandidates = []
                         isIntendingToRecord = false
-                        voiceRecorder.stopRecording()
+                        Self.sharedVoiceRecorder.stopRecording()
+                        if inputForm.isOptions {
+                                updateInputForm()
+                        }
                         guard inputStage != .idle else { return }
                         if inputStage.isBuffering {
                                 let text: String = bufferText
@@ -152,9 +163,6 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 client?.insertText(text as NSString, replacementRange: replacementRange())
                         } else {
                                 clearMarkedText()
-                        }
-                        if inputForm.isOptions {
-                                updateInputForm()
                         }
                         let activatingWindowCount = NSApp.windows.count(where: { $0.windowNumber > 0 })
                         if activatingWindowCount > 20 {
@@ -188,31 +196,23 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 // super.commitComposition(sender)
         }
 
-        private lazy var voiceRecorder: VoiceRecorder = {
-                let recorder = VoiceRecorder()
-                recorder.onTranscription = { [weak self] text in
-                        self?.insertTranscribedText(text)
-                }
-                if !AppSettings.whisperModelPath.isEmpty {
-                        recorder.loadModel(fromMlmodelc: AppSettings.whisperModelPath)
-                }
-                return recorder
-        }()
+        private static let sharedVoiceRecorder: VoiceRecorder = VoiceRecorder()
+        private static var whisperModelObserver: NSObjectProtocol?
+
         private var isIntendingToRecord: Bool = false
-        private var whisperModelObserver: NSObjectProtocol?
 
         private func setupWhisperModelObserver() {
-                guard whisperModelObserver == nil else { return }
-                whisperModelObserver = NotificationCenter.default.addObserver(
+                guard Self.whisperModelObserver == nil else { return }
+                Self.whisperModelObserver = NotificationCenter.default.addObserver(
                         forName: .whisperModelPathDidChange,
                         object: nil,
                         queue: .main
-                ) { [weak self] _ in
+                ) { _ in
                         let path = AppSettings.whisperModelPath
                         if path.isEmpty {
-                                self?.voiceRecorder.isModelLoaded = false
+                                Self.sharedVoiceRecorder.isModelLoaded = false
                         } else {
-                                self?.voiceRecorder.loadModel(fromMlmodelc: path)
+                                Self.sharedVoiceRecorder.loadModel(fromMlmodelc: path)
                         }
                 }
         }
@@ -557,9 +557,9 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 guard let event = event else { return false }
                 // keyUp: stop recording when Space is released
                 if event.type == .keyUp {
-                        if event.keyCode == KeyCode.Special.VK_SPACE {
+                        if event.keyCode == KeyCode.Special.VK_SPACE && (isIntendingToRecord || Self.sharedVoiceRecorder.isRecording) {
                                 isIntendingToRecord = false
-                                voiceRecorder.stopRecording()
+                                Self.sharedVoiceRecorder.stopRecording()
                                 return true  // consume Space keyUp to prevent apps acting on it
                         }
                         return false
@@ -569,7 +569,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 // We keep blocking Space events until the Space keyUp arrives.
                 if event.type == .flagsChanged {
                         if !event.modifierFlags.contains(.shift) {
-                                voiceRecorder.stopRecording()
+                                Self.sharedVoiceRecorder.stopRecording()
                         }
                         return false
                 }
@@ -578,13 +578,13 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 let shouldIgnoreCurrentEvent: Bool = modifiers.contains(.command) || modifiers.contains(.option)
                 guard !shouldIgnoreCurrentEvent else { return false }
                 // Shift+Space (not buffering, not auto-repeat): start voice recording (only if model is loaded)
-                if modifiers == .shift && code == KeyCode.Special.VK_SPACE && !inputStage.isBuffering && !event.isARepeat && voiceRecorder.isModelLoaded {
+                if modifiers == .shift && code == KeyCode.Special.VK_SPACE && !inputStage.isBuffering && !event.isARepeat && Self.sharedVoiceRecorder.isModelLoaded {
                         isIntendingToRecord = true
-                        voiceRecorder.startRecording()
+                        Self.sharedVoiceRecorder.startRecording()
                         return true
                 }
                 // While recording (or intending to record), consume all Space key events (including auto-repeat) without input
-                if (isIntendingToRecord || voiceRecorder.isRecording) && code == KeyCode.Special.VK_SPACE {
+                if (isIntendingToRecord || Self.sharedVoiceRecorder.isRecording) && code == KeyCode.Special.VK_SPACE {
                         return true
                 }
                 let currentInputForm: InputForm = inputForm
@@ -1304,6 +1304,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 let settingsWindow = NSWindow(contentRect: frame, styleMask: [.titled, .closable, .resizable, .fullSizeContentView], backing: .buffered, defer: true)
                 settingsWindow.title = String(localized: "Settings.Window.Title")
                 settingsWindow.toolbarStyle = .unifiedCompact
+                settingsWindow.tabbingMode = .disallowed
                 settingsWindow.contentViewController = NSHostingController(rootView: SettingsView())
                 let identifierString: String = AppSettings.TypeDuckSettingsWindowIdentifierPrefix + Date.timeIntervalSinceReferenceDate.description
                 settingsWindow.identifier = NSUserInterfaceItemIdentifier(rawValue: identifierString)

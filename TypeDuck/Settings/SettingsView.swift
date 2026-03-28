@@ -1,20 +1,6 @@
 import SwiftUI
 
-final class SettingsViewAppDelegate: NSObject, NSApplicationDelegate {
-        func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-                return true
-        }
-        func applicationWillFinishLaunching(_ notification: Notification) {
-                NSWindow.allowsAutomaticWindowTabbing = false
-        }
-        func applicationDidFinishLaunching(_ notification: Notification) {
-                _ = NSApp.windows.map({ $0.tabbingMode = .disallowed })
-        }
-}
-
 struct SettingsView: View {
-
-        @NSApplicationDelegateAdaptor(SettingsViewAppDelegate.self) var appDelegate
 
         // macOS 13.0+
         @State private var selection: SettingsSidebarRow = AppSettings.selectedSettingsSidebarRow

@@ -98,8 +98,11 @@ final class VoiceRecorder {
                 isModelLoaded = false
                 Self.postLoadState(.loading)
                 logger.info("Loading whisper model: \(binPath)")
+                // Capture and clear ctx before dispatching to prevent double-free if loadModel is called twice
+                let oldCtx = ctx
+                ctx = nil
                 whisperQueue.async { [weak self] in
-                        if let old = self?.ctx { whisper_free(old) }
+                        if let old = oldCtx { whisper_free(old) }
                         let newCtx = whisper_init_from_file(binPath)
                         DispatchQueue.main.async {
                                 self?.ctx = newCtx
@@ -157,6 +160,7 @@ final class VoiceRecorder {
         }
 
         private func beginCapture() {
+                guard !isRecording else { return }
                 samples = []
                 capture.onSamples = { [weak self] newSamples in
                         self?.samples.append(contentsOf: newSamples)
@@ -182,7 +186,12 @@ final class VoiceRecorder {
                         logger.info("Recording too short (\(buffer.count) samples), skipping transcription")
                         return
                 }
-                logger.info("Transcribing \(buffer.count / 16000) sec of audio...")
+                let rms = sqrt(buffer.reduce(0) { $0 + $1 * $1 } / Float(buffer.count))
+                guard rms > 0.001 else {
+                        logger.info("Audio too quiet (RMS=\(rms)), skipping transcription")
+                        return
+                }
+                logger.info("Transcribing \(buffer.count / 16000) sec of audio, RMS=\(rms)...")
                 transcribe(buffer)
         }
 
@@ -209,6 +218,8 @@ final class VoiceRecorder {
                         if result == 0 {
                                 let n = whisper_full_n_segments(ctx)
                                 for i in 0 ..< n {
+                                        let noSpeechProb = whisper_full_get_segment_no_speech_prob(ctx, i)
+                                        guard noSpeechProb < 0.6 else { continue }
                                         if let seg = whisper_full_get_segment_text(ctx, i) {
                                                 text += String(cString: seg)
                                         }

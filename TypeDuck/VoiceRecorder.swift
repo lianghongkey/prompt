@@ -120,6 +120,7 @@ final class VoiceRecorder {
         private let logger = Logger(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "VoiceRecorder")
 
         var isModelLoaded: Bool = false
+        var isModelLoading: Bool = false
         var isRecording: Bool = false
 
         // MARK: Model loading
@@ -130,10 +131,12 @@ final class VoiceRecorder {
                 guard let binPath = Self.binPath(from: mlmodelcPath) else {
                         logger.warning("Cannot derive .bin path from: \(mlmodelcPath)")
                         isModelLoaded = false
+                        isModelLoading = false
                         Self.postLoadState(.failed)
                         return
                 }
                 isModelLoaded = false
+                isModelLoading = true
                 Self.postLoadState(.loading)
                 logger.info("Loading whisper model: \(binPath)")
                 // Capture and clear ctx before dispatching to prevent double-free if loadModel is called twice
@@ -142,7 +145,16 @@ final class VoiceRecorder {
                 whisperQueue.async { [weak self] in
                         if let old = oldCtx { whisper_free(old) }
                         let newCtx = whisper_init_from_file(binPath)
+                        // ggml Metal GPU resource-set init runs asynchronously after
+                        // whisper_init_from_file returns (on DispatchQueue.global(.default)).
+                        // Keeping whisperQueue occupied here ensures applicationWillTerminate's
+                        // whisperQueue.sync {} blocks until Metal init has had time to settle,
+                        // preventing the ggml_abort race in static destructors.
+                        if newCtx != nil {
+                                Thread.sleep(forTimeInterval: 0.8)
+                        }
                         DispatchQueue.main.async {
+                                self?.isModelLoading = false
                                 self?.ctx = newCtx
                                 if newCtx != nil {
                                         self?.isModelLoaded = true

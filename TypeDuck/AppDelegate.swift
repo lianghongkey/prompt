@@ -20,13 +20,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         func applicationWillTerminate(_ notification: Notification) {
-                // Block until any in-progress whisper model load finishes.
-                // ggml's Metal backend dispatches async GPU resource-set initialisation;
-                // if the process exits while that work is still running, the C++ global
-                // destructor for ggml Metal devices races with the background thread and
-                // triggers ggml_abort.  Draining whisperQueue here ensures
-                // whisper_init_from_file (which internally waits for Metal init) has
-                // returned before exit() fires the static destructors.
+                // Block until any in-progress whisper model load finishes, including the
+                // 0.8s settling period appended in VoiceRecorder.loadModel that covers the
+                // asynchronous ggml Metal GPU resource-set initialisation.  Without this,
+                // the C++ global destructor for ggml Metal devices can race with the still-
+                // running Metal init thread and trigger ggml_abort.
                 whisperQueue.sync { }
         }
 }

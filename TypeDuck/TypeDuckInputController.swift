@@ -140,8 +140,8 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         Self.sharedVoiceRecorder.onTranscription = { [weak self] text in
                                 self?.insertTranscribedText(text)
                         }
-                        // Trigger model loading if not already loaded
-                        if !AppSettings.whisperModelPath.isEmpty && !Self.sharedVoiceRecorder.isModelLoaded {
+                        // Trigger model loading if not already loaded or currently loading
+                        if !AppSettings.whisperModelPath.isEmpty && !Self.sharedVoiceRecorder.isModelLoaded && !Self.sharedVoiceRecorder.isModelLoading {
                                 Self.sharedVoiceRecorder.loadModel(fromMlmodelc: AppSettings.whisperModelPath)
                         }
                 }
@@ -1313,27 +1313,22 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         .contains(where: { $0.hasPrefix(AppSettings.TypeDuckSettingsWindowIdentifierPrefix) })
                 guard !(isSettingsWindowOpen) else { return }
                 let frame: CGRect = settingsWindowFrame()
-                let settingsWindow = NSWindow(contentRect: frame, styleMask: [.titled, .closable, .resizable, .fullSizeContentView], backing: .buffered, defer: true)
+                // Use NSPanel with .nonactivatingPanel so TypeDuck does NOT become the
+                // active application.  Activating an IME process as a regular app confuses
+                // macOS input-method routing and can leave the IME in a broken state.
+                // A non-activating floating panel can still receive keyboard events for
+                // its text fields without disrupting the current app or the IME lifecycle.
+                let settingsWindow = NSPanel(contentRect: frame, styleMask: [.titled, .closable, .resizable, .fullSizeContentView, .nonactivatingPanel], backing: .buffered, defer: true)
                 settingsWindow.title = String(localized: "Settings.Window.Title")
                 settingsWindow.toolbarStyle = .unifiedCompact
                 settingsWindow.tabbingMode = .disallowed
-                // Keep settings window above other apps' windows even after TypeDuck deactivates
                 settingsWindow.level = .floating
+                settingsWindow.hidesOnDeactivate = false
+                settingsWindow.worksWhenModal = true
                 settingsWindow.contentViewController = NSHostingController(rootView: SettingsView())
                 let identifierString: String = AppSettings.TypeDuckSettingsWindowIdentifierPrefix + Date.timeIntervalSinceReferenceDate.description
                 settingsWindow.identifier = NSUserInterfaceItemIdentifier(rawValue: identifierString)
-                // Save the frontmost app so we can restore it after activation.
-                // When TypeDuck becomes the active app, the system input-source menu no longer
-                // shows TypeDuck as an available input method (since TypeDuck is itself the active
-                // app, not a client using an input method).  Restoring the previous app keeps
-                // the input-source switcher functional so the user can still reach the "设置"
-                // menu item without having to manually switch apps.
-                let previousApp = NSWorkspace.shared.frontmostApplication
-                NSApp.activate(ignoringOtherApps: true)
-                settingsWindow.makeKeyAndOrderFront(nil)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        previousApp?.activate(options: [.activateIgnoringOtherApps])
-                }
+                settingsWindow.orderFrontRegardless()
         }
         private func settingsWindowFrame() -> CGRect {
                 let screenOrigin: CGPoint = NSScreen.main?.visibleFrame.origin ?? .zero

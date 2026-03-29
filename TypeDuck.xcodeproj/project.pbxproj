@@ -10,6 +10,7 @@
 		AA000002AA000002AA000002 /* whisper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA000001AA000001AA000001 /* whisper.framework */; };
 		AA000003AA000003AA000003 /* whisper.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AA000001AA000001AA000001 /* whisper.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		370C646F2BFEC3A5006F2ABA /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370C646E2BFEC3A5006F2ABA /* GeneralSettingsView.swift */; };
+		AA001100AA001100AA001100 /* MicrophoneTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001100BB001100BB001100 /* MicrophoneTestView.swift */; };
 		9BB8EFEC10CC4E9E9AD90926 /* FuzzyPinyinSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A029780BDA94DD4BB45D8D2 /* FuzzyPinyinSettingsView.swift */; };
 		370F5B312BB59B2200F0A65C /* ColorExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370F5B302BB59B2200F0A65C /* ColorExtensions.swift */; };
 		370F5B332BB59B4200F0A65C /* ViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370F5B322BB59B4200F0A65C /* ViewExtensions.swift */; };
@@ -84,6 +85,7 @@
 
 /* Begin PBXFileReference section */
 		370C646E2BFEC3A5006F2ABA /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
+		AA001100BB001100BB001100 /* MicrophoneTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneTestView.swift; sourceTree = "<group>"; };
 		5A029780BDA94DD4BB45D8D2 /* FuzzyPinyinSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FuzzyPinyinSettingsView.swift; sourceTree = "<group>"; };
 		370F5B302BB59B2200F0A65C /* ColorExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtensions.swift; sourceTree = "<group>"; };
 		370F5B322BB59B4200F0A65C /* ViewExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewExtensions.swift; sourceTree = "<group>"; };
@@ -331,6 +333,7 @@
 				37279F3A2B62873600CC50A4 /* AppSettings.swift */,
 				37279F3E2B62909600CC50A4 /* SettingsView.swift */,
 				370C646E2BFEC3A5006F2ABA /* GeneralSettingsView.swift */,
+				AA001100BB001100BB001100 /* MicrophoneTestView.swift */,
 				5A029780BDA94DD4BB45D8D2 /* FuzzyPinyinSettingsView.swift */,
 					37279F422B6296A600CC50A4 /* AboutView.swift */,
 			);
@@ -494,6 +497,7 @@
 				371B27CF2B3EB93A00EC1271 /* AppContext.swift in Sources */,
 				37279F432B6296A600CC50A4 /* AboutView.swift in Sources */,
 				370C646F2BFEC3A5006F2ABA /* GeneralSettingsView.swift in Sources */,
+				AA001100AA001100AA001100 /* MicrophoneTestView.swift in Sources */,
 				9BB8EFEC10CC4E9E9AD90926 /* FuzzyPinyinSettingsView.swift in Sources */,
 				371B27CE2B3EB93A00EC1271 /* Language.swift in Sources */,
 				371B27D52B3EB93A00EC1271 /* InputStage.swift in Sources */,

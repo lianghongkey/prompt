@@ -21,11 +21,27 @@ private final class AudioCapture: @unchecked Sendable {
         var onSamples: (([Float]) -> Void)?
 
         private var engine: AVAudioEngine?
+        private var configObserver: NSObjectProtocol?
         private let targetSampleRate: Double = 16000
+        private var active = false
 
         func startCapture() throws {
-                engine = AVAudioEngine()
-                let input = engine!.inputNode
+                active = true
+                try attachEngine()
+        }
+
+        private func attachEngine() throws {
+                configObserver.map { NotificationCenter.default.removeObserver($0) }
+                configObserver = nil
+                engine?.inputNode.removeTap(onBus: 0)
+                engine?.stop()
+                engine = nil
+
+                let eng = AVAudioEngine()
+                if #available(macOS 13.0, *) {
+                        try? eng.inputNode.setVoiceProcessingEnabled(false)
+                }
+                let input = eng.inputNode
                 let inputFormat = input.outputFormat(forBus: 0)
                 guard let convertFormat = AVAudioFormat(
                         commonFormat: .pcmFormatFloat32,
@@ -38,7 +54,8 @@ private final class AudioCapture: @unchecked Sendable {
                 let ratio = targetSampleRate / inputFormat.sampleRate
                 input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
                         guard let self else { return }
-                        let outFrames = AVAudioFrameCount(Double(buffer.frameLength) * ratio)
+                        // + 1 guards against off-by-one when ratio is non-integer
+                        let outFrames = AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 1
                         guard outFrames > 0,
                               let outBuf = AVAudioPCMBuffer(pcmFormat: convertFormat, frameCapacity: outFrames)
                         else { return }
@@ -56,10 +73,27 @@ private final class AudioCapture: @unchecked Sendable {
                         let samples = Array(UnsafeBufferPointer(start: data, count: Int(outBuf.frameLength)))
                         DispatchQueue.main.async { self.onSamples?(samples) }
                 }
-                try engine!.start()
+
+                // Restart automatically when Bluetooth switches HFP or device changes mid-recording
+                configObserver = NotificationCenter.default.addObserver(
+                        forName: .AVAudioEngineConfigurationChange,
+                        object: eng,
+                        queue: nil
+                ) { [weak self] _ in
+                        guard let self, self.active else { return }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                try? self.attachEngine()
+                        }
+                }
+
+                engine = eng
+                try eng.start()
         }
 
         func stopCapture() {
+                active = false
+                configObserver.map { NotificationCenter.default.removeObserver($0) }
+                configObserver = nil
                 engine?.inputNode.removeTap(onBus: 0)
                 engine?.stop()
                 engine = nil

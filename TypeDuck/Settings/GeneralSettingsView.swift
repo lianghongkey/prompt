@@ -162,6 +162,8 @@ struct GeneralSettingsView: View {
                                         }
                                 }
                                 .textSelection(.enabled)
+                                MicrophoneTestView()
+                                        .block()
                         }
                         .padding()
                         .frame(minWidth: 300)

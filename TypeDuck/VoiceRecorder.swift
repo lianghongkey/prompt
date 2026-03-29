@@ -20,11 +20,12 @@ private final class AudioCapture: @unchecked Sendable {
 
         var onSamples: (([Float]) -> Void)?
 
-        private let engine = AVAudioEngine()
+        private var engine: AVAudioEngine?
         private let targetSampleRate: Double = 16000
 
         func startCapture() throws {
-                let input = engine.inputNode
+                engine = AVAudioEngine()
+                let input = engine!.inputNode
                 let inputFormat = input.outputFormat(forBus: 0)
                 guard let convertFormat = AVAudioFormat(
                         commonFormat: .pcmFormatFloat32,
@@ -55,12 +56,13 @@ private final class AudioCapture: @unchecked Sendable {
                         let samples = Array(UnsafeBufferPointer(start: data, count: Int(outBuf.frameLength)))
                         DispatchQueue.main.async { self.onSamples?(samples) }
                 }
-                try engine.start()
+                try engine!.start()
         }
 
         func stopCapture() {
-                engine.inputNode.removeTap(onBus: 0)
-                engine.stop()
+                engine?.inputNode.removeTap(onBus: 0)
+                engine?.stop()
+                engine = nil
         }
 }
 

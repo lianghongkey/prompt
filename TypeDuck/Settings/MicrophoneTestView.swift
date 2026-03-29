@@ -167,6 +167,8 @@ private final class MicCapture: @unchecked Sendable {
                         recordedFileURL = nil
                 }
         }
+
+        deinit { stop() }
 }
 
 private enum MicCaptureError: Error { case invalidFormat, converterUnavailable }
@@ -212,6 +214,7 @@ private final class MicTestController: ObservableObject {
                         try capture.start()
                         recordState = .recording
                 } catch {
+                        capture.stop()
                         capture.onLevel = nil
                 }
         }

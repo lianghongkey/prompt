@@ -98,11 +98,13 @@ private final class AudioCapture: @unchecked Sendable {
                 engine?.stop()
                 engine = nil
         }
+
+        deinit { stopCapture() }
 }
 
 // MARK: - Whisper serial queue
 
-private let whisperQueue = DispatchQueue(label: "hk.eduhk.inputmethod.TypeDuck.whisper", qos: .userInitiated)
+let whisperQueue = DispatchQueue(label: "hk.eduhk.inputmethod.TypeDuck.whisper", qos: .userInitiated)
 
 // MARK: - VoiceRecorder
 

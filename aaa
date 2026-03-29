@@ -1,0 +1,50 @@
+根本原因：原来直接使用设备的原生格式（可能是 44100 Hz 或 48000 Hz），但当连接耳机时：     
+  1. AVAudioEngine 启动后，蓝牙耳机会切换到 HFP 模式（8kHz/16kHz），触发                    
+  AVAudioEngineConfigurationChange                                                          
+  2. 引擎可能在切换过程中以不同采样率继续投递 buffer                                        
+  3. 我们记录的 sampleRate 是启动时的值，和后续实际 buffer 的采样率对不上，WAV 回放就乱了   
+                                                                                            
+  修复：和 VoiceRecorder.AudioCapture 完全一致——用 AVAudioConverter                         
+  把任何输入设备的音频都转换到固定的 16kHz mono Float32，再存入                             
+  WAV。输入设备的原生格式是什么、中途怎么变，都不影响输出数据的一致性。                     
+         
+
+
+原因分析：蓝牙耳机连接时，macOS 会异步地把蓝牙从 A2DP（仅输出）切换到                     
+  HFP（输入+输出）。这个切换需要 几秒钟，完成后 AVAudioEngine 会收到                        
+  AVAudioEngineConfigurationChange 并自动停止。之前我们没有处理这个通知，引擎停了但 tap     
+  仍挂着，之后的 buffer 数据就乱了。                                                        
+                                                                                            
+  修复：监听 AVAudioEngineConfigurationChange，收到后等 0.5 秒（让 macOS                    
+  完成设备切换），然后重新创建引擎+转换器，继续录音。因为输出始终是固定的 16kHz
+  mono，新旧片段能无缝拼接。                                                                
+                                                            
+  同样的问题也存在于 VoiceRecorder 的 AudioCapture                                          
+  里，不过语音输入录音时间短（通常几秒内），触发概率低，所以不太明显。
+
+
+
+原因：macOS 对外接麦克风（尤其耳机）可能自动启用语音处理（Voice Processing），其中包含    
+  AGC（自动增益控制）。AGC 会在几秒内把它认为"信号太强"的输入逐渐压低，导致录音越来越小。内 
+  置麦克风因为有独立的系统校准，通常不会触发这个行为。                                      
+                                                                                            
+  修复：两处都加了 setVoiceProcessingEnabled(false)（macOS 13+）：                          
+  - MicrophoneTestView 的 MicCapture：麦克风测试时完全关闭，确保原始音量
+  - VoiceRecorder 的 AudioCapture：语音输入时同样关闭，保证 whisper 收到稳定音量            
+                                                                                          
+  顺带这次重构也把录音从「主线程积累 [Float] → 手写 WAV」改成了「专用队列写                 
+  AVAudioFile」，更健壮。                      
+
+
+
+
+
+
+三个字的拼音候选词匹配不正常， 比如 “xianxiansi“ 不能显示 “现象“ 的候选词，而只能显示 “xian“的候选词
+视频主 shipingzhu 不能显示 “视频“ 的候选词
+
+“音频“ 为什么不能修改候选词的显示的优先级（词频），其他的词汇都可以
+
+重新启动之后，只要进去设置界面后，关闭，就会崩溃。
+
+使用耳机的时候，语音识别就不正常

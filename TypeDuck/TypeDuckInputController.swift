@@ -1317,12 +1317,23 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 settingsWindow.title = String(localized: "Settings.Window.Title")
                 settingsWindow.toolbarStyle = .unifiedCompact
                 settingsWindow.tabbingMode = .disallowed
+                // Keep settings window above other apps' windows even after TypeDuck deactivates
+                settingsWindow.level = .floating
                 settingsWindow.contentViewController = NSHostingController(rootView: SettingsView())
                 let identifierString: String = AppSettings.TypeDuckSettingsWindowIdentifierPrefix + Date.timeIntervalSinceReferenceDate.description
                 settingsWindow.identifier = NSUserInterfaceItemIdentifier(rawValue: identifierString)
-                settingsWindow.orderFrontRegardless()
-                settingsWindow.setFrame(frame, display: true)
+                // Save the frontmost app so we can restore it after activation.
+                // When TypeDuck becomes the active app, the system input-source menu no longer
+                // shows TypeDuck as an available input method (since TypeDuck is itself the active
+                // app, not a client using an input method).  Restoring the previous app keeps
+                // the input-source switcher functional so the user can still reach the "设置"
+                // menu item without having to manually switch apps.
+                let previousApp = NSWorkspace.shared.frontmostApplication
                 NSApp.activate(ignoringOtherApps: true)
+                settingsWindow.makeKeyAndOrderFront(nil)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        previousApp?.activate(options: [.activateIgnoringOtherApps])
+                }
         }
         private func settingsWindowFrame() -> CGRect {
                 let screenOrigin: CGPoint = NSScreen.main?.visibleFrame.origin ?? .zero

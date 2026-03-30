@@ -4,7 +4,7 @@ import os.log
 
 public struct Engine {
 
-        private static let logger = Logger(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Engine")
+        private static let logger = Logger(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Engine")
 
         public static func prepare() {
                 logger.debug("Engine.prepare() called")

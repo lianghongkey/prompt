@@ -8,61 +8,61 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "yue" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hans-CN" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-CN" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-MO" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         }
       }
@@ -74,193 +74,193 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "yue" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hans-CN" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-CN" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-MO" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         }
       }
     },
-    "hk.eduhk.inputmethod.TypeDuck" : {
+    "hk.eduhk.inputmethod.Prompt" : {
       "comment" : "Input Source ID",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "yue" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hans-CN" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-CN" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-MO" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         }
       }
     },
-    "hk.eduhk.inputmethod.TypeDuck.TypeDuckIM" : {
+    "hk.eduhk.inputmethod.Prompt.PromptIM" : {
       "comment" : "Input Mode ID",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "yue" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hans-CN" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-CN" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-MO" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-Hant-TW" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         },
         "zh-HK" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TypeDuck"
+            "value" : "Prompt"
           }
         }
       }

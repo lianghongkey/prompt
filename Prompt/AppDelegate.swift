@@ -14,8 +14,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         private lazy var imkServer: IMKServer? = nil
 
         func applicationDidFinishLaunching(_ notification: Notification) {
-                let name: String = (Bundle.main.infoDictionary?["InputMethodConnectionName"] as? String) ?? "hk.eduhk.inputmethod.TypeDuck_Connection"
-                let identifier: String = Bundle.main.bundleIdentifier ?? "hk.eduhk.inputmethod.TypeDuck"
+                let name: String = (Bundle.main.infoDictionary?["InputMethodConnectionName"] as? String) ?? "hk.eduhk.inputmethod.Prompt_Connection"
+                let identifier: String = Bundle.main.bundleIdentifier ?? "hk.eduhk.inputmethod.Prompt"
                 imkServer = IMKServer(name: name, bundleIdentifier: identifier)
         }
 
@@ -39,13 +39,13 @@ extension CommandLine {
                 exit(0)
         }
         private static func register() {
-                let path = "/Library/Input Methods/TypeDuck.app"
+                let path = "/Library/Input Methods/Prompt.app"
                 let url = FileManager.default.fileExists(atPath: path) ? URL(fileURLWithPath: path) : Bundle.main.bundleURL
                 TISRegisterInputSource(url as CFURL)
         }
         private static func activate() {
-                let kInputSourceID: String = "hk.eduhk.inputmethod.TypeDuck"
-                let kInputModeID: String = "hk.eduhk.inputmethod.TypeDuck.TypeDuckIM"
+                let kInputSourceID: String = "hk.eduhk.inputmethod.Prompt"
+                let kInputModeID: String = "hk.eduhk.inputmethod.Prompt.PromptIM"
                 guard let inputSourceList = TISCreateInputSourceList(nil, true).takeRetainedValue() as? [TISInputSource] else { return }
                 for inputSource in inputSourceList {
                         guard let pointer = TISGetInputSourceProperty(inputSource, kTISPropertyInputSourceID) else { continue }
@@ -58,5 +58,5 @@ extension CommandLine {
 }
 
 extension Logger {
-        static let shared: Logger = Logger(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "inputmethod")
+        static let shared: Logger = Logger(subsystem: "hk.eduhk.inputmethod.Prompt", category: "inputmethod")
 }

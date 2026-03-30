@@ -3,17 +3,17 @@
 set -e  # Exit on error
 
 # Configuration
-BUNDLE_IDENTIFIER='hk.eduhk.inputmethod.TypeDuck'
+BUNDLE_IDENTIFIER='hk.eduhk.inputmethod.Prompt'
 APP_VERSION='1.6.1'
 INSTALL_LOCATION='/Library/Input Methods'
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PACKAGING_DIR="$PROJECT_ROOT/packaging"
 BUILD_DIR="$PROJECT_ROOT/build"
-APP_NAME="TypeDuck.app"
-PKG_NAME="TypeDuck.pkg"
-DMG_NAME="TypeDuck-${APP_VERSION}.dmg"
+APP_NAME="Prompt.app"
+PKG_NAME="Prompt.pkg"
+DMG_NAME="Prompt-${APP_VERSION}.dmg"
 
-echo "==> Building TypeDuck..."
+echo "==> Building Prompt..."
 
 # Clean previous build
 rm -rf "$BUILD_DIR"
@@ -22,8 +22,8 @@ mkdir -p "$BUILD_DIR"
 # Build the app
 cd "$PROJECT_ROOT"
 xcodebuild \
-    -project TypeDuck.xcodeproj \
-    -scheme TypeDuck \
+    -project Prompt.xcodeproj \
+    -scheme Prompt \
     -configuration Release \
     -derivedDataPath "$BUILD_DIR/DerivedData" \
     -destination 'platform=macOS' \
@@ -55,7 +55,7 @@ pkgbuild \
     --version "${APP_VERSION}" \
     --install-location "${INSTALL_LOCATION}" \
     --info PackageInfo \
-    --component-plist TypeDuckComponent.plist \
+    --component-plist PromptComponent.plist \
     --root "app" \
     --scripts "scripts" \
     "$BUILD_DIR/$PKG_NAME"
@@ -72,7 +72,7 @@ cp "$BUILD_DIR/$PKG_NAME" "$DMG_TEMP/"
 
 # Create DMG
 hdiutil create \
-    -volname "TypeDuck ${APP_VERSION}" \
+    -volname "Prompt ${APP_VERSION}" \
     -srcfolder "$DMG_TEMP" \
     -ov \
     -format UDZO \

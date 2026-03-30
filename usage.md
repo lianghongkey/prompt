@@ -1,30 +1,30 @@
 
-xcodebuild -project TypeDuck.xcodeproj -scheme TypeDuck -destination 'platform=macOS' build 
-cp -R ~/Library/Developer/Xcode/DerivedData/TypeDuck-*/Build/Products/Debug/TypeDuck.app ~/Library/Input\ Methods/
-open ~/Library/Input\ Methods/TypeDuck.app 
+xcodebuild -project Prompt.xcodeproj -scheme Prompt -destination 'platform=macOS' build 
+cp -R ~/Library/Developer/Xcode/DerivedData/Prompt-*/Build/Products/Debug/Prompt.app ~/Library/Input\ Methods/
+open ~/Library/Input\ Methods/Prompt.app 
 
-log stream --predicate 'subsystem == "hk.eduhk.inputmethod.TypeDuck"' --level debug
+log stream --predicate 'subsystem == "hk.eduhk.inputmethod.Prompt"' --level debug
 
 
   # 切换到简体
-  defaults write hk.eduhk.inputmethod.TypeDuck CharacterStandard -int 4
+  defaults write hk.eduhk.inputmethod.Prompt CharacterStandard -int 4
 
   # 切换到繁体
-  defaults write hk.eduhk.inputmethod.TypeDuck CharacterStandard -int 1
+  defaults write hk.eduhk.inputmethod.Prompt CharacterStandard -int 1
 
   # 重启输入法生效
-  osascript -e 'tell application id "hk.eduhk.inputmethod.TypeDuck" to quit'
+  osascript -e 'tell application id "hk.eduhk.inputmethod.Prompt" to quit'
 
 
-cd /Users/colin/develop/TypeDuck-Mac
+cd /Users/colin/develop/Prompt-Mac
 rm -rf .build
 
 # 运行 Python 脚本更新数据库
-python3 /Users/colin/develop/TypeDuck-Mac/add_common_phrases.py
-python3 /Users/colin/develop/TypeDuck-Mac/clean_and_expand_dict.py
+python3 /Users/colin/develop/Prompt-Mac/add_common_phrases.py
+python3 /Users/colin/develop/Prompt-Mac/clean_and_expand_dict.py
 
 # 重新构建
-xcodebuild -scheme TypeDuck -configuration Debug
+xcodebuild -scheme Prompt -configuration Debug
 
 
 # 测试造词功能
@@ -34,20 +34,20 @@ xcodebuild -scheme TypeDuck -configuration Debug
 1. **编译并安装应用**：
 ```bash
 # 编译
-xcodebuild -project TypeDuck.xcodeproj -scheme TypeDuck -destination 'platform=macOS' build
+xcodebuild -project Prompt.xcodeproj -scheme Prompt -destination 'platform=macOS' build
 
 # 复制到输入法目录
-cp -R ~/Library/Developer/Xcode/DerivedData/TypeDuck-*/Build/Products/Debug/TypeDuck.app ~/Library/Input\ Methods/
+cp -R ~/Library/Developer/Xcode/DerivedData/Prompt-*/Build/Products/Debug/Prompt.app ~/Library/Input\ Methods/
 
 # 退出旧实例
-osascript -e 'tell application id "hk.eduhk.inputmethod.TypeDuck" to quit'
+osascript -e 'tell application id "hk.eduhk.inputmethod.Prompt" to quit'
 
 # 启动新实例
-open ~/Library/Input\ Methods/TypeDuck.app
+open ~/Library/Input\ Methods/Prompt.app
 ```
 
 2. **测试造词**：
-   - 在任意文本编辑器中切换到 TypeDuck 输入法
+   - 在任意文本编辑器中切换到 Prompt 输入法
    - 输入：`xulianlian`
    - 选择候选词中的"徐"（单字）
    - 选择候选词中的"两两"（双字词）
@@ -55,7 +55,7 @@ open ~/Library/Input\ Methods/TypeDuck.app
 
 3. **查看日志**：
 ```bash
-log stream --predicate 'subsystem == "hk.eduhk.inputmethod.TypeDuck"' --level debug --style compact
+log stream --predicate 'subsystem == "hk.eduhk.inputmethod.Prompt"' --level debug --style compact
 ```
 
 查找以下日志：

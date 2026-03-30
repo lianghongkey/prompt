@@ -1,6 +1,6 @@
 import XCTest
 
-final class TypeDuckUITestsLaunchTests: XCTestCase {
+final class PromptUITestsLaunchTests: XCTestCase {
 
         override class var runsForEachTargetApplicationUIConfiguration: Bool {
                 true

@@ -41,7 +41,7 @@ private final class MicCapture: @unchecked Sendable {
 
         private var engine: AVAudioEngine?
         private var audioFile: AVAudioFile?      // written on writeQueue
-        private let writeQueue = DispatchQueue(label: "hk.eduhk.inputmethod.TypeDuck.micWrite",
+        private let writeQueue = DispatchQueue(label: "hk.eduhk.inputmethod.Prompt.micWrite",
                                                qos: .userInitiated)
         private var configObserver: NSObjectProtocol?
         private var active = false
@@ -87,7 +87,7 @@ private final class MicCapture: @unchecked Sendable {
                 // Open / reuse audio file
                 if !reuseFile || audioFile == nil {
                         let url = FileManager.default.temporaryDirectory
-                                .appendingPathComponent("typeduck_mic_test.caf")
+                                .appendingPathComponent("prompt_mic_test.caf")
                         try? FileManager.default.removeItem(at: url)
                         audioFile = try AVAudioFile(
                                 forWriting: url,

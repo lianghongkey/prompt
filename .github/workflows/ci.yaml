@@ -21,10 +21,10 @@ jobs:
       - name: Swift Build CoreIME
         run: swift build
         working-directory: ./CoreIME
-  build_typeduck:
-    name: Build TypeDuck
+  build_prompt:
+    name: Build Prompt
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Build TypeDuck Project
-        run: set -o pipefail && xcodebuild clean build -project TypeDuck.xcodeproj -scheme TypeDuck -configuration Debug -destination "platform=macOS" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO | xcpretty
+      - name: Build Prompt Project
+        run: set -o pipefail && xcodebuild clean build -project Prompt.xcodeproj -scheme Prompt -configuration Debug -destination "platform=macOS" CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO | xcpretty

@@ -105,7 +105,7 @@ private final class AudioCapture: @unchecked Sendable {
 
 // MARK: - Whisper serial queue
 
-let whisperQueue = DispatchQueue(label: "hk.eduhk.inputmethod.TypeDuck.whisper", qos: .userInitiated)
+let whisperQueue = DispatchQueue(label: "hk.eduhk.inputmethod.Prompt.whisper", qos: .userInitiated)
 
 // MARK: - VoiceRecorder
 
@@ -118,7 +118,7 @@ final class VoiceRecorder {
         private let capture = AudioCapture()
         private var samples: [Float] = []
         nonisolated(unsafe) private var ctx: OpaquePointer?   // accessed only on whisperQueue
-        private let logger = Logger(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "VoiceRecorder")
+        private let logger = Logger(subsystem: "hk.eduhk.inputmethod.Prompt", category: "VoiceRecorder")
 
         var isModelLoaded: Bool = false
         var isModelLoading: Bool = false

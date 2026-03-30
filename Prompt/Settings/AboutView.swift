@@ -5,7 +5,7 @@ struct AboutView: View {
                 VStack(spacing: 20) {
                         Spacer()
 
-                        Text("TypeDuck")
+                        Text("Prompt")
                                 .font(.largeTitle.bold())
 
                         HStack(spacing: 8) {

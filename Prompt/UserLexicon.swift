@@ -6,7 +6,7 @@ import os.log
 @MainActor
 struct UserLexicon: Sendable {
 
-        private static let logger = Logger(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "UserLexicon")
+        private static let logger = Logger(subsystem: "hk.eduhk.inputmethod.Prompt", category: "UserLexicon")
 
         private static let database: OpaquePointer? = {
                 var db: OpaquePointer? = nil

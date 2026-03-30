@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TypeDuck is a macOS input method (IME) for Mandarin Pinyin input. It is built with Swift/SwiftUI and uses SQLite databases for lexicon storage. The project has three main components:
+Prompt is a macOS input method (IME) for Mandarin Pinyin input. It is built with Swift/SwiftUI and uses SQLite databases for lexicon storage. The project has three main components:
 
-- **TypeDuck/** - Main macOS IME application (Swift/SwiftUI), registered as an IMKInputController
-- **CoreIME/** - Core engine Swift Package, imported by TypeDuck
+- **Prompt/** - Main macOS IME application (Swift/SwiftUI), registered as an IMKInputController
+- **CoreIME/** - Core engine Swift Package, imported by Prompt
 - **Preparing/** - Standalone Swift Package that generates `imedb.sqlite3` from `pinyin.txt`
 
 ## Build Requirements
@@ -23,12 +23,12 @@ TypeDuck is a macOS input method (IME) for Mandarin Pinyin input. It is built wi
 cd Preparing && swift run -c release && cd ..
 
 # Build app
-xcodebuild -project TypeDuck.xcodeproj -scheme TypeDuck -destination 'platform=macOS' build
+xcodebuild -project Prompt.xcodeproj -scheme Prompt -destination 'platform=macOS' build
 
 # Install and restart
-cp -R ~/Library/Developer/Xcode/DerivedData/TypeDuck-*/Build/Products/Debug/TypeDuck.app ~/Library/Input\ Methods/
-osascript -e 'tell application id "hk.eduhk.inputmethod.TypeDuck" to quit'
-open ~/Library/Input\ Methods/TypeDuck.app
+cp -R ~/Library/Developer/Xcode/DerivedData/Prompt-*/Build/Products/Debug/Prompt.app ~/Library/Input\ Methods/
+osascript -e 'tell application id "hk.eduhk.inputmethod.Prompt" to quit'
+open ~/Library/Input\ Methods/Prompt.app
 ```
 
 Do NOT use "Run" in Xcode — the app must be placed in `~/Library/Input Methods/`.
@@ -40,20 +40,20 @@ Do NOT use "Run" in Xcode — the app must be placed in `~/Library/Input Methods
 
 ### View Debug Logs
 ```bash
-log stream --predicate 'subsystem == "hk.eduhk.inputmethod.TypeDuck"' --level debug --style compact
+log stream --predicate 'subsystem == "hk.eduhk.inputmethod.Prompt"' --level debug --style compact
 ```
 
 ### User Lexicon Database
 The app is sandboxed, so the database lives in the container:
 ```bash
-sqlite3 ~/Library/Containers/hk.eduhk.inputmethod.TypeDuck/Data/Library/userlexicon.sqlite3 "SELECT * FROM userlexicontable ORDER BY frequency DESC LIMIT 20;"
+sqlite3 ~/Library/Containers/hk.eduhk.inputmethod.Prompt/Data/Library/userlexicon.sqlite3 "SELECT * FROM userlexicontable ORDER BY frequency DESC LIMIT 20;"
 ```
 
 ### Switch Character Standard
 ```bash
-defaults write hk.eduhk.inputmethod.TypeDuck CharacterStandard -int 4  # Simplified
-defaults write hk.eduhk.inputmethod.TypeDuck CharacterStandard -int 1  # Traditional
-osascript -e 'tell application id "hk.eduhk.inputmethod.TypeDuck" to quit'
+defaults write hk.eduhk.inputmethod.Prompt CharacterStandard -int 4  # Simplified
+defaults write hk.eduhk.inputmethod.Prompt CharacterStandard -int 1  # Traditional
+osascript -e 'tell application id "hk.eduhk.inputmethod.Prompt" to quit'
 ```
 
 ## Architecture
@@ -68,7 +68,7 @@ Source data: `Preparing/Sources/Preparing/Resources/pinyin.txt` (70MB, tab-separ
 
 ### Critical: Hash & Encoding Invariants
 
-All lookup columns must use consistent hash functions between build time (Preparing) and runtime (CoreIME/TypeDuck):
+All lookup columns must use consistent hash functions between build time (Preparing) and runtime (CoreIME/Prompt):
 
 - **`deterministicHash`** — `(hash * 31 + utf8_byte) & 0xFFFFFFFF`, always positive. Used for `ping` column (full spaced pinyin string, e.g. `"zhi dao".deterministicHash`) and for the `id` column in UserLexicon (`(word + romanization).deterministicHash`).
 - **`charcode` / `intercode`** — Letters a-z map to 20-45 (`Int(ascii) - 97 + 20`). Multi-letter codes combine as base-100 (`reduce(0) { $0 * 100 + $1 }`). Used for `shortcut` column (initials of each syllable) and `pinyinsyllabletable`.
@@ -79,7 +79,7 @@ Never use Swift's built-in `.hash` for any DB value — it is non-deterministic 
 ### Input Flow
 
 ```
-Keystrokes → TypeDuckInputController.process() [Task @MainActor]
+Keystrokes → PromptInputController.process() [Task @MainActor]
            → bufferText (didSet triggers suggest() or clearMarkedText())
            → suggest(): UserLexicon.suggest() + Engine.suggest()
            → candidates[] (didSet calls updateDisplayCandidates())
@@ -101,8 +101,8 @@ insert(candidate.text) → aftercareSelection() → updates bufferText
 - `Candidate.swift` — `Comparable` ordering: user lexicon first (order < 0), then by input length, syllable-count match, text length, rowid, fuzzy/exact. `Candidate.+` concatenates two candidates into a compound.
 - `FuzzyPinyin.swift` / `FuzzyPinyinExpander.swift` — zh↔z, ch↔c, sh↔s, n↔l, etc. Settings stored in UserDefaults.
 
-**TypeDuck App** (`TypeDuck/`)
-- `TypeDuckInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder` and `static var whisperModelObserver`.
+**Prompt App** (`Prompt/`)
+- `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder` and `static var whisperModelObserver`.
 - `UserLexicon.swift` — Stores at `~/Library/userlexicon.sqlite3`. Has prepared statements for ping/shortcut/find queries. `handle(_:)` inserts or doubles frequency (min +1000). Initial frequency: 1000.
 - `AppContext.swift` — `@MainActor ObservableObject` holding `displayCandidates`, `highlightedIndex`, `inputForm`, `quadrant`. The SwiftUI environment object for the candidate window.
 - `CandidateWindow.swift` — `NSPanel` with `ignoresMouseEvents = true`; all selection is keyboard-driven.
@@ -166,5 +166,5 @@ The saved romanization uses the joined individual romanizations (e.g. `"mei zhi 
 - After modifying `pinyin.txt`, always rebuild DB: `cd Preparing && swift run -c release`
 - After modifying `DatabasePreparer.swift` hash logic, the DB must be rebuilt AND `deterministicHash` in CoreIME must match
 - `rebuild.sh` also deletes the user lexicon — do not run it if you want to preserve user data
-- Bundle identifier: `hk.eduhk.inputmethod.TypeDuck`
+- Bundle identifier: `hk.eduhk.inputmethod.Prompt`
 - Default mode is **English (transparent)** — Mandarin mode requires switching via system input menu

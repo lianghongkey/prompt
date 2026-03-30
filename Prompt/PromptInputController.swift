@@ -5,7 +5,7 @@ import os.log
 import CoreIME
 
 @MainActor
-final class TypeDuckInputController: IMKInputController, Sendable {
+final class PromptInputController: IMKInputController, Sendable {
 
         // MARK: - Window, InputClient
 
@@ -166,10 +166,10 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         }
                         let activatingWindowCount = NSApp.windows.count(where: { $0.windowNumber > 0 })
                         if activatingWindowCount > 20 {
-                                logger.warning("TypeDuck containing more than 20 windows, closing extras")
+                                logger.warning("Prompt containing more than 20 windows, closing extras")
                                 NSApp.windows.filter({ $0 != window }).forEach({ $0.close() })
                         } else if activatingWindowCount > 10 {
-                                logger.notice("TypeDuck containing more than 10 windows")
+                                logger.notice("Prompt containing more than 10 windows")
                         }
                 }
                 super.deactivateServer(sender)
@@ -404,7 +404,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 if let first = segmentation.first {
                     let origins = first.map(\.origin).joined(separator: " ")
                     let texts = first.map(\.text).joined(separator: " ")
-                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Segmentation"), "Input: %{public}@, Origins: %{public}@, Texts: %{public}@", processingText, origins, texts)
+                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Segmentation"), "Input: %{public}@, Origins: %{public}@, Texts: %{public}@", processingText, origins, texts)
                 }
 
                 let bestScheme = segmentation.first
@@ -424,14 +424,14 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                     }
                 }
 
-                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "=== Input: %{public}@ ===", processingText)
-                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "UserLexicon: %d candidates", userLexiconCandidates.count)
+                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "=== Input: %{public}@ ===", processingText)
+                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "UserLexicon: %d candidates", userLexiconCandidates.count)
                 for (i, c) in userLexiconCandidates.prefix(5).enumerated() {
-                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "  UL[%d] %{public}@ (%{public}@) input=%{public}@ mark=%{public}@ fuzzy=%d", i, c.text, c.romanization, c.input, c.mark, c.isFuzzyMatch ? 1 : 0)
+                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "  UL[%d] %{public}@ (%{public}@) input=%{public}@ mark=%{public}@ fuzzy=%d", i, c.text, c.romanization, c.input, c.mark, c.isFuzzyMatch ? 1 : 0)
                 }
-                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "Engine: %d candidates", engineCandidates.count)
+                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "Engine: %d candidates", engineCandidates.count)
                 for (i, c) in engineCandidates.prefix(10).enumerated() {
-                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "  EN[%d] %{public}@ (%{public}@) input=%{public}@ mark=%{public}@ fuzzy=%d", i, c.text, c.romanization, c.input, c.mark, c.isFuzzyMatch ? 1 : 0)
+                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "  EN[%d] %{public}@ (%{public}@) input=%{public}@ mark=%{public}@ fuzzy=%d", i, c.text, c.romanization, c.input, c.mark, c.isFuzzyMatch ? 1 : 0)
                 }
 
                 let suggestions: [Candidate] = {
@@ -439,7 +439,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         if processingText == "bushi" {
                             NSLog("Combined: \(combined.count) candidates")
                         }
-                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "Combined: %d candidates", combined.count)
+                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "Combined: %d candidates", combined.count)
                         let hasUserLexicon = combined.first?.isUserLexicon ?? false
                         if hasUserLexicon {
                                 // When user lexicon is present, deduplicate by text only to avoid showing
@@ -467,9 +467,9 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                         NSLog("  UQ[\(i)] \(c.text) (\(c.romanization))")
                                     }
                                 }
-                                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "After uniqued: %d -> %d", combined.count, uniqued.count)
+                                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "After uniqued: %d -> %d", combined.count, uniqued.count)
                                 for (i, c) in uniqued.prefix(10).enumerated() {
-                                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "  UQ[%d] %{public}@ (%{public}@)", i, c.text, c.romanization)
+                                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "  UQ[%d] %{public}@ (%{public}@)", i, c.text, c.romanization)
                                 }
                                 return uniqued
                         }
@@ -485,7 +485,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                         let singleChars = Engine.suggest(text: firstPinyin, segmentation: [[firstSyllable]], needsSymbols: false)
                                 .filter({ $0.text.count == 1 && $0.isMandarin })
 
-                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "SingleChars for '%{public}@': %d candidates", firstPinyin, singleChars.count)
+                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "SingleChars for '%{public}@': %d candidates", firstPinyin, singleChars.count)
 
                         // Only add if not already present
                         var result = suggestions
@@ -493,10 +493,10 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                                 if !result.contains(where: { $0.text == singleChar.text && $0.romanization == singleChar.romanization }) {
                                         result.append(singleChar)
                                 } else {
-                                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "  Skipping duplicate: %{public}@ (%{public}@)", singleChar.text, singleChar.romanization)
+                                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "  Skipping duplicate: %{public}@ (%{public}@)", singleChar.text, singleChar.romanization)
                                 }
                         }
-                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "After adding single chars: %d -> %d", suggestions.count, result.count)
+                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "After adding single chars: %d -> %d", suggestions.count, result.count)
                         return result
                 }()
 
@@ -520,9 +520,9 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                     }
                 }
 
-                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "Final candidates: %d", suggestionsWithSingleChars.count)
+                os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "Final candidates: %d", suggestionsWithSingleChars.count)
                 for (i, c) in suggestionsWithSingleChars.prefix(10).enumerated() {
-                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.TypeDuck", category: "Candidates"), "  FINAL[%d] %{public}@ (%{public}@)", i, c.text, c.romanization)
+                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "  FINAL[%d] %{public}@ (%{public}@)", i, c.text, c.romanization)
                 }
 
                 candidates = suggestionsWithSingleChars
@@ -1310,10 +1310,10 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 let isSettingsWindowOpen: Bool = NSApp.windows
                         .filter({ $0.windowNumber > 0 })
                         .compactMap(\.identifier?.rawValue)
-                        .contains(where: { $0.hasPrefix(AppSettings.TypeDuckSettingsWindowIdentifierPrefix) })
+                        .contains(where: { $0.hasPrefix(AppSettings.PromptSettingsWindowIdentifierPrefix) })
                 guard !(isSettingsWindowOpen) else { return }
                 let frame: CGRect = settingsWindowFrame()
-                // Use NSPanel with .nonactivatingPanel so TypeDuck does NOT become the
+                // Use NSPanel with .nonactivatingPanel so Prompt does NOT become the
                 // active application.  Activating an IME process as a regular app confuses
                 // macOS input-method routing and can leave the IME in a broken state.
                 // A non-activating floating panel can still receive keyboard events for
@@ -1326,7 +1326,7 @@ final class TypeDuckInputController: IMKInputController, Sendable {
                 settingsWindow.hidesOnDeactivate = false
                 settingsWindow.worksWhenModal = true
                 settingsWindow.contentViewController = NSHostingController(rootView: SettingsView())
-                let identifierString: String = AppSettings.TypeDuckSettingsWindowIdentifierPrefix + Date.timeIntervalSinceReferenceDate.description
+                let identifierString: String = AppSettings.PromptSettingsWindowIdentifierPrefix + Date.timeIntervalSinceReferenceDate.description
                 settingsWindow.identifier = NSUserInterfaceItemIdentifier(rawValue: identifierString)
                 settingsWindow.orderFrontRegardless()
         }

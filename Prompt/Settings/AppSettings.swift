@@ -104,7 +104,7 @@ struct AppSettings: Sendable {
                 selectedSettingsSidebarRow = row
         }
 
-        static let TypeDuckSettingsWindowIdentifierPrefix: String = "TypeDuckSettingsWindowIdentifierPrefix"
+        static let PromptSettingsWindowIdentifierPrefix: String = "PromptSettingsWindowIdentifierPrefix"
 }
 
 struct SettingsKey {
@@ -116,8 +116,8 @@ struct SettingsKey {
 }
 
 extension Notification.Name {
-        static let whisperModelPathDidChange = Notification.Name("hk.eduhk.inputmethod.TypeDuck.whisperModelPathDidChange")
-        static let whisperModelLoadStateDidChange = Notification.Name("hk.eduhk.inputmethod.TypeDuck.whisperModelLoadStateDidChange")
+        static let whisperModelPathDidChange = Notification.Name("hk.eduhk.inputmethod.Prompt.whisperModelPathDidChange")
+        static let whisperModelLoadStateDidChange = Notification.Name("hk.eduhk.inputmethod.Prompt.whisperModelLoadStateDidChange")
 }
 
 enum WhisperModelLoadState: String {

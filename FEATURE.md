@@ -31,7 +31,7 @@
 
 ### 代码修改
 
-1. **TypeDuckInputController.swift**
+1. **PromptInputController.swift**
    - 添加了 `wordCreationCharacters` 和 `wordCreationPinyins` 数组来跟踪造词过程
    - 修改 `suggest()` 函数，在多音节拼音输入时自动添加所有单字候选（不限制数量）
    - 修改 `aftercareSelection()` 函数，改进造词逻辑：

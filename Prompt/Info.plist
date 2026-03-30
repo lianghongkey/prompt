@@ -6,19 +6,19 @@
 	<dict>
 		<key>tsInputModeListKey</key>
 		<dict>
-			<key>hk.eduhk.inputmethod.TypeDuck.TypeDuckIM</key>
+			<key>hk.eduhk.inputmethod.Prompt.PromptIM</key>
 			<dict>
 				<key>TISIconLabels</key>
 				<dict>
 					<key>Primary</key>
-					<string>TypeDuck</string>
+					<string>Prompt</string>
 				</dict>
 				<key>TISInputSourceID</key>
-				<string>hk.eduhk.inputmethod.TypeDuck.TypeDuckIM</string>
+				<string>hk.eduhk.inputmethod.Prompt.PromptIM</string>
 				<key>TISIntendedLanguage</key>
 				<string>zh-Hans</string>
 				<key>tsInputModeAlternateMenuIconFileKey</key>
-				<string>typeduck.png</string>
+				<string>prompt.png</string>
 				<key>tsInputModeDefaultStateKey</key>
 				<true/>
 				<key>tsInputModeIsVisibleKey</key>
@@ -26,9 +26,9 @@
 				<key>tsInputModeKeyEquivalentModifiersKey</key>
 				<integer>4608</integer>
 				<key>tsInputModeMenuIconFileKey</key>
-				<string>typeduck.png</string>
+				<string>prompt.png</string>
 				<key>tsInputModePaletteIconFileKey</key>
-				<string>typeduck.png</string>
+				<string>prompt.png</string>
 				<key>tsInputModePrimaryInScriptKey</key>
 				<true/>
 				<key>tsInputModeScriptKey</key>
@@ -37,19 +37,19 @@
 		</dict>
 		<key>tsVisibleInputModeOrderedArrayKey</key>
 		<array>
-			<string>hk.eduhk.inputmethod.TypeDuck.TypeDuckIM</string>
+			<string>hk.eduhk.inputmethod.Prompt.PromptIM</string>
 		</array>
 	</dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>TypeDuck 需要使用麦克风进行语音录制。</string>
+	<string>Prompt 需要使用麦克风进行语音录制。</string>
 	<key>InputMethodConnectionName</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)_Connection</string>
 	<key>InputMethodServerControllerClass</key>
-	<string>$(PRODUCT_MODULE_NAME).TypeDuckInputController</string>
+	<string>$(PRODUCT_MODULE_NAME).PromptInputController</string>
 	<key>InputMethodServerDelegateClass</key>
-	<string>$(PRODUCT_MODULE_NAME).TypeDuckInputController</string>
+	<string>$(PRODUCT_MODULE_NAME).PromptInputController</string>
 	<key>LSHasLocalizedDisplayName</key>
 	<true/>
 	<key>TICapsLockLanguageSwitchCapable</key>
@@ -62,6 +62,6 @@
 		<string>Hant</string>
 	</array>
 	<key>tsInputMethodIconFileKey</key>
-	<string>typeduck.png</string>
+	<string>prompt.png</string>
 </dict>
 </plist>

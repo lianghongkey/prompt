@@ -121,13 +121,13 @@ public struct Engine {
 
                 var allCandidates: [Candidate] = []
                 var seen = Set<Int>()
+                // Share queried hashes across all scheme queries to avoid redundant DB hits
+                var queriedHashes = Set<Int>()
 
                 for scheme in topSchemes {
                         let spacedPinyin = scheme.map(\.origin).joined(separator: " ")
                         let combinedInput = scheme.map(\.text).joined()
 
-                        // Track all queried pinyin hashes to avoid duplicate queries
-                        var queriedHashes = Set<Int>()
                         let spacedPinyinHash = spacedPinyin.deterministicHash
                         queriedHashes.insert(spacedPinyinHash)
 
@@ -159,21 +159,49 @@ public struct Engine {
                         }
                 }
 
-                // Sort candidates: exact matches first, then fuzzy matches, both sorted by order (rowid)
-                allCandidates.sort(by: <)
+                // Always also collect candidates from shorter prefix schemes (not only as a fallback).
+                // This ensures e.g. "视频" appears when typing "shipingzhu" (with in/ing fuzzy),
+                // and "现象" appears when typing "xianxiansi" (with ian/iang fuzzy).
+                var fallbackScheme = bestScheme
+                while fallbackScheme.count > 1 {
+                        fallbackScheme = Array(fallbackScheme.dropLast())
+                        guard fallbackScheme.count >= 2 else { break }
+                        let fallbackPinyin = fallbackScheme.map(\.origin).joined(separator: " ")
+                        let fallbackInput = fallbackScheme.map(\.text).joined()
 
-                // If no exact match, fall back progressively by dropping the last token
-                if allCandidates.isEmpty {
-                        var scheme = bestScheme
-                        while scheme.count > 1 {
-                                scheme = Array(scheme.dropLast())
-                                let fallbackPinyin = scheme.map(\.origin).joined(separator: " ")
-                                let fallbackInput = scheme.map(\.text).joined()
+                        let hash = fallbackPinyin.deterministicHash
+                        if queriedHashes.insert(hash).inserted {
                                 let fallbackCandidates = pinyinMatchInternal(text: fallbackPinyin, input: fallbackInput)
-                                if fallbackCandidates.isNotEmpty {
-                                        return fallbackCandidates
+                                for candidate in fallbackCandidates {
+                                        if seen.insert(candidate.order).inserted {
+                                                allCandidates.append(candidate)
+                                        }
                                 }
                         }
+
+                        // Also apply fuzzy expansion for shorter prefixes
+                        if FuzzyPinyinSettings.isAnyEnabled {
+                                let pinyinArray = fallbackScheme.map(\.origin)
+                                let expandedArrays = FuzzyPinyinExpander.expandArray(pinyinArray)
+                                for expandedArray in expandedArrays {
+                                        let expandedSpacedPinyin = expandedArray.joined(separator: " ")
+                                        let expandedHash = expandedSpacedPinyin.deterministicHash
+                                        guard queriedHashes.insert(expandedHash).inserted else { continue }
+                                        let isFuzzy = expandedSpacedPinyin != fallbackPinyin
+                                        let fuzzyCandidates = pinyinMatchInternal(text: expandedSpacedPinyin, input: fallbackInput, isFuzzyMatch: isFuzzy)
+                                        for candidate in fuzzyCandidates {
+                                                if seen.insert(candidate.order).inserted {
+                                                        allCandidates.append(candidate)
+                                                }
+                                        }
+                                }
+                        }
+                }
+
+                // Sort: longer input first (more specific), user lexicon first, then by rowid
+                allCandidates.sort(by: <)
+
+                if allCandidates.isEmpty {
                         let standardPinyin = bestScheme.map(\.origin).joined()
                         return pinyinShortcutInternal(text: standardPinyin, limit: 100)
                 }

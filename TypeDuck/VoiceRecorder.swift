@@ -1,5 +1,6 @@
 import AppKit
 import AVFoundation
+import CoreAudio
 import os.log
 import whisper
 
@@ -177,6 +178,25 @@ final class VoiceRecorder {
                 )
         }
 
+        /// Returns true if the current default audio input device is not the built-in mic
+        /// (e.g. Bluetooth or USB headphones), in which case playing sounds through it
+        /// would trigger Bluetooth HFP mode and degrade recording quality.
+        private static func isUsingHeadphoneInput() -> Bool {
+                var deviceID = AudioDeviceID(0)
+                var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+                var addr = AudioObjectPropertyAddress(
+                        mSelector: kAudioHardwarePropertyDefaultInputDevice,
+                        mScope: kAudioObjectPropertyScopeGlobal,
+                        mElement: kAudioObjectPropertyElementMain
+                )
+                guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &addr, 0, nil, &size, &deviceID) == noErr else { return false }
+                var transportType: UInt32 = 0
+                size = UInt32(MemoryLayout<UInt32>.size)
+                addr.mSelector = kAudioDevicePropertyTransportType
+                guard AudioObjectGetPropertyData(deviceID, &addr, 0, nil, &size, &transportType) == noErr else { return false }
+                return transportType != kAudioDeviceTransportTypeBuiltIn
+        }
+
         private static func binPath(from mlmodelcPath: String) -> String? {
                 let url = URL(fileURLWithPath: mlmodelcPath)
                 guard url.pathExtension == "mlmodelc" else { return nil }
@@ -218,7 +238,9 @@ final class VoiceRecorder {
                 do {
                         try capture.startCapture()
                         isRecording = true
-                        NSSound(named: "Tink")?.play()
+                        if !Self.isUsingHeadphoneInput() {
+                                NSSound(named: "Tink")?.play()
+                        }
                         logger.info("Voice capture started")
                 } catch {
                         logger.error("Failed to start capture: \(error.localizedDescription)")
@@ -229,7 +251,9 @@ final class VoiceRecorder {
                 guard isRecording else { return }
                 capture.stopCapture()
                 isRecording = false
-                NSSound(named: "Pop")?.play()
+                if !Self.isUsingHeadphoneInput() {
+                        NSSound(named: "Pop")?.play()
+                }
                 let buffer = samples
                 samples = []
                 guard buffer.count > 8000 else {

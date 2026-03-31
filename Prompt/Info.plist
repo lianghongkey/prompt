@@ -18,7 +18,7 @@
 				<key>TISIntendedLanguage</key>
 				<string>zh-Hans</string>
 				<key>tsInputModeAlternateMenuIconFileKey</key>
-				<string>prompt.png</string>
+				<string>prompt.pdf</string>
 				<key>tsInputModeDefaultStateKey</key>
 				<true/>
 				<key>tsInputModeIsVisibleKey</key>
@@ -26,9 +26,9 @@
 				<key>tsInputModeKeyEquivalentModifiersKey</key>
 				<integer>4608</integer>
 				<key>tsInputModeMenuIconFileKey</key>
-				<string>prompt.png</string>
+				<string>prompt.pdf</string>
 				<key>tsInputModePaletteIconFileKey</key>
-				<string>prompt.png</string>
+				<string>prompt.pdf</string>
 				<key>tsInputModePrimaryInScriptKey</key>
 				<true/>
 				<key>tsInputModeScriptKey</key>
@@ -62,6 +62,6 @@
 		<string>Hant</string>
 	</array>
 	<key>tsInputMethodIconFileKey</key>
-	<string>prompt.png</string>
+	<string>prompt.pdf</string>
 </dict>
 </plist>

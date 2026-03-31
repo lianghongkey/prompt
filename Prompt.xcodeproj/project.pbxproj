@@ -62,8 +62,7 @@
 		378CE02A2C200DA300BA7FBA /* CollectionExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378CE0292C200DA300BA7FBA /* CollectionExtensions.swift */; };
 		3797F6E92C18902900DE6D0E /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3797F6E82C18902900DE6D0E /* AppDelegate.swift */; };
 		379DBF9A2C8EA79900D041C8 /* CandidateWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379DBF992C8EA79900D041C8 /* CandidateWindow.swift */; };
-		37A619B12BAE2F5A00A0C7F9 /* prompt@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 37A619AF2BAE2F5900A0C7F9 /* prompt@2x.png */; };
-		37A619B22BAE2F5A00A0C7F9 /* prompt.png in Resources */ = {isa = PBXBuildFile; fileRef = 37A619B02BAE2F5A00A0C7F9 /* prompt.png */; };
+		37A619B22BAE2F5A00A0C7F9 /* prompt.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 37A619B02BAE2F5A00A0C7F9 /* prompt.pdf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -142,8 +141,7 @@
 		378CE0292C200DA300BA7FBA /* CollectionExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionExtensions.swift; sourceTree = "<group>"; };
 		3797F6E82C18902900DE6D0E /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		379DBF992C8EA79900D041C8 /* CandidateWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidateWindow.swift; sourceTree = "<group>"; };
-		37A619AF2BAE2F5900A0C7F9 /* prompt@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "prompt@2x.png"; sourceTree = "<group>"; };
-		37A619B02BAE2F5A00A0C7F9 /* prompt.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = prompt.png; sourceTree = "<group>"; };
+		37A619B02BAE2F5A00A0C7F9 /* prompt.pdf */ = {isa = PBXFileReference; lastKnownFileType = file; path = prompt.pdf; sourceTree = "<group>"; };
 		AA000001AA000001AA000001 /* whisper.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = whisper.framework; path = Frameworks/whisper.framework; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -235,8 +233,7 @@
 				371B280E2B3EBA0900EC1271 /* Info.plist */,
 				3764F6112BFAC36400B3737B /* InfoPlist.xcstrings */,
 				3764F6132BFAC36400B3737B /* Localizable.xcstrings */,
-				37A619B02BAE2F5A00A0C7F9 /* prompt.png */,
-				37A619AF2BAE2F5900A0C7F9 /* prompt@2x.png */,
+				37A619B02BAE2F5A00A0C7F9 /* prompt.pdf */,
 				371B27ED2B3EB95F00EC1271 /* Assets.xcassets */,
 				371B27EE2B3EB95F00EC1271 /* Images.xcassets */,
 				371B277C2B3EB66A00EC1271 /* Preview Content */,
@@ -459,8 +456,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				371B27F02B3EB95F00EC1271 /* Images.xcassets in Resources */,
-				37A619B22BAE2F5A00A0C7F9 /* prompt.png in Resources */,
-				37A619B12BAE2F5A00A0C7F9 /* prompt@2x.png in Resources */,
+				37A619B22BAE2F5A00A0C7F9 /* prompt.pdf in Resources */,
 				3764F6122BFAC36400B3737B /* InfoPlist.xcstrings in Resources */,
 				3764F6142BFAC36400B3737B /* Localizable.xcstrings in Resources */,
 				371B27EF2B3EB95F00EC1271 /* Assets.xcassets in Resources */,
@@ -706,7 +702,7 @@
 				CODE_SIGN_ENTITLEMENTS = Prompt/Prompt.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
+				COMBINE_HIDPI_IMAGES = NO;
 				CURRENT_PROJECT_VERSION = 23;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Prompt/Preview Content\"";
@@ -746,7 +742,7 @@
 				CODE_SIGN_ENTITLEMENTS = Prompt/Prompt.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
+				COMBINE_HIDPI_IMAGES = NO;
 				CURRENT_PROJECT_VERSION = 23;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Prompt/Preview Content\"";

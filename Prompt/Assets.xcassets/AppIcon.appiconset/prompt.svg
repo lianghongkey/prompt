@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 331 331" width="331" height="331">
+  <defs>
+    <linearGradient id="blueGrad" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#1360B0"/>
+      <stop offset="45%" stop-color="#1A85E0"/>
+      <stop offset="100%" stop-color="#00AAFF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- P letter using a single path -->
+  <path d="
+    M 58,8
+    H 245
+    Q 295,8 295,58
+    V 155
+    Q 295,205 245,205
+    H 120
+    V 280
+    Q 120,300 100,300
+    H 58
+    Q 38,300 38,280
+    V 58
+    Q 38,8 58,8
+    Z
+    M 145,65
+    Q 130,65 130,82
+    V 128
+    Q 130,145 145,145
+    H 220
+    Q 238,145 238,128
+    V 82
+    Q 238,65 220,65
+    Z
+  " fill="url(#blueGrad)" fill-rule="evenodd"/>
+</svg>

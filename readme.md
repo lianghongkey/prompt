@@ -13,7 +13,7 @@ Prompt 是一款 macOS 普通话拼音输入法（IME），使用 Swift/SwiftUI 
 
 ### 编译安装
 
-直接执行 rebuild.sh
+直接执行 rebuild.sh，重启电脑
 
 ## 如何卸载
 
@@ -22,9 +22,9 @@ Prompt 是一款 macOS 普通话拼音输入法（IME），使用 Swift/SwiftUI 
 然后删除以下文件/文件夹：
 
 ```
-rm -rf /Library/Input\ Methods/Prompt.app
+sudo rm -rf /Library/Input\ Methods/Prompt.app
 rm -rf ~/Library/Input\ Methods/Prompt.app
-rm -rf ~/Library/Application Scripts/hk.eduhk.inputmethod.Prompt
+rm -rf ~/Library/Application\ Scripts/hk.eduhk.inputmethod.Prompt
 rm -rf ~/Library/Containers/hk.eduhk.inputmethod.Prompt
 ```
 
@@ -40,22 +40,6 @@ rm -rf ~/Library/Containers/hk.eduhk.inputmethod.Prompt
 - **Prompt/** — 主 macOS 输入法应用（Swift/SwiftUI），注册为 IMKInputController
 - **CoreIME/** — 核心引擎 Swift Package，由 Prompt 导入
 - **Preparing/** — 独立 Swift Package，用于从 `pinyin.txt` 生成 `imedb.sqlite3`
-
-### 编译安装
-
-```bash
-# 编译应用
-xcodebuild -project Prompt.xcodeproj -scheme Prompt -destination 'platform=macOS' build
-
-# 安装到输入法目录
-cp -R ~/Library/Developer/Xcode/DerivedData/Prompt-*/Build/Products/Debug/Prompt.app ~/Library/Input\ Methods/
-
-# 退出旧实例并重启
-osascript -e 'tell application id "hk.eduhk.inputmethod.Prompt" to quit'
-open ~/Library/Input\ Methods/Prompt.app
-```
-
-> 不要在 Xcode 中直接点击「Run」——应用必须放在 `~/Library/Input Methods/` 才能正常作为输入法运行。
 
 ### 重新生成词库（修改 pinyin.txt 后必须执行）
 

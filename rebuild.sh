@@ -1,13 +1,13 @@
 #!/bin/bash
-# Rebuild database with latest pinyin.txt
-echo "Building database..."
-cd Preparing
 
 # 删除用户词库数据库（沙盒容器内）
 # rm -f ~/Library/Containers/hk.eduhk.inputmethod.Prompt/Data/Library/userlexicon.sqlite3
 
 xcodebuild -project Prompt.xcodeproj -scheme Prompt clean 
 
+# Rebuild database with latest pinyin.txt
+echo "Building database..."
+cd Preparing
 swift run -c release
 cd ..
 

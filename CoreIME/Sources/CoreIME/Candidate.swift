@@ -165,20 +165,22 @@ public struct Candidate: Hashable, Comparable, Sendable {
 
         // Comparable
         public static func < (lhs: Candidate, rhs: Candidate) -> Bool {
-                // 1. User lexicon (order < 0) always comes first, sorted by frequency (higher frequency = lower order value)
+                // 1. Input length first (longer input = more complete match of what user typed)
+                // This ensures "这里面" (input="zhelimian") beats "这里" (input="zheli")
+                // regardless of whether either is from user lexicon or engine.
+                guard lhs.input.count == rhs.input.count else { return lhs.input.count > rhs.input.count }
+
+                // 2. User lexicon (order < 0) before system lexicon, within same input length
                 let lhsIsUser = lhs.order < 0
                 let rhsIsUser = rhs.order < 0
                 if lhsIsUser != rhsIsUser {
                         return lhsIsUser  // user lexicon comes before system lexicon
                 }
 
-                // 2. Within user lexicon, sort by frequency (order is negative, so lower = higher frequency)
+                // 3. Within user lexicon, sort by frequency (order is negative, so lower = higher frequency)
                 if lhsIsUser && rhsIsUser {
                         return lhs.order > rhs.order  // higher frequency (less negative) comes first
                 }
-
-                // 3. Within system lexicon, sort by input length first (longer input = more specific)
-                guard lhs.input.count == rhs.input.count else { return lhs.input.count > rhs.input.count }
 
                 // 4. Prioritize candidates whose character count matches the estimated syllable count
                 // For input "liangh" (2 syllables), prefer 2-character words over 1-character words

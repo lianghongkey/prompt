@@ -435,12 +435,9 @@ final class PromptInputController: IMKInputController, Sendable {
                 }
 
                 let suggestions: [Candidate] = {
-                        let combined = userLexiconCandidates + engineCandidates
-                        if processingText == "bushi" {
-                            NSLog("Combined: \(combined.count) candidates")
-                        }
+                        let combined = (userLexiconCandidates + engineCandidates).sorted(by: <)
                         os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "Combined: %d candidates", combined.count)
-                        let hasUserLexicon = combined.first?.isUserLexicon ?? false
+                        let hasUserLexicon = userLexiconCandidates.isNotEmpty
                         if hasUserLexicon {
                                 // When user lexicon is present, deduplicate by text only to avoid showing
                                 // multiple entries like "不是 (bushi)" from user lexicon and "不是 (bu shi)" from engine
@@ -451,26 +448,11 @@ final class PromptInputController: IMKInputController, Sendable {
                                         guard seen.insert(key).inserted else { return nil }
                                         return candidate
                                 })
-                                if processingText == "bushi" {
-                                    NSLog("After text-only dedup: \(combined.count) -> \(deduped.count)")
-                                    for (i, c) in deduped.prefix(10).enumerated() {
-                                        NSLog("  DD[\(i)] \(c.text) (\(c.romanization))")
-                                    }
-                                }
                                 return deduped
                         } else {
                                 // Always deduplicate to avoid showing duplicate candidates from different query paths
                                 let uniqued = combined.uniqued()
-                                if processingText == "bushi" {
-                                    NSLog("After uniqued: \(combined.count) -> \(uniqued.count)")
-                                    for (i, c) in uniqued.prefix(10).enumerated() {
-                                        NSLog("  UQ[\(i)] \(c.text) (\(c.romanization))")
-                                    }
-                                }
                                 os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "After uniqued: %d -> %d", combined.count, uniqued.count)
-                                for (i, c) in uniqued.prefix(10).enumerated() {
-                                    os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "  UQ[%d] %{public}@ (%{public}@)", i, c.text, c.romanization)
-                                }
                                 return uniqued
                         }
                 }()

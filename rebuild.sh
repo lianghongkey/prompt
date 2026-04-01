@@ -3,6 +3,8 @@
 # 删除用户词库数据库（沙盒容器内）
 # rm -f ~/Library/Containers/hk.eduhk.inputmethod.Prompt/Data/Library/userlexicon.sqlite3
 
+# rm -rf ~/Library/Developer/Xcode/DerivedData/Prompt-*
+
 xcodebuild -project Prompt.xcodeproj -scheme Prompt clean 
 
 # Rebuild database with latest pinyin.txt

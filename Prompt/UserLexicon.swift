@@ -214,6 +214,53 @@ struct UserLexicon: Sendable {
                                 }
                         }
 
+                        // Also try shorter prefix schemes from user lexicon (drop trailing syllables)
+                        if let bestScheme = schemes.first, bestScheme.count > 2 {
+                                var queriedPings = Set<Int>()
+                                for scheme in schemes {
+                                        queriedPings.insert(scheme.map(\.origin).joined().deterministicHash)
+                                }
+                                var fallbackScheme = bestScheme
+                                while fallbackScheme.count > 1 {
+                                        fallbackScheme = Array(fallbackScheme.dropLast())
+                                        guard fallbackScheme.count >= 2 else { break }
+                                        let pingText = fallbackScheme.map(\.origin).joined()
+                                        let fallbackInput = fallbackScheme.map(\.text).joined()
+                                        let text2mark = fallbackInput
+                                        let syllables = pingText
+
+                                        let pingHash = pingText.deterministicHash
+                                        if queriedPings.insert(pingHash).inserted {
+                                                let matched = query(text: pingText, input: fallbackInput, isShortcut: false, isFuzzyMatch: false)
+                                                for candidate in matched {
+                                                        if candidate.mark == syllables {
+                                                                let key = candidate.text + candidate.romanization
+                                                                if seen.insert(key).inserted {
+                                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: fallbackInput, mark: text2mark, order: -1, isFuzzyMatch: false))
+                                                                }
+                                                        }
+                                                }
+                                        }
+
+                                        if FuzzyPinyinSettings.isAnyEnabled {
+                                                let expandedArrays = FuzzyPinyinExpander.expandArray(fallbackScheme.map(\.origin))
+                                                for expandedArray in expandedArrays {
+                                                        let expandedPingText = expandedArray.joined()
+                                                        let expandedHash = expandedPingText.deterministicHash
+                                                        guard queriedPings.insert(expandedHash).inserted else { continue }
+                                                        let isFuzzy = expandedPingText != pingText
+                                                        let fuzzyMatched = query(text: expandedPingText, input: fallbackInput, isShortcut: false, isFuzzyMatch: isFuzzy)
+                                                        for candidate in fuzzyMatched {
+                                                                let key = candidate.text + candidate.romanization
+                                                                if seen.insert(key).inserted {
+                                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: fallbackInput, mark: text2mark, order: -1, isFuzzyMatch: isFuzzy))
+                                                                }
+                                                        }
+                                                }
+                                        }
+                                }
+                        }
+
                         return allCandidates
                 }()
 

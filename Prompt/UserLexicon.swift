@@ -74,18 +74,21 @@ struct UserLexicon: Sendable {
                                 update(id: id, frequency: 1000)
                                 return
                         }
-                        let doubled = frequency.multipliedReportingOverflow(by: 2)
-                        let newFrequency: Int64 = doubled.overflow
-                                ? frequency  // no meaningful gain; normalization below handles headroom
-                                : max(doubled.partialValue, frequency + 1000)
+                        // Additive boost: each selection adds a fixed amount.
+                        // This avoids the exponential doubling problem where a popular word
+                        // repeatedly triggers normalization, halving all other entries.
+                        let boost: Int64 = 1000
+                        let newFrequency: Int64 = frequency + boost
 
                         // When any entry would overflow the threshold, halve ALL entries so
                         // relative order is preserved and there is room to keep growing.
                         let threshold: Int64 = 1_000_000_000
                         if newFrequency > threshold {
                                 normalizeFrequencies()
-                                // After halving, double the normalized value to reward this selection.
-                                update(id: id, frequency: max(frequency / 2 * 2, frequency / 2 + 1000))
+                                // Entry was already halved by normalizeFrequencies.
+                                // Give it the boost on top of its halved value.
+                                let halved = frequency / 2
+                                update(id: id, frequency: halved + boost)
                         } else {
                                 update(id: id, frequency: newFrequency)
                         }

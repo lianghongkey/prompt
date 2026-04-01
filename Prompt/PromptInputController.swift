@@ -151,6 +151,7 @@ final class PromptInputController: IMKInputController, Sendable {
                 Task { @MainActor in
                         window.setFrame(.zero, display: true)
                         selectedCandidates = []
+                        selectedNonFirst = false
                         isIntendingToRecord = false
                         Self.sharedVoiceRecorder.stopRecording()
                         if inputForm.isOptions {
@@ -185,6 +186,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         guard !inputStage.isBuffering else { return }
                         window.setFrame(.zero, display: true)
                         selectedCandidates = []
+                        selectedNonFirst = false
                         clearMarkedText()
                         if inputForm.isOptions {
                                 updateInputForm()
@@ -264,14 +266,17 @@ final class PromptInputController: IMKInputController, Sendable {
                         switch bufferText.first {
                         case .none:
                                 logger.debug("bufferText.didSet: case .none, selectedCandidates.count=\(self.selectedCandidates.count)")
-                                if AppSettings.isInputMemoryOn && selectedCandidates.isNotEmpty {
+                                if AppSettings.isInputMemoryOn && selectedCandidates.isNotEmpty && selectedNonFirst {
                                         logger.debug("bufferText.didSet: calling UserLexicon.handle")
                                         let concatenated = selectedCandidates.joined()
                                         UserLexicon.handle(concatenated)
                                         logger.debug("bufferText.didSet: UserLexicon.handle completed")
+                                } else if !selectedNonFirst {
+                                        logger.debug("bufferText.didSet: skipping UserLexicon.handle (all selections were top candidate)")
                                 }
                                 logger.debug("bufferText.didSet: clearing selectedCandidates")
                                 selectedCandidates = []
+                                selectedNonFirst = false
                                 logger.debug("bufferText.didSet: calling clearMarkedText")
                                 clearMarkedText()
                                 logger.debug("bufferText.didSet: clearMarkedText completed, clearing candidates")
@@ -280,6 +285,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         case .some(let character) where character.isInvalidAnchor:
                                 mark(text: bufferText)
                                 selectedCandidates = []
+                                selectedNonFirst = false
                                 candidates = []
                         case .some(let character) where character.isBasicLatinLetter:
                                 suggest()
@@ -296,6 +302,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         default:
                                 mark(text: bufferText)
                                 selectedCandidates = []
+                                selectedNonFirst = false
                                 candidates = []
                         }
                 }
@@ -343,6 +350,10 @@ final class PromptInputController: IMKInputController, Sendable {
 
         /// Cached Candidate sequence for UserLexicon
         private lazy var selectedCandidates: [Candidate] = []
+
+        /// Whether any candidate was selected from a non-first position.
+        /// When false (all selections were the top candidate), skip frequency updates.
+        private var selectedNonFirst: Bool = false
 
         /// Word creation state: tracks characters being composed
         private lazy var wordCreationCharacters: [String] = []
@@ -1154,11 +1165,15 @@ final class PromptInputController: IMKInputController, Sendable {
                         clearBufferText()
                         return
                 }
+                if selected.candidateIndex != 0 {
+                        selectedNonFirst = true
+                }
                 switch bufferText.first {
                 case .none:
                         return
                 case .some(.backtick):
                         selectedCandidates = []
+                        selectedNonFirst = false
                         let leadingCount: Int = candidate.input.count + 2
                         if bufferText.count > leadingCount {
                                 let head = bufferText.prefix(2)
@@ -1169,6 +1184,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         }
                 case .some(let character) where !(character.isBasicLatinLetter):
                         selectedCandidates = []
+                        selectedNonFirst = false
                         clearBufferText()
                 default:
                         // Check if we should enter or continue word creation mode
@@ -1245,6 +1261,7 @@ final class PromptInputController: IMKInputController, Sendable {
                                 selectedCandidates.append(candidate)
                         } else {
                                 selectedCandidates = []
+                                selectedNonFirst = false
                         }
                         wordCreationCharacters = []
                         wordCreationPinyins = []

@@ -1228,31 +1228,21 @@ final class PromptInputController: IMKInputController, Sendable {
                                 return
                         }
 
-                        // Enter word creation mode if: single char selected AND multiple syllables remain
-                        let isSingleCharSelected = candidate.text.count == 1
-                        if isSingleCharSelected && shouldProcessUserLexicon && hasMultipleSyllables {
+                        // Enter word creation mode if: candidate doesn't consume all syllables
+                        let inputCount: Int = candidate.input.replacingOccurrences(of: "(4|5|6)", with: "RR", options: .regularExpression).count
+                        let hasRemainingSyllables = inputCount < bufferText.count
+                        if hasRemainingSyllables && shouldProcessUserLexicon && hasMultipleSyllables {
                                 // Start word creation
                                 logger.debug("Enter word creation mode: candidate=\(candidate.text), romanization=\(candidate.romanization)")
                                 wordCreationCharacters.append(candidate.text)
                                 wordCreationPinyins.append(candidate.romanization)
 
-                                // Remove the used pinyin from buffer (single character = 1 syllable)
-                                if let scheme = segmentation.first, !scheme.isEmpty {
-                                        let usedLength = scheme.first!.text.count
-                                        var tail = bufferText.dropFirst(usedLength)
-                                        while tail.hasPrefix("'") {
-                                                tail = tail.dropFirst()
-                                        }
-                                        bufferText = String(tail)
-                                } else {
-                                        // Fallback
-                                        let inputCount: Int = candidate.input.replacingOccurrences(of: "(4|5|6)", with: "RR", options: .regularExpression).count
-                                        var tail = bufferText.dropFirst(inputCount)
-                                        while tail.hasPrefix("'") {
-                                                tail = tail.dropFirst()
-                                        }
-                                        bufferText = String(tail)
+                                // Remove the used pinyin from buffer
+                                var tail = bufferText.dropFirst(inputCount)
+                                while tail.hasPrefix("'") {
+                                        tail = tail.dropFirst()
                                 }
+                                bufferText = String(tail)
                                 return
                         }
 
@@ -1265,7 +1255,6 @@ final class PromptInputController: IMKInputController, Sendable {
                         }
                         wordCreationCharacters = []
                         wordCreationPinyins = []
-                        let inputCount: Int = candidate.input.replacingOccurrences(of: "(4|5|6)", with: "RR", options: .regularExpression).count
                         var tail = bufferText.dropFirst(inputCount)
                         while tail.hasPrefix("'") {
                                 tail = tail.dropFirst()

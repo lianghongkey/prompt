@@ -32,10 +32,6 @@ echo "Build and install complete!"
 
 # log stream --predicate 'subsystem == "hk.eduhk.inputmethod.Prompt"' --level debug --style compact
 
-## 录音文件存储
-
-# ~/Library/Containers/hk.eduhk.inputmethod.Prompt/Data/Documents/prompt_recording.wav
-
 ## 词频数据保存的位置
 
 # ~/Library/Containers/hk.eduhk.inputmethod.Prompt/Data/Library/userlexicon.sqlite3

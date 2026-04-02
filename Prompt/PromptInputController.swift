@@ -245,6 +245,7 @@ final class PromptInputController: IMKInputController, Sendable {
                 bufferText = String.empty
                 wordCreationCharacters = []
                 wordCreationPinyins = []
+                wordCreationInputs = []
         }
         private lazy var bufferText: String = .empty {
                 willSet {
@@ -308,10 +309,21 @@ final class PromptInputController: IMKInputController, Sendable {
                 }
         }
 
+        /// Check if the character immediately before the cursor (or the last char of a prefix) is half-width (ASCII digit, letter, or symbol).
+        /// When true, punctuation should be output in half-width form even in Chinese punctuation mode.
+        private func shouldUseHalfWidthPunctuation(prefix: String = "") -> Bool {
+                if let lastChar = prefix.last {
+                        return lastChar.isASCII
+                }
+                guard let lastChar = lastInsertedText.last else { return false }
+                return lastChar.isASCII
+        }
+
         private func insert(_ text: String) {
                 let shouldClearMarkedText: Bool = !(inputStage.isBuffering)
                 // let replacementRange = NSRange(location: NSNotFound, length: 0)
                 currentClient?.insertText(text as NSString, replacementRange: replacementRange())
+                lastInsertedText = text
                 if shouldClearMarkedText {
                         clearMarkedText()
                 }
@@ -355,9 +367,14 @@ final class PromptInputController: IMKInputController, Sendable {
         /// When false (all selections were the top candidate), skip frequency updates.
         private var selectedNonFirst: Bool = false
 
+        /// Tracks the last text committed to the document, used for context-aware punctuation
+        private lazy var lastInsertedText: String = .empty
+
         /// Word creation state: tracks characters being composed
         private lazy var wordCreationCharacters: [String] = []
         private lazy var wordCreationPinyins: [String] = []
+        /// Tracks the consumed pinyin input at each word creation step (for backspace undo)
+        private lazy var wordCreationInputs: [String] = []
 
         private lazy var candidates: [Candidate] = [] {
                 didSet {
@@ -493,17 +510,18 @@ final class PromptInputController: IMKInputController, Sendable {
                         return result
                 }()
 
+                let wordCreationPrefix = wordCreationCharacters.joined()
                 mark(text: {
                         let hasSeparatorsOrTones: Bool = processingText.contains(where: \.isSeparatorOrTone)
-                        guard !hasSeparatorsOrTones else { return processingText.formattedForMark() }
+                        guard !hasSeparatorsOrTones else { return wordCreationPrefix + processingText.formattedForMark() }
                         let userInputTextCount: Int = processingText.count
-                        if let firstCandidate = suggestionsWithSingleChars.first, firstCandidate.input.count == userInputTextCount { return firstCandidate.mark }
-                        guard let bestScheme else { return processingText.formattedForMark() }
+                        if let firstCandidate = suggestionsWithSingleChars.first, firstCandidate.input.count == userInputTextCount { return wordCreationPrefix + firstCandidate.mark }
+                        guard let bestScheme else { return wordCreationPrefix + processingText.formattedForMark() }
                         let leadingLength: Int = bestScheme.length
                         let leadingText: String = bestScheme.map(\.text).joined()
-                        guard leadingLength != userInputTextCount else { return leadingText }
+                        guard leadingLength != userInputTextCount else { return wordCreationPrefix + leadingText }
                         let tailText = processingText.dropFirst(leadingLength)
-                        return leadingText + tailText
+                        return wordCreationPrefix + leadingText + tailText
                 }())
 
                 if processingText == "bushi" {
@@ -818,7 +836,10 @@ final class PromptInputController: IMKInputController, Sendable {
                                 } else if isShifting {
                                         switch Options.punctuationForm {
                                         case .chinese:
-                                                let symbol: String = PunctuationKey.numberKeyShiftingMandarinSymbol(of: number) ?? String.empty
+                                                let useHalfWidth = shouldUseHalfWidthPunctuation(prefix: bufferText)
+                                                let symbol: String = useHalfWidth
+                                                        ? (PunctuationKey.numberKeyShiftingSymbol(of: number) ?? String.empty)
+                                                        : (PunctuationKey.numberKeyShiftingMandarinSymbol(of: number) ?? String.empty)
                                                 insert(bufferText + symbol)
                                                 bufferText = String.empty
                                         case .english:
@@ -828,7 +849,6 @@ final class PromptInputController: IMKInputController, Sendable {
                                         }
                                 } else if isBuffering {
                                         guard let selectedItem = appContext.displayCandidates.fetch(index) else { return }
-                                        insert(selectedItem.candidate.text)
                                         aftercareSelection(selectedItem)
                                 } else {
                                         let text: String = "\(number)"
@@ -910,7 +930,14 @@ final class PromptInputController: IMKInputController, Sendable {
                         guard currentInputForm.isMandarin else { return }
                         guard !isBuffering else { return }
                         guard Options.punctuationForm.isChineseMode else { return }
-                        let symbol: String = isShifting ? PunctuationKey.backquote.instantShiftingSymbol ?? PunctuationKey.backquote.shiftingKeyText : PunctuationKey.backquote.instantSymbol ?? PunctuationKey.backquote.keyText
+                        let useHalfWidth = shouldUseHalfWidthPunctuation()
+                        let symbol: String = {
+                                if useHalfWidth {
+                                        return isShifting ? PunctuationKey.backquote.shiftingKeyText : PunctuationKey.backquote.keyText
+                                } else {
+                                        return isShifting ? PunctuationKey.backquote.instantShiftingSymbol ?? PunctuationKey.backquote.shiftingKeyText : PunctuationKey.backquote.instantSymbol ?? PunctuationKey.backquote.keyText
+                                }
+                        }()
                         insert(symbol)
                 case .punctuation(let punctuationKey):
                         guard currentInputForm.isMandarin else { return }
@@ -927,7 +954,11 @@ final class PromptInputController: IMKInputController, Sendable {
                                 default:
                                         switch Options.punctuationForm {
                                         case .chinese:
-                                                if let symbol = punctuationKey.instantSymbol {
+                                                let useHalfWidth = shouldUseHalfWidthPunctuation(prefix: bufferText)
+                                                if useHalfWidth {
+                                                        insert(bufferText + punctuationKey.keyText)
+                                                        bufferText = String.empty
+                                                } else if let symbol = punctuationKey.instantSymbol {
                                                         insert(bufferText + symbol)
                                                         bufferText = String.empty
                                                 } else {
@@ -942,13 +973,20 @@ final class PromptInputController: IMKInputController, Sendable {
                         } else {
                                 switch Options.punctuationForm {
                                 case .chinese:
-                                        let symbol: String? = isShifting ? punctuationKey.instantShiftingSymbol : punctuationKey.instantSymbol
-                                        if let symbol {
+                                        let useHalfWidth = shouldUseHalfWidthPunctuation(prefix: bufferText)
+                                        if useHalfWidth {
+                                                let symbol: String = isShifting ? punctuationKey.shiftingKeyText : punctuationKey.keyText
                                                 insert(bufferText + symbol)
                                                 bufferText = String.empty
                                         } else {
-                                                insert(bufferText)
-                                                bufferText = isShifting ? punctuationKey.shiftingKeyText : punctuationKey.keyText
+                                                let symbol: String? = isShifting ? punctuationKey.instantShiftingSymbol : punctuationKey.instantSymbol
+                                                if let symbol {
+                                                        insert(bufferText + symbol)
+                                                        bufferText = String.empty
+                                                } else {
+                                                        insert(bufferText)
+                                                        bufferText = isShifting ? punctuationKey.shiftingKeyText : punctuationKey.keyText
+                                                }
                                         }
                                 case .english:
                                         let symbol: String = isShifting ? punctuationKey.shiftingKeyText : punctuationKey.keyText
@@ -969,7 +1007,14 @@ final class PromptInputController: IMKInputController, Sendable {
                                 } else {
                                         switch Options.punctuationForm {
                                         case .chinese:
-                                                let symbol: String = isShifting ? PunctuationKey.quote.instantShiftingSymbol ?? PunctuationKey.quote.shiftingKeyText : PunctuationKey.quote.instantSymbol ?? PunctuationKey.quote.keyText
+                                                let useHalfWidth = shouldUseHalfWidthPunctuation(prefix: bufferText)
+                                                let symbol: String = {
+                                                        if useHalfWidth {
+                                                                return isShifting ? PunctuationKey.quote.shiftingKeyText : PunctuationKey.quote.keyText
+                                                        } else {
+                                                                return isShifting ? PunctuationKey.quote.instantShiftingSymbol ?? PunctuationKey.quote.shiftingKeyText : PunctuationKey.quote.instantSymbol ?? PunctuationKey.quote.keyText
+                                                        }
+                                                }()
                                                 insert(bufferText + symbol)
                                                 bufferText = String.empty
                                         case .english:
@@ -1010,7 +1055,15 @@ final class PromptInputController: IMKInputController, Sendable {
                         case .mandarin:
                                 guard isBuffering else { return }
                                 guard hasControlShiftModifiers else {
-                                        bufferText = String(bufferText.dropLast())
+                                        if wordCreationCharacters.isNotEmpty {
+                                                // Undo last word creation step: restore consumed pinyin
+                                                wordCreationCharacters.removeLast()
+                                                wordCreationPinyins.removeLast()
+                                                let restoredInput = wordCreationInputs.removeLast()
+                                                bufferText = restoredInput + bufferText
+                                        } else {
+                                                bufferText = String(bufferText.dropLast())
+                                        }
                                         return
                                 }
                                 guard candidates.isNotEmpty else { return }
@@ -1054,8 +1107,6 @@ final class PromptInputController: IMKInputController, Sendable {
                                 if candidates.isNotEmpty {
                                         let index = appContext.highlightedIndex
                                         guard let selectedItem = appContext.displayCandidates.fetch(index) else { return }
-                                        let text = selectedItem.candidate.text
-                                        insert(text)
                                         aftercareSelection(selectedItem)
                                 } else if isBuffering {
                                         let text: String = Options.characterForm == .halfWidth ? bufferText : bufferText.fullWidth()
@@ -1162,6 +1213,7 @@ final class PromptInputController: IMKInputController, Sendable {
         private func aftercareSelection(_ selected: DisplayCandidate, shouldProcessUserLexicon: Bool = true) {
                 let candidate = candidates.fetch(selected.candidateIndex) ?? candidates.first(where: { $0 == selected.candidate })
                 guard let candidate, candidate.isMandarin else {
+                        insert(selected.candidate.text)
                         clearBufferText()
                         return
                 }
@@ -1172,6 +1224,7 @@ final class PromptInputController: IMKInputController, Sendable {
                 case .none:
                         return
                 case .some(.backtick):
+                        insert(candidate.text)
                         selectedCandidates = []
                         selectedNonFirst = false
                         let leadingCount: Int = candidate.input.count + 2
@@ -1183,6 +1236,7 @@ final class PromptInputController: IMKInputController, Sendable {
                                 clearBufferText()
                         }
                 case .some(let character) where !(character.isBasicLatinLetter):
+                        insert(candidate.text)
                         selectedCandidates = []
                         selectedNonFirst = false
                         clearBufferText()
@@ -1207,23 +1261,28 @@ final class PromptInputController: IMKInputController, Sendable {
                                 while tail.hasPrefix("'") {
                                         tail = tail.dropFirst()
                                 }
-                                bufferText = String(tail)
 
-                                let newBuffer = bufferText
-                                let currentChars = wordCreationCharacters
-                                logger.debug("bufferText after: \(newBuffer), wordCreationCharacters: \(currentChars)")
-
-                                // Check if we're done with word creation
-                                if bufferText.isEmpty && wordCreationCharacters.count >= 2 {
-                                        // Save the created word to UserLexicon
+                                // Check if we're done with word creation (before setting bufferText)
+                                if tail.isEmpty && wordCreationCharacters.count >= 2 {
+                                        // Save the created word to UserLexicon and commit while marked text is still active
                                         let newWord = wordCreationCharacters.joined()
                                         let newPinyin = wordCreationPinyins.joined(separator: " ")
                                         logger.debug("Word creation completed: word=\(newWord), pinyin=\(newPinyin)")
                                         let newCandidate = Candidate(text: newWord, romanization: newPinyin, input: "", mark: "")
                                         UserLexicon.handle(newCandidate)
                                         logger.debug("Saved to UserLexicon")
+                                        insert(newWord)
                                         wordCreationCharacters = []
                                         wordCreationPinyins = []
+                                        wordCreationInputs = []
+                                        bufferText = String.empty
+                                } else {
+                                        let consumedInput = String(bufferText.prefix(bufferText.count - tail.count))
+                                        wordCreationInputs.append(consumedInput)
+                                        bufferText = String(tail)
+                                        let newBuffer = bufferText
+                                        let currentChars = wordCreationCharacters
+                                        logger.debug("bufferText after: \(newBuffer), wordCreationCharacters: \(currentChars)")
                                 }
                                 return
                         }
@@ -1232,7 +1291,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         let inputCount: Int = candidate.input.replacingOccurrences(of: "(4|5|6)", with: "RR", options: .regularExpression).count
                         let hasRemainingSyllables = inputCount < bufferText.count
                         if hasRemainingSyllables && shouldProcessUserLexicon && hasMultipleSyllables {
-                                // Start word creation
+                                // Start word creation — don't insert, show as marked text
                                 logger.debug("Enter word creation mode: candidate=\(candidate.text), romanization=\(candidate.romanization)")
                                 wordCreationCharacters.append(candidate.text)
                                 wordCreationPinyins.append(candidate.romanization)
@@ -1242,11 +1301,14 @@ final class PromptInputController: IMKInputController, Sendable {
                                 while tail.hasPrefix("'") {
                                         tail = tail.dropFirst()
                                 }
+                                let consumedInput = String(bufferText.prefix(bufferText.count - tail.count))
+                                wordCreationInputs.append(consumedInput)
                                 bufferText = String(tail)
                                 return
                         }
 
                         // Normal selection handling (not word creation)
+                        insert(candidate.text)
                         if shouldProcessUserLexicon {
                                 selectedCandidates.append(candidate)
                         } else {
@@ -1255,6 +1317,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         }
                         wordCreationCharacters = []
                         wordCreationPinyins = []
+                        wordCreationInputs = []
                         var tail = bufferText.dropFirst(inputCount)
                         while tail.hasPrefix("'") {
                                 tail = tail.dropFirst()

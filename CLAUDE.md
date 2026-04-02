@@ -88,8 +88,10 @@ Keystrokes → PromptInputController.process() [Task @MainActor]
 
 Candidate selection (number key or space):
 ```
-insert(candidate.text) → aftercareSelection() → updates bufferText
+aftercareSelection() → insert(candidate.text) + updates bufferText
 ```
+
+`aftercareSelection` handles both `insert()` and buffer updates. It decides whether to commit text immediately (normal selection) or defer it (word creation mode).
 
 `bufferText` is the single source of truth. Its `willSet` tracks `InputStage` (.starting/.ongoing/.ending). Its `didSet` drives all downstream effects.
 
@@ -102,7 +104,7 @@ insert(candidate.text) → aftercareSelection() → updates bufferText
 - `FuzzyPinyin.swift` / `FuzzyPinyinExpander.swift` — zh↔z, ch↔c, sh↔s, n↔l, etc. Settings stored in UserDefaults.
 
 **Prompt App** (`Prompt/`)
-- `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder` and `static var whisperModelObserver`.
+- `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`/`wordCreationInputs`, `lastInsertedText`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder` and `static var whisperModelObserver`.
 - `UserLexicon.swift` — Stores at `~/Library/userlexicon.sqlite3`. Has prepared statements for ping/shortcut/find queries. `handle(_:)` inserts or doubles frequency (min +1000). Initial frequency: 1000.
 - `AppContext.swift` — `@MainActor ObservableObject` holding `displayCandidates`, `highlightedIndex`, `inputForm`, `quadrant`. The SwiftUI environment object for the candidate window.
 - `CandidateWindow.swift` — `NSPanel` with `ignoresMouseEvents = true`; all selection is keyboard-driven.
@@ -139,13 +141,24 @@ Triggered by **Shift+Space when NOT buffering** (idle/standby in Mandarin mode) 
 ### Word Creation Feature
 
 When a user types multi-syllable pinyin (e.g. `meizhidao`) and selects a **single character** (`没`), the IME enters **word creation mode**:
-1. Removes consumed pinyin from buffer (by `segmentation.first!.first!.text.count`)
-2. Tracks characters/pinyins in `wordCreationCharacters` / `wordCreationPinyins`
-3. Shows candidates for the remaining buffer
-4. On each subsequent selection, removes `candidate.input.count` chars from buffer
-5. When buffer is empty and ≥2 parts selected, saves the composed word to UserLexicon
+1. Selected text is **NOT committed** to the document — it is shown as part of the marked text (预显示)
+2. Tracks characters/pinyins/consumed-inputs in `wordCreationCharacters` / `wordCreationPinyins` / `wordCreationInputs`
+3. `suggest()` prepends `wordCreationCharacters.joined()` to the marked text (e.g. `没zhidao`)
+4. On each subsequent selection, removes `candidate.input.count` chars from buffer, appends to tracking arrays
+5. When buffer is empty and ≥2 parts selected: `insert(composedWord)` commits the full word (e.g. `没知道`) **before** clearing `bufferText` (critical: marked text must still be active for `insertText` to work), then saves to UserLexicon
+6. **Backspace** during word creation: pops the last entry from all three tracking arrays, prepends restored input back to `bufferText`. The marked text updates automatically via `suggest()`. No document deletion needed since nothing was committed.
 
 The saved romanization uses the joined individual romanizations (e.g. `"mei zhi dao"`).
+
+### Context-Aware Punctuation (Auto Half-Width)
+
+When `Options.punctuationForm` is `.chinese`, punctuation width is determined by context via `shouldUseHalfWidthPunctuation(prefix:)`:
+- If the character immediately before the punctuation is ASCII (digit, letter, or half-width symbol) → output **half-width** punctuation
+- Otherwise (Chinese characters, full-width chars, start of line) → output **full-width** punctuation
+
+**Implementation:** `lastInsertedText` tracks the most recent text committed via `insert()`. The helper checks the last character of `prefix` (typically `bufferText`) first; if prefix is empty, falls back to `lastInsertedText.last`. This avoids relying on `client.attributedSubstring(from:)` which is unreliable across apps.
+
+Applies to all punctuation insertion points in Chinese mode: number keys + shift, backquote, general punctuation keys (both buffering and non-buffering), and quote/separator key.
 
 ### suggest() Pipeline
 

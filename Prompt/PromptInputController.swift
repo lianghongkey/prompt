@@ -598,7 +598,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         isIntendingToRecord = true
                         Self.sharedVoiceRecorder.startRecording()
                         let recordingClient = sender as? InputClient
-                        let indicatorText = NSAttributedString(string: "🎙", attributes: markAttributes)
+                        let indicatorText = NSAttributedString(string: "💬", attributes: markAttributes)
                         recordingClient?.setMarkedText(indicatorText, selectionRange: NSRange(location: 1, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
                         return true
                 }

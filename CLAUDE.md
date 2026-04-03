@@ -117,12 +117,12 @@ aftercareSelection() → insert(candidate.text) + updates bufferText
 Triggered by **Shift+Space when NOT buffering** (idle/standby in Mandarin mode) and only if the whisper model is loaded.
 
 **Key flow:**
-1. `Shift+Space` keyDown → sets `isIntendingToRecord = true`, calls `sharedVoiceRecorder.startRecording()` (plays "Tink" sound), shows `🎙` as marked text at cursor via `setMarkedText`
+1. `Shift+Space` keyDown → sets `isIntendingToRecord = true`, calls `sharedVoiceRecorder.startRecording()` (plays "Tink" sound), shows `💬` as marked text at cursor via `setMarkedText`
 2. Audio is streamed in real time via `AVAudioEngine`; samples accumulate in memory
 3. `Space` keyUp (or Shift release + subsequent Space keyUp) → `stopRecording()` (plays "Pop" sound), runs whisper transcription on `whisperQueue`
 4. `onTranscription` always fires (empty string if skipped/no result) → `insertTranscribedText()`:
-   - Non-empty: `insertText` commits text and replaces the `🎙` marked text; Traditional→Simplified conversion applied first
-   - Empty: `clearMarkedText()` removes the `🎙` indicator
+   - Non-empty: `insertText` commits text and replaces the `💬` marked text; Traditional→Simplified conversion applied first
+   - Empty: `clearMarkedText()` removes the `💬` indicator
 
 **Hallucination filtering** (per segment, both conditions required to keep):
 - `noSpeechProb < 0.4` (stricter than whisper default 0.6)

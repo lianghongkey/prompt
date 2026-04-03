@@ -18,6 +18,7 @@ struct SettingsView: View {
                                         Label("模糊音", systemImage: "speaker.wave.2").tag(SettingsSidebarRow.fuzzyPinyin)
                                         Label("关于", systemImage: "info.circle").tag(SettingsSidebarRow.about)
                                 }
+                                .padding(.top, 10)
                                 .frame(minWidth: 150, maxWidth: 200)
                         } detail: {
                                 detailView
@@ -38,6 +39,7 @@ struct SettingsView: View {
                                         }
                                 }
                                 .listStyle(.sidebar)
+                                .padding(.top, 10)
                                 .frame(minWidth: 150, maxWidth: 200)
                         }
                         .frame(minWidth: 600, maxWidth: .infinity, minHeight: 400, maxHeight: .infinity, alignment: .topLeading)

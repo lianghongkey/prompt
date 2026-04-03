@@ -20,21 +20,29 @@ private final class AudioCapture: @unchecked Sendable {
         }
 
         var onSamples: (([Float]) -> Void)?
+        var onReconfigure: (() -> Void)?
 
         private var engine: AVAudioEngine?
         private var configObserver: NSObjectProtocol?
         private let targetSampleRate: Double = 16000
         private var active = false
+        private let logger = Logger(subsystem: "hk.eduhk.inputmethod.Prompt", category: "AudioCapture")
 
         func startCapture() throws {
                 active = true
                 try attachEngine()
         }
 
-        private func attachEngine() throws {
+        private func attachEngine(fromConfigChange: Bool = false) throws {
                 configObserver.map { NotificationCenter.default.removeObserver($0) }
                 configObserver = nil
-                engine?.inputNode.removeTap(onBus: 0)
+                if !fromConfigChange {
+                        // Safe to remove tap normally. Skip this on config-change restarts:
+                        // after AVAudioEngineConfigurationChange the input node has been
+                        // reconfigured and calling removeTap on it can leave the audio
+                        // subsystem in a bad state that prevents future recording.
+                        engine?.inputNode.removeTap(onBus: 0)
+                }
                 engine?.stop()
                 engine = nil
 
@@ -42,8 +50,32 @@ private final class AudioCapture: @unchecked Sendable {
                 if #available(macOS 13.0, *) {
                         try? eng.inputNode.setVoiceProcessingEnabled(false)
                 }
+
+                // Register for config change BEFORE start so we catch any immediate reconfiguration.
+                configObserver = NotificationCenter.default.addObserver(
+                        forName: .AVAudioEngineConfigurationChange,
+                        object: eng,
+                        queue: nil
+                ) { [weak self] _ in
+                        guard let self, self.active else { return }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                // Discard samples collected during the HFP transition —
+                                // they were captured with the pre-switch format and are corrupt.
+                                self.onReconfigure?()
+                                try? self.attachEngine(fromConfigChange: true)
+                        }
+                }
+
+                engine = eng
+                // Start the engine FIRST so inputNode connects to hardware and
+                // outputFormat(forBus:) returns the real device format, not a stale
+                // default. Querying the format before start can return sampleRate=0
+                // or channelCount=0, which makes the converter produce all-zero samples.
+                try eng.start()
+
                 let input = eng.inputNode
                 let inputFormat = input.outputFormat(forBus: 0)
+                logger.debug("AudioCapture inputFormat: sampleRate=\(inputFormat.sampleRate), channels=\(inputFormat.channelCount)")
                 guard let convertFormat = AVAudioFormat(
                         commonFormat: .pcmFormatFloat32,
                         sampleRate: targetSampleRate,
@@ -74,21 +106,6 @@ private final class AudioCapture: @unchecked Sendable {
                         let samples = Array(UnsafeBufferPointer(start: data, count: Int(outBuf.frameLength)))
                         DispatchQueue.main.async { self.onSamples?(samples) }
                 }
-
-                // Restart automatically when Bluetooth switches HFP or device changes mid-recording
-                configObserver = NotificationCenter.default.addObserver(
-                        forName: .AVAudioEngineConfigurationChange,
-                        object: eng,
-                        queue: nil
-                ) { [weak self] _ in
-                        guard let self, self.active else { return }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                try? self.attachEngine()
-                        }
-                }
-
-                engine = eng
-                try eng.start()
         }
 
         func stopCapture() {
@@ -235,6 +252,11 @@ final class VoiceRecorder {
                 capture.onSamples = { [weak self] newSamples in
                         self?.samples.append(contentsOf: newSamples)
                 }
+                capture.onReconfigure = { [weak self] in
+                        // Bluetooth HFP switch corrupts audio collected with the pre-switch
+                        // format; discard it so only post-reconfiguration audio is transcribed.
+                        self?.samples = []
+                }
                 do {
                         try capture.startCapture()
                         isRecording = true
@@ -244,6 +266,8 @@ final class VoiceRecorder {
                         logger.info("Voice capture started")
                 } catch {
                         logger.error("Failed to start capture: \(error.localizedDescription)")
+                        // Notify so the controller can clear the 🎙 marked text and reset state.
+                        onTranscription?("")
                 }
         }
 

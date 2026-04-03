@@ -125,6 +125,7 @@ final class PromptInputController: IMKInputController, Sendable {
                                 clearBufferText()
                         }
                         inputStage = .standby
+                        isPunctuationFullWidth = false
                         if inputForm.isOptions {
                                 updateInputForm()
                         }
@@ -153,6 +154,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         selectedCandidates = []
                         selectedNonFirst = false
                         isIntendingToRecord = false
+                        isPunctuationFullWidth = false
                         Self.sharedVoiceRecorder.stopRecording()
                         if inputForm.isOptions {
                                 updateInputForm()
@@ -309,14 +311,9 @@ final class PromptInputController: IMKInputController, Sendable {
                 }
         }
 
-        /// Check if the character immediately before the cursor (or the last char of a prefix) is half-width (ASCII digit, letter, or symbol).
-        /// When true, punctuation should be output in half-width form even in Chinese punctuation mode.
+        /// Returns true (half-width) unless the last inserted content was Chinese.
         private func shouldUseHalfWidthPunctuation(prefix: String = "") -> Bool {
-                if let lastChar = prefix.last {
-                        return lastChar.isASCII
-                }
-                guard let lastChar = lastInsertedText.last else { return false }
-                return lastChar.isASCII
+                return !isPunctuationFullWidth
         }
 
         private func insert(_ text: String) {
@@ -324,6 +321,7 @@ final class PromptInputController: IMKInputController, Sendable {
                 // let replacementRange = NSRange(location: NSNotFound, length: 0)
                 currentClient?.insertText(text as NSString, replacementRange: replacementRange())
                 lastInsertedText = text
+                updatePunctuationState(for: text)
                 if shouldClearMarkedText {
                         clearMarkedText()
                 }
@@ -369,6 +367,17 @@ final class PromptInputController: IMKInputController, Sendable {
 
         /// Tracks the last text committed to the document, used for context-aware punctuation
         private lazy var lastInsertedText: String = .empty
+
+        /// Full-width punctuation state: true after Chinese input, false after ASCII letter/digit input or at start
+        private var isPunctuationFullWidth: Bool = false
+        private func updatePunctuationState(for text: String) {
+                if text.contains(where: { $0.isChineseCharacter }) {
+                        isPunctuationFullWidth = true
+                } else if text.contains(where: { $0.isASCII && ($0.isLetter || $0.isNumber) }) {
+                        isPunctuationFullWidth = false
+                }
+                // Pure punctuation insertion leaves the state unchanged
+        }
 
         /// Word creation state: tracks characters being composed
         private lazy var wordCreationCharacters: [String] = []

@@ -104,7 +104,7 @@ aftercareSelection() → insert(candidate.text) + updates bufferText
 - `FuzzyPinyin.swift` / `FuzzyPinyinExpander.swift` — zh↔z, ch↔c, sh↔s, n↔l, etc. Settings stored in UserDefaults.
 
 **Prompt App** (`Prompt/`)
-- `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`/`wordCreationInputs`, `lastInsertedText`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder` and `static var whisperModelObserver`.
+- `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`/`wordCreationInputs`, `lastInsertedText`, `isPunctuationFullWidth`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder` and `static var whisperModelObserver`.
 - `UserLexicon.swift` — Stores at `~/Library/userlexicon.sqlite3`. Has prepared statements for ping/shortcut/find queries. `handle(_:)` inserts or doubles frequency (min +1000). Initial frequency: 1000.
 - `AppContext.swift` — `@MainActor ObservableObject` holding `displayCandidates`, `highlightedIndex`, `inputForm`, `quadrant`. The SwiftUI environment object for the candidate window.
 - `CandidateWindow.swift` — `NSPanel` with `ignoresMouseEvents = true`; all selection is keyboard-driven.
@@ -150,13 +150,20 @@ When a user types multi-syllable pinyin (e.g. `meizhidao`) and selects a **singl
 
 The saved romanization uses the joined individual romanizations (e.g. `"mei zhi dao"`).
 
-### Context-Aware Punctuation (Auto Half-Width)
+### Context-Aware Punctuation (State-Based Half/Full Width)
 
-When `Options.punctuationForm` is `.chinese`, punctuation width is determined by context via `shouldUseHalfWidthPunctuation(prefix:)`:
-- If the character immediately before the punctuation is ASCII (digit, letter, or half-width symbol) → output **half-width** punctuation
-- Otherwise (Chinese characters, full-width chars, start of line) → output **full-width** punctuation
+When `Options.punctuationForm` is `.chinese`, punctuation width is determined by a persistent state variable `isPunctuationFullWidth` via `shouldUseHalfWidthPunctuation()`:
+- **Full-width** punctuation is output only when `isPunctuationFullWidth == true` (i.e., the last inserted content was Chinese text)
+- **Half-width** in all other cases: after ASCII letters/digits, at start of line, or after focus switch
 
-**Implementation:** `lastInsertedText` tracks the most recent text committed via `insert()`. The helper checks the last character of `prefix` (typically `bufferText`) first; if prefix is empty, falls back to `lastInsertedText.last`. This avoids relying on `client.attributedSubstring(from:)` which is unreliable across apps.
+**State transitions** (updated in `insert()` via `updatePunctuationState(for:)`):
+- Inserted text contains CJK characters → `isPunctuationFullWidth = true`
+- Inserted text contains ASCII letters or digits → `isPunctuationFullWidth = false`
+- Inserted text is pure punctuation → state unchanged
+
+**Reset to half-width** on `deactivateServer` and `activateServer` (both reset `isPunctuationFullWidth = false`), so switching focus always starts in half-width state until Chinese is typed.
+
+**`isChineseCharacter`** on `Character` (in `CharacterExtensions.swift`) detects CJK Unified Ideographs (U+4E00–9FFF, U+3400–4DBF, U+F900–FAFF, U+20000–2A6DF).
 
 Applies to all punctuation insertion points in Chinese mode: number keys + shift, backquote, general punctuation keys (both buffering and non-buffering), and quote/separator key.
 

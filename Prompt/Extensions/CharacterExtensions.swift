@@ -29,6 +29,16 @@ extension Character {
                 return ("a"..."z") ~= self || ("A"..."Z") ~= self
         }
 
+        /// CJK Unified Ideographs and common extensions
+        var isChineseCharacter: Bool {
+                guard let scalar = unicodeScalars.first else { return false }
+                let v = scalar.value
+                return (0x4E00...0x9FFF).contains(v)
+                        || (0x3400...0x4DBF).contains(v)
+                        || (0xF900...0xFAFF).contains(v)
+                        || (0x20000...0x2A6DF).contains(v)
+        }
+
         /// A Boolean value indicating whether this character represents a tone number (1-6).
         var isTone: Bool {
                 return ("1"..."6") ~= self

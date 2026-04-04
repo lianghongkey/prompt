@@ -198,7 +198,7 @@ final class VoiceRecorder {
         /// Returns true if the current default audio input device is not the built-in mic
         /// (e.g. Bluetooth or USB headphones), in which case playing sounds through it
         /// would trigger Bluetooth HFP mode and degrade recording quality.
-        private static func isUsingHeadphoneInput() -> Bool {
+        static func isUsingHeadphoneInput() -> Bool {
                 var deviceID = AudioDeviceID(0)
                 var size = UInt32(MemoryLayout<AudioDeviceID>.size)
                 var addr = AudioObjectPropertyAddress(

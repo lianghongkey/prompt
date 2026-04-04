@@ -153,15 +153,15 @@ The saved romanization uses the joined individual romanizations (e.g. `"mei zhi 
 ### Context-Aware Punctuation (State-Based Half/Full Width)
 
 When `Options.punctuationForm` is `.chinese`, punctuation width is determined by a persistent state variable `isPunctuationFullWidth` via `shouldUseHalfWidthPunctuation()`:
-- **Full-width** punctuation is output only when `isPunctuationFullWidth == true` (i.e., the last inserted content was Chinese text)
-- **Half-width** in all other cases: after ASCII letters/digits, at start of line, or after focus switch
+- **Full-width** punctuation is the default state and is output when `isPunctuationFullWidth == true` (at start, after focus switch, or after Chinese text input)
+- **Half-width** only after ASCII letters/digits are inserted
 
 **State transitions** (updated in `insert()` via `updatePunctuationState(for:)`):
 - Inserted text contains CJK characters → `isPunctuationFullWidth = true`
 - Inserted text contains ASCII letters or digits → `isPunctuationFullWidth = false`
 - Inserted text is pure punctuation → state unchanged
 
-**Reset to half-width** on `deactivateServer` and `activateServer` (both reset `isPunctuationFullWidth = false`), so switching focus always starts in half-width state until Chinese is typed.
+**Reset to full-width** on `deactivateServer` and `activateServer` (both reset `isPunctuationFullWidth = true`), so switching focus always starts in full-width state.
 
 **`isChineseCharacter`** on `Character` (in `CharacterExtensions.swift`) detects CJK Unified Ideographs (U+4E00–9FFF, U+3400–4DBF, U+F900–FAFF, U+20000–2A6DF).
 

@@ -125,7 +125,7 @@ final class PromptInputController: IMKInputController, Sendable {
                                 clearBufferText()
                         }
                         inputStage = .standby
-                        isPunctuationFullWidth = false
+                        isPunctuationFullWidth = true
                         if inputForm.isOptions {
                                 updateInputForm()
                         }
@@ -154,7 +154,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         selectedCandidates = []
                         selectedNonFirst = false
                         isIntendingToRecord = false
-                        isPunctuationFullWidth = false
+                        isPunctuationFullWidth = true
                         Self.sharedVoiceRecorder.stopRecording()
                         if inputForm.isOptions {
                                 updateInputForm()
@@ -368,8 +368,8 @@ final class PromptInputController: IMKInputController, Sendable {
         /// Tracks the last text committed to the document, used for context-aware punctuation
         private lazy var lastInsertedText: String = .empty
 
-        /// Full-width punctuation state: true after Chinese input, false after ASCII letter/digit input or at start
-        private var isPunctuationFullWidth: Bool = false
+        /// Full-width punctuation state: true after Chinese input or at start, false after ASCII letter/digit input
+        private var isPunctuationFullWidth: Bool = true
         private func updatePunctuationState(for text: String) {
                 if text.contains(where: { $0.isChineseCharacter }) {
                         isPunctuationFullWidth = true

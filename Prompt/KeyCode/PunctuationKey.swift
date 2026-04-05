@@ -12,12 +12,12 @@ extension PunctuationKey {
         static let period = PunctuationKey(keyText: ".", shiftingKeyText: ">", instantSymbol: "。", instantShiftingSymbol: "》")
         static let slash = PunctuationKey(keyText: "/", shiftingKeyText: "?", instantSymbol: "／", instantShiftingSymbol: "？")
         static let semicolon = PunctuationKey(keyText: ";", shiftingKeyText: ":", instantSymbol: "；", instantShiftingSymbol: "：")
-        static let quote = PunctuationKey(keyText: "'", shiftingKeyText: "\"", instantSymbol: "\u{2018}", instantShiftingSymbol: "\u{201C}")
+        static let quote = PunctuationKey(keyText: "'", shiftingKeyText: "\"", instantSymbol: "'", instantShiftingSymbol: "\"")
         static let bracketLeft = PunctuationKey(keyText: "[", shiftingKeyText: "{", instantSymbol: "[", instantShiftingSymbol: "{")
         static let bracketRight = PunctuationKey(keyText: "]", shiftingKeyText: "}", instantSymbol: "]", instantShiftingSymbol: "}")
         static let backSlash = PunctuationKey(keyText: "\\", shiftingKeyText: "|", instantSymbol: "、", instantShiftingSymbol: "｜")
         static let backquote = PunctuationKey(keyText: "`", shiftingKeyText: "~", instantSymbol: "·", instantShiftingSymbol: "～")
-        static let minus = PunctuationKey(keyText: "-", shiftingKeyText: "_", instantSymbol: "-", instantShiftingSymbol: "——")
+        static let minus = PunctuationKey(keyText: "-", shiftingKeyText: "_", instantSymbol: "-", instantShiftingSymbol: "_")
         static let equal = PunctuationKey(keyText: "=", shiftingKeyText: "+", instantSymbol: "=", instantShiftingSymbol: "+")
 }
 

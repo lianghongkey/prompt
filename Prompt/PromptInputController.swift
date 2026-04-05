@@ -155,6 +155,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         selectedNonFirst = false
                         isIntendingToRecord = false
                         isPunctuationFullWidth = true
+                        appContext.updateRecordingIndicator(nil)
                         Self.sharedVoiceRecorder.stopRecording()
                         if inputForm.isOptions {
                                 updateInputForm()
@@ -222,6 +223,8 @@ final class PromptInputController: IMKInputController, Sendable {
         }
 
         private func insertTranscribedText(_ text: String) {
+                appContext.updateRecordingIndicator(nil)
+                window.setFrame(.zero, display: true)
                 let client = currentClient ?? client()
                 guard !text.isEmpty else {
                         clearMarkedText()
@@ -607,9 +610,10 @@ final class PromptInputController: IMKInputController, Sendable {
                         isIntendingToRecord = true
                         Self.sharedVoiceRecorder.startRecording()
                         let recordingClient = sender as? InputClient
-                        let indicator: String = VoiceRecorder.isUsingHeadphoneInput() ? "🎧" : "💬"
-                        let indicatorText = NSAttributedString(string: indicator, attributes: markAttributes)
-                        recordingClient?.setMarkedText(indicatorText, selectionRange: NSRange(location: 1, length: 0), replacementRange: NSRange(location: NSNotFound, length: 0))
+                        let indicator: String = VoiceRecorder.isUsingHeadphoneInput() ? "🎧" : "🎙️"
+                        appContext.updateRecordingIndicator(indicator)
+                        mark(text: String.zeroWidthSpace)
+                        updateWindowFrame()
                         return true
                 }
                 // While actively recording, consume all Space key events (including auto-repeat) without input

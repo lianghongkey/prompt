@@ -2,6 +2,7 @@ import Combine
 
 final class AppContext: ObservableObject {
 
+        @Published private(set) var recordingIndicator: String? = nil
         @Published private(set) var isClean: Bool = true
         @Published private(set) var displayCandidates: [DisplayCandidate] = []
         @Published private(set) var highlightedIndex: Int = 0
@@ -50,6 +51,9 @@ final class AppContext: ObservableObject {
         }
         func updateQuadrant(to newQuadrant: Quadrant) {
                 quadrant = newQuadrant
+        }
+        func updateRecordingIndicator(_ indicator: String?) {
+                recordingIndicator = indicator
         }
 
 

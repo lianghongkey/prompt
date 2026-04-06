@@ -105,6 +105,29 @@ struct AppSettings: Sendable {
         }
 
         static let PromptSettingsWindowIdentifierPrefix: String = "PromptSettingsWindowIdentifierPrefix"
+
+        // MARK: - Corrector (llama.cpp server)
+
+        /// Path to llama-server executable
+        private(set) static var llamaServerPath: String = {
+                UserDefaults.standard.string(forKey: SettingsKey.LlamaServerPath) ?? ""
+        }()
+        static func updateLlamaServerPath(to path: String) {
+                llamaServerPath = path
+                UserDefaults.standard.set(path, forKey: SettingsKey.LlamaServerPath)
+        }
+
+        /// Path to GGUF model file
+        private(set) static var llamaModelPath: String = {
+                UserDefaults.standard.string(forKey: SettingsKey.LlamaModelPath) ?? ""
+        }()
+        static func updateLlamaModelPath(to path: String) {
+                llamaModelPath = path
+                UserDefaults.standard.set(path, forKey: SettingsKey.LlamaModelPath)
+        }
+
+        /// Current corrector server state. Updated by CorrectorEngine; read by GeneralSettingsView.
+        static var correctorServerState: CorrectorServerState = .notConfigured
 }
 
 struct SettingsKey {
@@ -113,17 +136,29 @@ struct SettingsKey {
         static let PrimaryCommentLanguage: String = "PrimaryCommentLanguage"
         static let UserLexiconInputMemory: String = "UserLexiconInputMemory"
         static let WhisperModelPath: String = "WhisperModelPath"
+        static let LlamaServerPath: String = "LlamaServerPath"
+        static let LlamaModelPath: String = "LlamaModelPath"
 }
 
 extension Notification.Name {
         static let whisperModelPathDidChange = Notification.Name("hk.eduhk.inputmethod.Prompt.whisperModelPathDidChange")
         static let whisperModelLoadStateDidChange = Notification.Name("hk.eduhk.inputmethod.Prompt.whisperModelLoadStateDidChange")
+        static let correctorServerStateDidChange = Notification.Name("hk.eduhk.inputmethod.Prompt.correctorServerStateDidChange")
+        static let correctorPathsDidChange = Notification.Name("hk.eduhk.inputmethod.Prompt.correctorPathsDidChange")
 }
 
 enum WhisperModelLoadState: String {
         case notConfigured
         case loading
         case loaded
+        case failed
+}
+
+enum CorrectorServerState: String {
+        case notConfigured
+        case starting
+        case running
+        case stopped
         case failed
 }
 

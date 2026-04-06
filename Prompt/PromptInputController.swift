@@ -145,6 +145,11 @@ final class PromptInputController: IMKInputController, Sendable {
                         if !AppSettings.whisperModelPath.isEmpty && !Self.sharedVoiceRecorder.isModelLoaded && !Self.sharedVoiceRecorder.isModelLoading {
                                 Self.sharedVoiceRecorder.loadModel(fromMlmodelc: AppSettings.whisperModelPath)
                         }
+                        // Auto-start corrector server if both paths are configured
+                        setupCorrectorObserver()
+                        if !AppSettings.llamaServerPath.isEmpty && !AppSettings.llamaModelPath.isEmpty && !CorrectorEngine.shared.isServerRunning && AppSettings.correctorServerState != .starting {
+                                Task { await CorrectorEngine.shared.startServer() }
+                        }
                 }
         }
         override func deactivateServer(_ sender: Any!) {
@@ -222,6 +227,24 @@ final class PromptInputController: IMKInputController, Sendable {
                 }
         }
 
+        private static var correctorObserver: NSObjectProtocol?
+
+        private func setupCorrectorObserver() {
+                guard Self.correctorObserver == nil else { return }
+                Self.correctorObserver = NotificationCenter.default.addObserver(
+                        forName: .correctorPathsDidChange,
+                        object: nil,
+                        queue: .main
+                ) { _ in
+                        Task { @MainActor in
+                                CorrectorEngine.shared.stopServer()
+                                if !AppSettings.llamaServerPath.isEmpty && !AppSettings.llamaModelPath.isEmpty {
+                                        await CorrectorEngine.shared.startServer()
+                                }
+                        }
+                }
+        }
+
         private func insertTranscribedText(_ text: String) {
                 appContext.updateRecordingIndicator(nil)
                 window.setFrame(.zero, display: true)
@@ -231,7 +254,14 @@ final class PromptInputController: IMKInputController, Sendable {
                         return
                 }
                 let simplified = text.applyingTransform(StringTransform("Traditional-Simplified"), reverse: false) ?? text
-                client?.insertText(simplified as NSString, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
+                if CorrectorEngine.shared.isServerRunning {
+                        Task { @MainActor in
+                                let corrected = await CorrectorEngine.shared.correct(text: simplified) ?? simplified
+                                client?.insertText(corrected as NSString, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
+                        }
+                } else {
+                        client?.insertText(simplified as NSString, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
+                }
         }
 
         private lazy var appContext: AppContext = AppContext()

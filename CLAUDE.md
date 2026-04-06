@@ -104,13 +104,14 @@ aftercareSelection() → insert(candidate.text) + updates bufferText
 - `FuzzyPinyin.swift` / `FuzzyPinyinExpander.swift` — zh↔z, ch↔c, sh↔s, n↔l, etc. Settings stored in UserDefaults.
 
 **Prompt App** (`Prompt/`)
-- `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`/`wordCreationInputs`, `lastInsertedText`, `isPunctuationFullWidth`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder` and `static var whisperModelObserver`.
+- `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`/`wordCreationInputs`, `lastInsertedText`, `isPunctuationFullWidth`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder`, `static var whisperModelObserver`, and `static var correctorObserver`.
 - `UserLexicon.swift` — Stores at `~/Library/userlexicon.sqlite3`. Has prepared statements for ping/shortcut/find queries. `handle(_:)` inserts or doubles frequency (min +1000). Initial frequency: 1000.
 - `AppContext.swift` — `@MainActor ObservableObject` holding `displayCandidates`, `highlightedIndex`, `inputForm`, `quadrant`. The SwiftUI environment object for the candidate window.
 - `CandidateWindow.swift` — `NSPanel` with `ignoresMouseEvents = true`; all selection is keyboard-driven.
 - `Options.swift` — Runtime character form (half/full width) and punctuation form settings.
-- `AppSettings.swift` — Persistent settings in UserDefaults (page size, input memory on/off, etc.). Also holds `whisperModelPath` (persisted) and `whisperModelLoadState` (runtime, updated by `VoiceRecorder`).
+- `AppSettings.swift` — Persistent settings in UserDefaults (page size, input memory on/off, etc.). Also holds `whisperModelPath` (persisted) and `whisperModelLoadState` (runtime, updated by `VoiceRecorder`). Additionally holds `llamaServerPath`, `llamaModelPath` (persisted), and `correctorServerState` (runtime, updated by `CorrectorEngine`).
 - `VoiceRecorder.swift` — Captures 16kHz mono Float32 PCM audio via `AVAudioEngine` (`AudioCapture`) and transcribes using a whisper GGML model (`.bin`) via `whisper.cpp`. Model path is configured as `.mlmodelc` in Settings; the `.bin` sibling is derived automatically. Transcription result is inserted as text via `onTranscription` callback.
+- `CorrectorEngine.swift` — Singleton (`CorrectorEngine.shared`) that manages connection to a llama.cpp server for post-transcription error correction. Connects to `http://127.0.0.1:8081` and calls the OpenAI-compatible `/v1/chat/completions` endpoint. On startup, checks if an existing server is already running on the port before attempting to launch a new process. Server process management is limited by the app sandbox (external processes may be killed); the engine gracefully falls back to detecting externally-started servers.
 
 ### Voice Recognition Feature
 
@@ -137,6 +138,39 @@ Triggered by **Shift+Space when NOT buffering** (idle/standby in Mandarin mode) 
 **Whisper model setup:**
 - User pastes `.mlmodelc` path in General Settings; the `.bin` GGML file must be a sibling with the same base name (minus `-encoder` suffix if present)
 - Model loading runs on `whisperQueue` to avoid blocking the main thread
+
+### Post-Transcription Error Correction (LLM)
+
+After voice transcription completes, the text can optionally be sent to a local llama.cpp server for grammar/error correction before insertion.
+
+**Configuration (in General Settings):**
+- `llamaServerPath` — Path to the `llama-server` executable (persisted in UserDefaults)
+- `llamaModelPath` — Path to a `.gguf` model file (persisted in UserDefaults)
+- Status indicator shows server state: notConfigured / starting / running / stopped / failed
+- "启动服务" / "停止服务" buttons for manual control
+
+**Server lifecycle (`CorrectorEngine.swift`):**
+- `CorrectorEngine.shared` is a singleton, similar to `sharedVoiceRecorder`
+- On `activateServer`, if both paths are configured and `userStopped == false`, calls `startServer()`
+- `startServer()` first checks if an existing server is already responding on `127.0.0.1:8081/health`; if so, connects without launching a new process
+- If no server found, attempts to launch `llama-server` as a `Process` (may fail under sandbox — terminationStatus=6)
+- Health polling: up to 30 seconds, 0.5s intervals, exits early if process dies
+- `userStopped` flag prevents auto-reconnect after user clicks "停止服务"; cleared when user clicks "启动服务" (`userInitiated: true`)
+- `correctorPathsDidChange` notification triggers server restart when paths change in Settings
+
+**Correction flow:**
+- `insertTranscribedText()` checks `CorrectorEngine.shared.isServerRunning`
+- If running: `await CorrectorEngine.shared.correct(text:)` sends text to `/v1/chat/completions` (OpenAI-compatible API)
+- Prompt: "你是一个文本纠错专家，纠正输入句子中的语法错误，并输出正确的句子，输入句子为：" + transcribed text
+- Parameters: `temperature=0`, `seed=42`, `max_tokens=1024`, `timeout=10s`
+- If correction fails or server not running, original transcribed text is inserted as fallback
+
+**Sandbox constraint:** The IME is sandboxed (`com.apple.security.app-sandbox`). Launching external processes from within the sandbox is restricted. The recommended workflow is to start `llama-server` manually in Terminal, and the IME will auto-detect it via health check. The `com.apple.security.network.client` entitlement is required for HTTP calls to localhost.
+
+**State management:**
+- `AppSettings.correctorServerState: CorrectorServerState` (`.notConfigured` / `.starting` / `.running` / `.stopped` / `.failed`)
+- State changes post `.correctorServerStateDidChange` notification with `["state": rawValue, "status": statusText]`
+- `GeneralSettingsView` observes this notification to update the status dot and text
 
 ### Word Creation Feature
 

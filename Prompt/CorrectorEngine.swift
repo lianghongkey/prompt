@@ -54,11 +54,6 @@ final class CorrectorEngine {
                         return
                 }
 
-                // Stop existing process if any
-                if serverProcess != nil {
-                        terminateProcess()
-                }
-
                 postState(.starting, status: "启动 llama-server…")
 
                 let process = Process()
@@ -94,7 +89,7 @@ final class CorrectorEngine {
                         let wasAlive = serverProcess?.isRunning ?? false
                         logger.error("llama-server 启动超时, processAlive=\(wasAlive)")
                         terminateProcess()
-                        postState(.failed, status: wasAlive ? "启动超时（服务未就绪）" : "进程已退出（可能被沙盒阻止）")
+                        postState(.failed, status: wasAlive ? "启动超时（服务未就绪）" : "进程已退出")
                 }
         }
 

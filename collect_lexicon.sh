@@ -2,7 +2,7 @@
 # Merge user lexicon from the sandboxed container into a local collection file.
 # Usage: ./collect_lexicon.sh
 
-SOURCE="$HOME/Library/Containers/hk.eduhk.inputmethod.Prompt/Data/Library/userlexicon.sqlite3"
+SOURCE="~/Library/userlexicon.sqlite3"
 TARGET="$(dirname "$0")/userlexicon.sqlite3"
 
 if [ ! -f "$SOURCE" ]; then

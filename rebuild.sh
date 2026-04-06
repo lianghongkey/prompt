@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# 删除用户词库数据库（沙盒容器内）
-# rm -f ~/Library/Containers/hk.eduhk.inputmethod.Prompt/Data/Library/userlexicon.sqlite3
+# 删除用户词库数据库
+# rm -f ~/Library/userlexicon.sqlite3
 
 # rm -rf ~/Library/Developer/Xcode/DerivedData/Prompt-*
 
@@ -36,7 +36,7 @@ echo "Build and install complete!"
 
 ## 词频数据保存的位置
 
-# ~/Library/Containers/hk.eduhk.inputmethod.Prompt/Data/Library/userlexicon.sqlite3
+# ~/Library/userlexicon.sqlite3
 
 
 

@@ -33,7 +33,7 @@ Prompt 是一款 macOS 普通话拼音输入法（IME），使用 Swift/SwiftUI 
 sudo rm -rf /Library/Input\ Methods/Prompt.app
 rm -rf ~/Library/Input\ Methods/Prompt.app
 rm -rf ~/Library/Application\ Scripts/hk.eduhk.inputmethod.Prompt
-rm -rf ~/Library/Containers/hk.eduhk.inputmethod.Prompt
+rm -rf ~/Library/userlexicon.sqlite3
 ```
 
 ## 如何构建
@@ -69,10 +69,8 @@ log stream --predicate 'subsystem == "hk.eduhk.inputmethod.Prompt"' --level debu
 
 ## 用户词库
 
-应用已沙盒化，数据库位于容器内：
-
 ```bash
-sqlite3 ~/Library/Containers/hk.eduhk.inputmethod.Prompt/Data/Library/userlexicon.sqlite3 \
+sqlite3 ~/Library/userlexicon.sqlite3 \
   "SELECT * FROM userlexicontable ORDER BY frequency DESC LIMIT 20;"
 ```
 

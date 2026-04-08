@@ -17,7 +17,6 @@ struct GeneralSettingsView: View {
         @State private var whisperModelPath: String = AppSettings.whisperModelPath
         @State private var whisperModelLoadState: WhisperModelLoadState = AppSettings.whisperModelLoadState
 
-        @State private var llamaServerPath: String = AppSettings.llamaServerPath
         @State private var llamaModelPath: String = AppSettings.llamaModelPath
         @State private var correctorServerState: CorrectorServerState = AppSettings.correctorServerState
         @State private var correctorStatusText: String = {
@@ -69,8 +68,7 @@ struct GeneralSettingsView: View {
                 }
         }
 
-        private func applyCorrectorPaths() {
-                AppSettings.updateLlamaServerPath(to: llamaServerPath)
+        private func applyCorrectorModelPath() {
                 AppSettings.updateLlamaModelPath(to: llamaModelPath)
                 NotificationCenter.default.post(name: .correctorPathsDidChange, object: nil)
         }
@@ -206,13 +204,11 @@ struct GeneralSettingsView: View {
                                                         .font(.caption)
                                                         .foregroundStyle(Color.secondary)
                                         }
-                                        NativeTextField(placeholder: "粘贴 llama-server 可执行文件路径", text: $llamaServerPath)
-                                                .frame(height: 22)
                                         NativeTextField(placeholder: "粘贴 .gguf 模型文件路径", text: $llamaModelPath)
                                                 .frame(height: 22)
                                         HStack {
-                                                Button("应用路径") {
-                                                        applyCorrectorPaths()
+                                                Button("应用") {
+                                                        applyCorrectorModelPath()
                                                 }
                                                 if correctorServerState == .running {
                                                         Button("停止服务") {
@@ -221,16 +217,16 @@ struct GeneralSettingsView: View {
                                                         .foregroundStyle(Color.red)
                                                 } else if correctorServerState != .starting {
                                                         Button("启动服务") {
-                                                                applyCorrectorPaths()
+                                                                applyCorrectorModelPath()
                                                                 Task {
                                                                         await CorrectorEngine.shared.startServer(userInitiated: true)
                                                                 }
                                                         }
-                                                        .disabled(llamaServerPath.isEmpty || llamaModelPath.isEmpty)
+                                                        .disabled(llamaModelPath.isEmpty)
                                                 }
                                                 Spacer()
                                         }
-                                        Text("语音识别后自动调用 LLM 纠正文本错误。需要 llama.cpp 的 llama-server 和 GGUF 模型文件。")
+                                        Text("语音识别后自动调用 LLM 纠正文本错误。只需提供 GGUF 模型文件路径。")
                                                 .font(.caption)
                                                 .foregroundStyle(Color.secondary)
                                 }

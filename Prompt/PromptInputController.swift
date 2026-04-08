@@ -147,7 +147,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         }
                         // Auto-start corrector server if both paths are configured
                         setupCorrectorObserver()
-                        if !AppSettings.llamaServerPath.isEmpty && !AppSettings.llamaModelPath.isEmpty && !CorrectorEngine.shared.isServerRunning && AppSettings.correctorServerState != .starting {
+                        if !AppSettings.llamaModelPath.isEmpty && !CorrectorEngine.shared.isServerRunning && AppSettings.correctorServerState != .starting {
                                 Task { await CorrectorEngine.shared.startServer() }
                         }
                 }
@@ -238,7 +238,7 @@ final class PromptInputController: IMKInputController, Sendable {
                 ) { _ in
                         Task { @MainActor in
                                 CorrectorEngine.shared.stopServer()
-                                if !AppSettings.llamaServerPath.isEmpty && !AppSettings.llamaModelPath.isEmpty {
+                                if !AppSettings.llamaModelPath.isEmpty {
                                         await CorrectorEngine.shared.startServer()
                                 }
                         }

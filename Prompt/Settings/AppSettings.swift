@@ -108,15 +108,6 @@ struct AppSettings: Sendable {
 
         // MARK: - Corrector (llama.cpp server)
 
-        /// Path to llama-server executable
-        private(set) static var llamaServerPath: String = {
-                UserDefaults.standard.string(forKey: SettingsKey.LlamaServerPath) ?? ""
-        }()
-        static func updateLlamaServerPath(to path: String) {
-                llamaServerPath = path
-                UserDefaults.standard.set(path, forKey: SettingsKey.LlamaServerPath)
-        }
-
         /// Path to GGUF model file
         private(set) static var llamaModelPath: String = {
                 UserDefaults.standard.string(forKey: SettingsKey.LlamaModelPath) ?? ""
@@ -136,7 +127,6 @@ struct SettingsKey {
         static let PrimaryCommentLanguage: String = "PrimaryCommentLanguage"
         static let UserLexiconInputMemory: String = "UserLexiconInputMemory"
         static let WhisperModelPath: String = "WhisperModelPath"
-        static let LlamaServerPath: String = "LlamaServerPath"
         static let LlamaModelPath: String = "LlamaModelPath"
 }
 

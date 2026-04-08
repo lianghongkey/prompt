@@ -27,10 +27,14 @@ final class CorrectorEngine {
                 isStarting = true
                 defer { isStarting = false }
 
-                let serverBin = AppSettings.llamaServerPath
+                guard let serverBin = Bundle.main.path(forResource: "llama-server", ofType: nil) else {
+                        logger.error("llama-server 未找到（未打包到应用中）")
+                        postState(.failed, status: "llama-server 未打包")
+                        return
+                }
                 let modelPath = AppSettings.llamaModelPath
 
-                guard !serverBin.isEmpty && !modelPath.isEmpty else {
+                guard !modelPath.isEmpty else {
                         postState(.notConfigured)
                         return
                 }
@@ -43,11 +47,6 @@ final class CorrectorEngine {
                         return
                 }
 
-                guard FileManager.default.fileExists(atPath: serverBin) else {
-                        logger.error("llama-server 不存在: \(serverBin)")
-                        postState(.failed, status: "llama-server 文件不存在")
-                        return
-                }
                 guard FileManager.default.fileExists(atPath: modelPath) else {
                         logger.error("模型文件不存在: \(modelPath)")
                         postState(.failed, status: "模型文件不存在")

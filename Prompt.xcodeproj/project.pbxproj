@@ -22,6 +22,7 @@
 		371B27CB2B3EB93A00EC1271 /* UserLexicon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27A52B3EB93900EC1271 /* UserLexicon.swift */; };
 		C2DB0967FDF4443FB5F59239 /* VoiceRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39C801959FF5413BAF5C25EC /* VoiceRecorder.swift */; };
 		CC000001CC000001CC000001 /* CorrectorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002CC000002CC000002 /* CorrectorEngine.swift */; };
+		DD000001DD000001DD000001 /* llama-server in Resources */ = {isa = PBXBuildFile; fileRef = DD000002DD000002DD000002 /* llama-server */; };
 		371B27CC2B3EB93A00EC1271 /* DisplayCandidate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27A72B3EB93900EC1271 /* DisplayCandidate.swift */; };
 		371B27CD2B3EB93A00EC1271 /* Comment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27A82B3EB93900EC1271 /* Comment.swift */; };
 		371B27CE2B3EB93A00EC1271 /* Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27A92B3EB93900EC1271 /* Language.swift */; };
@@ -145,6 +146,7 @@
 		379DBF992C8EA79900D041C8 /* CandidateWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidateWindow.swift; sourceTree = "<group>"; };
 		37A619B02BAE2F5A00A0C7F9 /* prompt.pdf */ = {isa = PBXFileReference; lastKnownFileType = file; path = prompt.pdf; sourceTree = "<group>"; };
 		AA000001AA000001AA000001 /* whisper.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = whisper.framework; path = Frameworks/whisper.framework; sourceTree = SOURCE_ROOT; };
+		DD000002DD000002DD000002 /* llama-server */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = "llama-server"; path = "Resources/llama-server"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -237,6 +239,7 @@
 				3764F6112BFAC36400B3737B /* InfoPlist.xcstrings */,
 				3764F6132BFAC36400B3737B /* Localizable.xcstrings */,
 				37A619B02BAE2F5A00A0C7F9 /* prompt.pdf */,
+				DD000002DD000002DD000002 /* llama-server */,
 				371B27ED2B3EB95F00EC1271 /* Assets.xcassets */,
 				371B27EE2B3EB95F00EC1271 /* Images.xcassets */,
 				371B277C2B3EB66A00EC1271 /* Preview Content */,
@@ -460,6 +463,7 @@
 			files = (
 				371B27F02B3EB95F00EC1271 /* Images.xcassets in Resources */,
 				37A619B22BAE2F5A00A0C7F9 /* prompt.pdf in Resources */,
+				DD000001DD000001DD000001 /* llama-server in Resources */,
 				3764F6122BFAC36400B3737B /* InfoPlist.xcstrings in Resources */,
 				3764F6142BFAC36400B3737B /* Localizable.xcstrings in Resources */,
 				371B27EF2B3EB95F00EC1271 /* Assets.xcassets in Resources */,

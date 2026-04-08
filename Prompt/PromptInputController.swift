@@ -916,11 +916,7 @@ final class PromptInputController: IMKInputController, Sendable {
                                 switch currentInputForm {
                                 case .mandarin:
                                         guard isBuffering else { return }
-                                        if appContext.isHighlightingStart {
-                                                updateDisplayCandidates(.previousPage, highlight: .end)
-                                        } else {
-                                                appContext.decreaseHighlightedIndex()
-                                        }
+                                        updateDisplayCandidates(.previousPage, highlight: .unchanged)
                                 case .transparent:
                                         return
                                 case .options:
@@ -930,11 +926,7 @@ final class PromptInputController: IMKInputController, Sendable {
                                 switch currentInputForm {
                                 case .mandarin:
                                         guard isBuffering else { return }
-                                        if appContext.isHighlightingEnd {
-                                                updateDisplayCandidates(.nextPage, highlight: .start)
-                                        } else {
-                                                appContext.increaseHighlightedIndex()
-                                        }
+                                        updateDisplayCandidates(.nextPage, highlight: .unchanged)
                                 case .transparent:
                                         return
                                 case .options:
@@ -944,7 +936,11 @@ final class PromptInputController: IMKInputController, Sendable {
                                 switch currentInputForm {
                                 case .mandarin:
                                         guard isBuffering else { return }
-                                        updateDisplayCandidates(.previousPage, highlight: .unchanged)
+                                        if appContext.isHighlightingStart {
+                                                updateDisplayCandidates(.previousPage, highlight: .end)
+                                        } else {
+                                                appContext.decreaseHighlightedIndex()
+                                        }
                                 case .transparent:
                                         return
                                 case .options:
@@ -954,7 +950,11 @@ final class PromptInputController: IMKInputController, Sendable {
                                 switch currentInputForm {
                                 case .mandarin:
                                         guard isBuffering else { return }
-                                        updateDisplayCandidates(.nextPage, highlight: .unchanged)
+                                        if appContext.isHighlightingEnd {
+                                                updateDisplayCandidates(.nextPage, highlight: .start)
+                                        } else {
+                                                appContext.increaseHighlightedIndex()
+                                        }
                                 case .transparent:
                                         return
                                 case .options:

@@ -36,7 +36,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
         public let mark: String
 
         /// Rank. Smaller is preferred.
-        let order: Int
+        public let order: Int
 
         /// Whether this candidate is from fuzzy pinyin matching
         public let isFuzzyMatch: Bool
@@ -177,9 +177,9 @@ public struct Candidate: Hashable, Comparable, Sendable {
                         return lhsIsUser  // user lexicon comes before system lexicon
                 }
 
-                // 3. Within user lexicon, sort by frequency (order is negative, so lower = higher frequency)
+                // 3. Within user lexicon, sort by frequency (order = -frequency, so more negative = higher frequency)
                 if lhsIsUser && rhsIsUser {
-                        return lhs.order > rhs.order  // higher frequency (less negative) comes first
+                        return lhs.order < rhs.order  // higher frequency (more negative) comes first
                 }
 
                 // 4. Prioritize candidates whose character count matches the estimated syllable count
@@ -196,11 +196,6 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 // 6. Then by database order (rowid, lower = more common)
                 // This ensures zi and zhi candidates are interleaved by frequency
                 guard lhs.order == rhs.order else { return lhs.order < rhs.order }
-
-                // 7. Finally, prioritize exact matches over fuzzy matches (as tiebreaker)
-                if lhs.isFuzzyMatch != rhs.isFuzzyMatch {
-                        return !lhs.isFuzzyMatch  // exact match (false) comes before fuzzy match (true)
-                }
 
                 return false
         }

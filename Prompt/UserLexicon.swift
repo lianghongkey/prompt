@@ -36,13 +36,13 @@ struct UserLexicon: Sendable {
 
         private static let pingQueryStatement: OpaquePointer? = {
                 var stmt: OpaquePointer? = nil
-                sqlite3_prepare_v2(database, "SELECT word, romanization FROM userlexicontable WHERE ping = ? ORDER BY frequency DESC LIMIT 5;", -1, &stmt, nil)
+                sqlite3_prepare_v2(database, "SELECT word, romanization, frequency FROM userlexicontable WHERE ping = ? ORDER BY frequency DESC LIMIT 5;", -1, &stmt, nil)
                 return stmt
         }()
 
         private static let shortcutQueryStatement: OpaquePointer? = {
                 var stmt: OpaquePointer? = nil
-                sqlite3_prepare_v2(database, "SELECT word, romanization FROM userlexicontable WHERE shortcut = ? ORDER BY frequency DESC LIMIT 5;", -1, &stmt, nil)
+                sqlite3_prepare_v2(database, "SELECT word, romanization, frequency FROM userlexicontable WHERE shortcut = ? ORDER BY frequency DESC LIMIT 5;", -1, &stmt, nil)
                 return stmt
         }()
 
@@ -193,7 +193,7 @@ struct UserLexicon: Sendable {
                                         if candidate.mark == syllables {
                                                 let key = candidate.text + candidate.romanization
                                                 if seen.insert(key).inserted {
-                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: candidate.input, mark: text2mark, order: -1, isFuzzyMatch: false))
+                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: candidate.input, mark: text2mark, order: candidate.order, isFuzzyMatch: false))
                                                 }
                                         }
                                 }
@@ -210,7 +210,7 @@ struct UserLexicon: Sendable {
                                                 for candidate in fuzzyMatched {
                                                         let key = candidate.text + candidate.romanization
                                                         if seen.insert(key).inserted {
-                                                                allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: candidate.input, mark: text2mark, order: -1, isFuzzyMatch: isFuzzy))
+                                                                allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: candidate.input, mark: text2mark, order: candidate.order, isFuzzyMatch: isFuzzy))
                                                         }
                                                 }
                                         }
@@ -239,7 +239,7 @@ struct UserLexicon: Sendable {
                                                         if candidate.mark == syllables {
                                                                 let key = candidate.text + candidate.romanization
                                                                 if seen.insert(key).inserted {
-                                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: fallbackInput, mark: text2mark, order: -1, isFuzzyMatch: false))
+                                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: fallbackInput, mark: text2mark, order: candidate.order, isFuzzyMatch: false))
                                                                 }
                                                         }
                                                 }
@@ -256,7 +256,7 @@ struct UserLexicon: Sendable {
                                                         for candidate in fuzzyMatched {
                                                                 let key = candidate.text + candidate.romanization
                                                                 if seen.insert(key).inserted {
-                                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: fallbackInput, mark: text2mark, order: -1, isFuzzyMatch: isFuzzy))
+                                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: fallbackInput, mark: text2mark, order: candidate.order, isFuzzyMatch: isFuzzy))
                                                                 }
                                                         }
                                                 }
@@ -301,12 +301,14 @@ struct UserLexicon: Sendable {
                         guard let romanizationPtr = sqlite3_column_text(stmt, 1) else { continue }
                         let word: String = String(cString: wordPtr)
                         let romanization: String = String(cString: romanizationPtr)
+                        let frequency: Int = Int(sqlite3_column_int64(stmt, 2))
 
                         // Filter: word character count must not exceed syllable count
                         guard word.count <= maxSyllableCount else { continue }
 
                         let mark: String = mark ?? romanization.removedTones().removedSpaces()
-                        let candidate: Candidate = Candidate(text: word, romanization: romanization, input: input, mark: mark, order: -1, isFuzzyMatch: isFuzzyMatch)
+                        // Use negative frequency as order so higher frequency sorts first
+                        let candidate: Candidate = Candidate(text: word, romanization: romanization, input: input, mark: mark, order: -frequency, isFuzzyMatch: isFuzzyMatch)
                         candidates.append(candidate)
                 }
                 return candidates

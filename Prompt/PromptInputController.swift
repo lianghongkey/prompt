@@ -1149,8 +1149,9 @@ final class PromptInputController: IMKInputController, Sendable {
                         switch currentInputForm {
                         case .mandarin:
                                 if isShifting && isBuffering && candidates.isNotEmpty {
-                                        if let firstCandidate = candidates.first, firstCandidate.isUserLexicon {
-                                                UserLexicon.removeItem(candidate: firstCandidate)
+                                        let index = appContext.highlightedIndex
+                                        if let highlightedDisplayCandidate = appContext.displayCandidates.fetch(index), highlightedDisplayCandidate.candidate.isUserLexicon {
+                                                UserLexicon.removeItem(candidate: highlightedDisplayCandidate.candidate)
                                                 suggest()
                                         }
                                 } else if candidates.isNotEmpty {

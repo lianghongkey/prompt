@@ -635,8 +635,8 @@ final class PromptInputController: IMKInputController, Sendable {
                 let code: UInt16 = event.keyCode
                 let shouldIgnoreCurrentEvent: Bool = modifiers.contains(.command) || modifiers.contains(.option)
                 guard !shouldIgnoreCurrentEvent else { return false }
-                // Shift+Space (not buffering, not auto-repeat): start voice recording (only if model is loaded)
-                if modifiers == .shift && code == KeyCode.Special.VK_SPACE && !inputStage.isBuffering && !event.isARepeat && Self.sharedVoiceRecorder.isModelLoaded {
+                // Shift+Space (no candidates visible, not auto-repeat): start voice recording (only if model is loaded)
+                if modifiers == .shift && code == KeyCode.Special.VK_SPACE && candidates.isEmpty && !inputStage.isBuffering && !event.isARepeat && Self.sharedVoiceRecorder.isModelLoaded {
                         isIntendingToRecord = true
                         Self.sharedVoiceRecorder.startRecording()
                         let recordingClient = sender as? InputClient

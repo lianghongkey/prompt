@@ -162,36 +162,50 @@ public struct Engine {
                 // Always also collect candidates from shorter prefix schemes (not only as a fallback).
                 // This ensures e.g. "视频" appears when typing "shipingzhu" (with in/ing fuzzy),
                 // and "现象" appears when typing "xianxiansi" (with ian/iang fuzzy).
-                var fallbackScheme = bestScheme
-                while fallbackScheme.count > 1 {
-                        fallbackScheme = Array(fallbackScheme.dropLast())
-                        guard fallbackScheme.count >= 2 else { break }
-                        let fallbackPinyin = fallbackScheme.map(\.origin).joined(separator: " ")
-                        let fallbackInput = fallbackScheme.map(\.text).joined()
+                //
+                // Run the tail-dropping fallback for every top scheme — otherwise ties at max
+                // length (e.g. "gengaoxiao" → [gen,gao,xiao] vs [geng,ao,xiao]) only produce
+                // partial matches for whichever scheme won an unstable sort.
+                //
+                // Drop all the way down to a single syllable so every prefix interpretation
+                // at every length is queried. Because topSchemes cover every full-length
+                // segmentation, iterating their tail-drops covers every reachable prefix —
+                // e.g. for "gengaoxiao" topScheme [ge,ng,ao,xiao] produces [ge,ng,ao],
+                // [ge,ng], [ge], reaching the "ge" single-char interpretation that isn't
+                // reachable from [gen,gao,xiao] or [geng,ao,xiao]. Candidate.Comparable
+                // orders by input length so single-syllable matches naturally fall to the
+                // bottom of the list without displacing longer prefix matches.
+                for topScheme in topSchemes {
+                        var fallbackScheme = topScheme
+                        while fallbackScheme.count > 1 {
+                                fallbackScheme = Array(fallbackScheme.dropLast())
+                                let fallbackPinyin = fallbackScheme.map(\.origin).joined(separator: " ")
+                                let fallbackInput = fallbackScheme.map(\.text).joined()
 
-                        let hash = fallbackPinyin.deterministicHash
-                        if queriedHashes.insert(hash).inserted {
-                                let fallbackCandidates = pinyinMatchInternal(text: fallbackPinyin, input: fallbackInput)
-                                for candidate in fallbackCandidates {
-                                        if seen.insert(candidate.order).inserted {
-                                                allCandidates.append(candidate)
-                                        }
-                                }
-                        }
-
-                        // Also apply fuzzy expansion for shorter prefixes
-                        if FuzzyPinyinSettings.isAnyEnabled {
-                                let pinyinArray = fallbackScheme.map(\.origin)
-                                let expandedArrays = FuzzyPinyinExpander.expandArray(pinyinArray)
-                                for expandedArray in expandedArrays {
-                                        let expandedSpacedPinyin = expandedArray.joined(separator: " ")
-                                        let expandedHash = expandedSpacedPinyin.deterministicHash
-                                        guard queriedHashes.insert(expandedHash).inserted else { continue }
-                                        let isFuzzy = expandedSpacedPinyin != fallbackPinyin
-                                        let fuzzyCandidates = pinyinMatchInternal(text: expandedSpacedPinyin, input: fallbackInput, isFuzzyMatch: isFuzzy)
-                                        for candidate in fuzzyCandidates {
+                                let hash = fallbackPinyin.deterministicHash
+                                if queriedHashes.insert(hash).inserted {
+                                        let fallbackCandidates = pinyinMatchInternal(text: fallbackPinyin, input: fallbackInput)
+                                        for candidate in fallbackCandidates {
                                                 if seen.insert(candidate.order).inserted {
                                                         allCandidates.append(candidate)
+                                                }
+                                        }
+                                }
+
+                                // Also apply fuzzy expansion for shorter prefixes
+                                if FuzzyPinyinSettings.isAnyEnabled {
+                                        let pinyinArray = fallbackScheme.map(\.origin)
+                                        let expandedArrays = FuzzyPinyinExpander.expandArray(pinyinArray)
+                                        for expandedArray in expandedArrays {
+                                                let expandedSpacedPinyin = expandedArray.joined(separator: " ")
+                                                let expandedHash = expandedSpacedPinyin.deterministicHash
+                                                guard queriedHashes.insert(expandedHash).inserted else { continue }
+                                                let isFuzzy = expandedSpacedPinyin != fallbackPinyin
+                                                let fuzzyCandidates = pinyinMatchInternal(text: expandedSpacedPinyin, input: fallbackInput, isFuzzyMatch: isFuzzy)
+                                                for candidate in fuzzyCandidates {
+                                                        if seen.insert(candidate.order).inserted {
+                                                                allCandidates.append(candidate)
+                                                        }
                                                 }
                                         }
                                 }

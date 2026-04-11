@@ -33,6 +33,64 @@ final class CoreIMETests: XCTestCase {
                 }
         }
 
+        func testGengaoxiaoSegmentation() throws {
+                let text = "gengaoxiao"
+                let schemes = PinyinSegmentor.segment(text: text)
+                let topLen = schemes.first?.length ?? 0
+                let top = schemes.filter { $0.length == topLen }.map { $0.map(\.text) }
+                XCTAssertTrue(top.contains(["gen", "gao", "xiao"]), "gen+gao+xiao should be a top segmentation")
+                XCTAssertTrue(top.contains(["geng", "ao", "xiao"]), "geng+ao+xiao should be a top segmentation")
+        }
+
+        /// Tail-drop fallback must run for every top scheme, not just whichever one
+        /// `segmentation.first` happens to return when lengths tie. Otherwise, for
+        /// "gengaoxiao", only one of "更傲" (geng+ao) and "根高" (gen+gao) would show
+        /// up depending on Swift's unstable sort.
+        func testGengaoxiaoSuggest() throws {
+                Engine.prepare()
+                let text = "gengaoxiao"
+                let schemes = PinyinSegmentor.segment(text: text)
+                let candidates = Engine.suggest(text: text, segmentation: schemes, needsSymbols: false)
+                let texts = candidates.map(\.text)
+                XCTAssertTrue(texts.contains("根高"), "gen+gao fallback should surface 根高; got \(texts)")
+                XCTAssertTrue(texts.contains("更傲"), "geng+ao fallback should surface 更傲; got \(texts)")
+        }
+
+        /// Fallback must descend all the way to a single syllable, so every prefix
+        /// interpretation (gen / geng / ge) produces single-char candidates — not just
+        /// the first syllable of whichever scheme `segmentation.first` happens to return.
+        func testGengaoxiaoSingleSyllableFallback() throws {
+                Engine.prepare()
+                let text = "gengaoxiao"
+                let schemes = PinyinSegmentor.segment(text: text)
+                let candidates = Engine.suggest(text: text, segmentation: schemes, needsSymbols: false)
+                let gen = candidates.first(where: { $0.text == "根" && $0.romanization == "gen" })
+                let geng = candidates.first(where: { $0.text == "更" && $0.romanization == "geng" })
+                XCTAssertNotNil(gen, "gen fallback should surface 根")
+                XCTAssertNotNil(geng, "geng fallback should surface 更")
+
+                // Single-char candidates must come after multi-syllable matches (longer
+                // input ranks higher), so 根高/更傲 must still outrank 根/更.
+                let idxGenGao = candidates.firstIndex(where: { $0.text == "根高" }) ?? Int.max
+                let idxGen = candidates.firstIndex(where: { $0.text == "根" && $0.romanization == "gen" }) ?? Int.max
+                XCTAssertLessThan(idxGenGao, idxGen, "2-syllable 根高 should rank above single-char 根")
+        }
+
+        /// Regression: typical 2-syllable input must still work and rank the full-length
+        /// match first, with single-char fallbacks trailing.
+        func testZhidaoOrdering() throws {
+                Engine.prepare()
+                let text = "zhidao"
+                let schemes = PinyinSegmentor.segment(text: text)
+                let candidates = Engine.suggest(text: text, segmentation: schemes, needsSymbols: false)
+                guard let top = candidates.first else {
+                        XCTFail("no candidates for zhidao")
+                        return
+                }
+                XCTAssertEqual(top.text, "知道", "top candidate for zhidao should be 知道")
+                XCTAssertEqual(top.input, "zhidao")
+        }
+
         // MARK: - Max Syllable Count
 
         func testMaxSyllableCount() throws {

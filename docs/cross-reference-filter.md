@@ -71,20 +71,25 @@ filterText 显示为大写，空格分隔：
 1. 对 filterText 分词
    若无完整音节 → 返回空（候选不显示）
 
-2. 找第一个共同音节（按 buffer 顺序）
+2. 找第一个共同音节（按 buffer 顺序，支持模糊音）
    bufferSyllables = [xi, guan]
    filterSyllables = [cheng, xi]
+   对每个音节用 FuzzyPinyinExpander.expand() 展开变体，
+   通过变体集合交集判断是否匹配（如 zhi↔zi、in↔ing 等）
    第一个共同音节 = xi（buffer 中的第一个匹配）
    若无交集 → 返回空
 
-3. 查辅助词候选
+3. 查辅助词候选（Engine.suggest 内部已支持模糊音扩展）
    Engine.suggest("chengxi") → 城西, 承袭, 晨曦, 乘隙 ...
    UserLexicon.suggest("chengxi") → ...
+   过滤：只保留音节数 == filterText 音节数的候选（不允许部分匹配）
 
-4. 提取共同音节位置的字
-   城西 (cheng xi) → xi 位置 = 西
-   晨曦 (chen xi) → xi 位置 = 曦
-   辰溪 (chen xi) → xi 位置 = 溪
+4. 提取共同音节位置的字（支持模糊音匹配）
+   将共同音节展开为变体集合（如 commonVariants = {xi}）
+   遍历辅助词候选，若某位置拼音 ∈ commonVariants 则提取该位置的字
+   城西 (cheng xi) → xi ∈ commonVariants → 西
+   晨曦 (chen xi) → xi ∈ commonVariants → 曦
+   辰溪 (chen xi) → xi ∈ commonVariants → 溪
    → allowedChars = {西, 袭, 隙, 习, 熙, 喜, 希, 溪, 曦, 玺, ...}
 
 5. 查共同音节的所有单字候选
@@ -122,6 +127,8 @@ filterText 显示为大写，空格分隔：
 |------|------|
 | filterText 无完整音节（如 "ch"） | 候选显示为空 |
 | 共同音节为空（如 filter="dama", buffer="xiguan"） | 候选为空 |
+| filter 输入 3 个音节，词库只匹配前 2 个 | 不采用，要求音节数完全匹配 |
+| 模糊音（如 zh/z）：buffer="zhi", filter="zi..." | 通过模糊音展开匹配为共同音节 |
 | 过滤结果为空 | 候选为空 |
 | 造词模式中按 Shift | 可进入过滤，为后续字使用交叉引用 |
 | bufferText 变化（普通字母输入） | 重新 suggest + 重新过滤 |

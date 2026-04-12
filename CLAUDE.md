@@ -211,9 +211,11 @@ Allows users to narrow down rare characters by typing an auxiliary word's pinyin
 
 **Filter algorithm (`filterCandidates()` in `PromptInputController.swift`):**
 - If filterText has no complete syllables → returns original candidates unchanged
-- If no common syllable between buffer and filter → returns empty
-- Queries `Engine.suggest()` with filterText to get auxiliary word candidates
-- Extracts allowed characters at the common syllable position
+- Finds common syllable between buffer and filter using `FuzzyPinyinExpander.expand()` for fuzzy matching (e.g. zh↔z, in↔ing)
+- If no common syllable (even after fuzzy expansion) → returns empty
+- Queries `Engine.suggest()` with filterText to get auxiliary word candidates (Engine internally handles fuzzy expansion)
+- Filters to only candidates whose syllable count matches filterText's syllable count (no partial matches)
+- Extracts allowed characters at the common syllable position, using fuzzy variants of the common syllable for matching
 - Returns single-character `Candidate` objects with `input` matching the buffer syllable's text (for correct word creation consumption)
 
 **Cleanup:** `filterText` is cleared in `clearBufferText()`, `deactivateServer()`, and `aftercareSelection()`.

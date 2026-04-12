@@ -613,21 +613,28 @@ final class PromptInputController: IMKInputController, Sendable {
                         return []
                 }
 
-                // Find the first common syllable (matching buffer order)
-                let filterSyllableSet = Set(filterScheme.map(\.origin))
-                guard let commonBufferToken = bufferScheme.first(where: { filterSyllableSet.contains($0.origin) }) else {
+                // Find the first common syllable (matching buffer order, with fuzzy pinyin support)
+                let filterVariantSets: [Set<String>] = filterScheme.map { Set(FuzzyPinyinExpander.expand($0.origin)) }
+                let allFilterVariants: Set<String> = filterVariantSets.reduce(into: Set<String>()) { $0.formUnion($1) }
+                guard let commonBufferToken = bufferScheme.first(where: { token in
+                        let expanded = Set(FuzzyPinyinExpander.expand(token.origin))
+                        return !expanded.isDisjoint(with: allFilterVariants)
+                }) else {
                         os_log(.debug, log: logCF, "no common syllable, buffer=%{public}@, filter=%{public}@", "\(bufferScheme.map(\.origin))", "\(filterScheme.map(\.origin))")
                         return []
                 }
                 let commonSyllable = commonBufferToken.origin
                 let commonInput = commonBufferToken.text
-                os_log(.debug, log: logCF, "commonSyllable=%{public}@, commonInput=%{public}@", commonSyllable, commonInput)
+                let commonVariants = Set(FuzzyPinyinExpander.expand(commonSyllable))
+                os_log(.debug, log: logCF, "commonSyllable=%{public}@, commonInput=%{public}@, variants=%{public}@", commonSyllable, commonInput, "\(commonVariants)")
 
                 // Query filter candidates from Engine and UserLexicon
                 let filterEngineCandidates = Engine.suggest(text: filterText, segmentation: filterSegmentation, needsSymbols: false)
                 let filterUserCandidates = AppSettings.isInputMemoryOn ? UserLexicon.suggest(text: filterText, segmentation: filterSegmentation) : []
-                let allFilterCandidates = filterEngineCandidates + filterUserCandidates
-                os_log(.debug, log: logCF, "filter query: engine=%d, user=%d", filterEngineCandidates.count, filterUserCandidates.count)
+                let filterSyllableCount = filterScheme.count
+                let allFilterCandidates = (filterEngineCandidates + filterUserCandidates)
+                        .filter({ $0.romanization.split(separator: " ").count == filterSyllableCount })
+                os_log(.debug, log: logCF, "filter query: engine=%d, user=%d, after syllable-count filter=%d", filterEngineCandidates.count, filterUserCandidates.count, allFilterCandidates.count)
 
                 // Extract allowed characters at the common syllable position from filter words
                 var allowedChars = Set<Character>()
@@ -635,7 +642,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         let pinyinParts = candidate.romanization.split(separator: " ")
                         let chars = Array(candidate.text)
                         for (i, pinyin) in pinyinParts.enumerated() where i < chars.count {
-                                if String(pinyin) == commonSyllable {
+                                if commonVariants.contains(String(pinyin)) {
                                         allowedChars.insert(chars[i])
                                 }
                         }

@@ -105,7 +105,7 @@ aftercareSelection() → insert(candidate.text) + updates bufferText
 
 **Prompt App** (`Prompt/`)
 - `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`/`wordCreationInputs`, `lastInsertedText`, `isPunctuationFullWidth`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder`, `static var whisperModelObserver`, and `static var correctorObserver`.
-- `UserLexicon.swift` — Stores at `~/Library/userlexicon.sqlite3`. Has prepared statements for ping/shortcut/find queries. `handle(_:)` inserts or doubles frequency (min +1000). Initial frequency: 1000.
+- `UserLexicon.swift` — Stores at `~/Library/userlexicon.sqlite3`. Has prepared statements for ping/shortcut/find queries. `handle(_:)` boosts selected word by +1000 and decays same-pinyin siblings by 10% (`frequency * 9 / 10`, min 1). All selections (including first candidate) are recorded so frequency reflects long-term usage proportions. Initial frequency: 1000.
 - `AppContext.swift` — `@MainActor ObservableObject` holding `displayCandidates`, `highlightedIndex`, `inputForm`, `quadrant`. The SwiftUI environment object for the candidate window.
 - `CandidateWindow.swift` — `NSPanel` with `ignoresMouseEvents = true`; all selection is keyboard-driven.
 - `Options.swift` — Runtime character form (half/full width) and punctuation form settings.

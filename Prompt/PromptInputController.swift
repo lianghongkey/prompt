@@ -302,13 +302,11 @@ final class PromptInputController: IMKInputController, Sendable {
                         switch bufferText.first {
                         case .none:
                                 logger.debug("bufferText.didSet: case .none, selectedCandidates.count=\(self.selectedCandidates.count)")
-                                if AppSettings.isInputMemoryOn && selectedCandidates.isNotEmpty && selectedNonFirst {
+                                if AppSettings.isInputMemoryOn && selectedCandidates.isNotEmpty {
                                         logger.debug("bufferText.didSet: calling UserLexicon.handle")
                                         let concatenated = selectedCandidates.joined()
                                         UserLexicon.handle(concatenated)
                                         logger.debug("bufferText.didSet: UserLexicon.handle completed")
-                                } else if !selectedNonFirst {
-                                        logger.debug("bufferText.didSet: skipping UserLexicon.handle (all selections were top candidate)")
                                 }
                                 logger.debug("bufferText.didSet: clearing selectedCandidates")
                                 selectedCandidates = []

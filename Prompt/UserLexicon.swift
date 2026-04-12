@@ -66,18 +66,21 @@ struct UserLexicon: Sendable {
                 let pingForm: String = romanization.removedSpacesTones()
                 let id: Int = (word + pingForm).deterministicHash
 
-                logger.debug("UserLexicon.handle: word=\(word), romanization=\(romanization), pingForm=\(pingForm)")
+                let ping: Int = romanization.ping
+                logger.debug("UserLexicon.handle: word=\(word), romanization=\(romanization), pingForm=\(pingForm), ping=\(ping)")
 
+                // Decay competing candidates (same pinyin, different word) by 10%
+                // so that long-term frequency reflects actual usage proportions
+                // and new words can gradually overtake stale ones.
+                decaySiblings(ping: ping, excludingId: id)
+
+                let boost: Int64 = 1000
                 if let frequency = find(by: id) {
                         guard frequency > 0 else {
                                 logger.warning("UserLexicon.handle: frequency \(frequency) is abnormal, resetting to 1000")
                                 update(id: id, frequency: 1000)
                                 return
                         }
-                        // Additive boost: each selection adds a fixed amount.
-                        // This avoids the exponential doubling problem where a popular word
-                        // repeatedly triggers normalization, halving all other entries.
-                        let boost: Int64 = 1000
                         let newFrequency: Int64 = frequency + boost
 
                         // When any entry would overflow the threshold, halve ALL entries so
@@ -85,8 +88,6 @@ struct UserLexicon: Sendable {
                         let threshold: Int64 = 1_000_000_000
                         if newFrequency > threshold {
                                 normalizeFrequencies()
-                                // Entry was already halved by normalizeFrequencies.
-                                // Give it the boost on top of its halved value.
                                 let halved = frequency / 2
                                 update(id: id, frequency: halved + boost)
                         } else {
@@ -94,9 +95,8 @@ struct UserLexicon: Sendable {
                         }
                         logger.debug("UserLexicon.handle: updated frequency from \(frequency) to \(newFrequency)")
                 } else {
-                        // Start with a high initial frequency (1000) so first selection already has good priority
-                        let entry = LexiconEntry(id: id, frequency: 1000, word: word, romanization: romanization, shortcut: romanization.shortcut, ping: romanization.ping)
-                        logger.debug("UserLexicon.handle: inserting new entry with frequency 1000")
+                        let entry = LexiconEntry(id: id, frequency: boost, word: word, romanization: romanization, shortcut: romanization.shortcut, ping: ping)
+                        logger.debug("UserLexicon.handle: inserting new entry with frequency \(boost)")
                         insert(entry: entry)
                 }
         }
@@ -126,6 +126,15 @@ struct UserLexicon: Sendable {
                 sqlite3_reset(stmt)  // Release cursor before any subsequent write
                 logger.debug("UserLexicon.find: returning frequency=\(frequency)")
                 return frequency
+        }
+        private static func decaySiblings(ping: Int, excludingId id: Int) {
+                let command: String = "UPDATE userlexicontable SET frequency = MAX(frequency * 9 / 10, 1) WHERE ping = ? AND id != ?;"
+                var statement: OpaquePointer? = nil
+                defer { sqlite3_finalize(statement) }
+                guard sqlite3_prepare_v2(database, command, -1, &statement, nil) == SQLITE_OK else { return }
+                sqlite3_bind_int64(statement, 1, Int64(ping))
+                sqlite3_bind_int64(statement, 2, Int64(id))
+                sqlite3_step(statement)
         }
         private static func normalizeFrequencies() {
                 let command: String = "UPDATE userlexicontable SET frequency = MAX(frequency / 2, 1);"

@@ -182,6 +182,42 @@ When a user types multi-syllable pinyin (e.g. `meizhidao`) and selects a **singl
 
 The saved romanization uses the joined individual romanizations (e.g. `"mei zhi dao"`).
 
+### Cross-Reference Filter (交叉引用过滤)
+
+Allows users to narrow down rare characters by typing an auxiliary word's pinyin while holding Shift. The system finds common syllables between the buffer input and the filter input, then shows single-character candidates filtered by characters that appear in the auxiliary word.
+
+**Trigger:** Shift+letter while buffering with candidates visible, or while already filtering.
+
+**Key flow:**
+1. User types `xiguan` → normal candidates (习惯, 吸管, 西关...)
+2. Holds Shift, types `chengxi` → `filterText = "chengxi"`
+3. System finds common syllable: `xi` (intersection of `[xi, guan]` and `[cheng, xi]`)
+4. Queries Engine for "cheng xi" words → 城西, 承袭, 晨曦, 乘隙...
+5. Extracts characters at `xi` position from those words → {西, 袭, 曦, 隙, 溪, 习, 熙...}
+6. Shows single-character candidates for `xi`, filtered to only those characters
+7. User selects 曦 → enters word creation mode, buffer becomes `guan`
+
+**Marked text display:** `xi guan CHENXI` — filterText shown in uppercase, space-separated from the pinyin.
+
+**State:** `filterText: String` and computed `isFiltering: Bool` on `PromptInputController`.
+
+**Keyboard behavior while filtering:**
+- Shift+letter: appends to `filterText`, re-runs `suggest()` + filter. Candidates show empty until a valid match is found.
+- Backspace: clears entire `filterText` at once, restores original candidates
+- Escape: clears `filterText`, restores original candidates
+- Space/number selection: selects candidate, clears `filterText`
+- First entry requires `isBuffering && candidates.isNotEmpty`; continuation requires `isFiltering`. This ensures Shift+letter without prior pinyin input produces uppercase letters as normal.
+- Works in word creation mode — can filter for the second, third character etc.
+
+**Filter algorithm (`filterCandidates()` in `PromptInputController.swift`):**
+- If filterText has no complete syllables → returns original candidates unchanged
+- If no common syllable between buffer and filter → returns empty
+- Queries `Engine.suggest()` with filterText to get auxiliary word candidates
+- Extracts allowed characters at the common syllable position
+- Returns single-character `Candidate` objects with `input` matching the buffer syllable's text (for correct word creation consumption)
+
+**Cleanup:** `filterText` is cleared in `clearBufferText()`, `deactivateServer()`, and `aftercareSelection()`.
+
 ### Context-Aware Punctuation (State-Based Half/Full Width)
 
 When `Options.punctuationForm` is `.chinese`, punctuation width is determined by a persistent state variable `isPunctuationFullWidth` via `shouldUseHalfWidthPunctuation()`:

@@ -160,6 +160,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         selectedNonFirst = false
                         isIntendingToRecord = false
                         isPunctuationFullWidth = true
+                        filterText = ""
                         appContext.updateRecordingIndicator(nil)
                         Self.sharedVoiceRecorder.stopRecording()
                         if inputForm.isOptions {
@@ -277,6 +278,7 @@ final class PromptInputController: IMKInputController, Sendable {
         private lazy var inputStage: InputStage = .standby
 
         private func clearBufferText() {
+                filterText = ""
                 bufferText = String.empty
                 wordCreationCharacters = []
                 wordCreationPinyins = []
@@ -409,6 +411,10 @@ final class PromptInputController: IMKInputController, Sendable {
                 }
                 // Pure punctuation insertion leaves the state unchanged
         }
+
+        /// Cross-reference filter: Shift+letter input for filtering candidates by intersection
+        private var filterText: String = ""
+        private var isFiltering: Bool { filterText.isNotEmpty }
 
         /// Word creation state: tracks characters being composed
         private lazy var wordCreationCharacters: [String] = []
@@ -551,17 +557,18 @@ final class PromptInputController: IMKInputController, Sendable {
                 }()
 
                 let wordCreationPrefix = wordCreationCharacters.joined()
+                let filterSuffix = isFiltering ? " \(filterText.uppercased())" : ""
                 mark(text: {
                         let hasSeparatorsOrTones: Bool = processingText.contains(where: \.isSeparatorOrTone)
-                        guard !hasSeparatorsOrTones else { return wordCreationPrefix + processingText.formattedForMark() }
+                        guard !hasSeparatorsOrTones else { return wordCreationPrefix + processingText.formattedForMark() + filterSuffix }
                         let userInputTextCount: Int = processingText.count
-                        if let firstCandidate = suggestionsWithSingleChars.first, firstCandidate.input.count == userInputTextCount { return wordCreationPrefix + firstCandidate.mark }
-                        guard let bestScheme else { return wordCreationPrefix + processingText.formattedForMark() }
+                        if let firstCandidate = suggestionsWithSingleChars.first, firstCandidate.input.count == userInputTextCount { return wordCreationPrefix + firstCandidate.mark + filterSuffix }
+                        guard let bestScheme else { return wordCreationPrefix + processingText.formattedForMark() + filterSuffix }
                         let leadingLength: Int = bestScheme.length
                         let leadingText: String = bestScheme.map(\.text).joined()
-                        guard leadingLength != userInputTextCount else { return wordCreationPrefix + leadingText }
+                        guard leadingLength != userInputTextCount else { return wordCreationPrefix + leadingText + filterSuffix }
                         let tailText = processingText.dropFirst(leadingLength)
-                        return wordCreationPrefix + leadingText + tailText
+                        return wordCreationPrefix + leadingText + tailText + filterSuffix
                 }())
 
                 if processingText == "bushi" {
@@ -576,8 +583,108 @@ final class PromptInputController: IMKInputController, Sendable {
                     os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "  FINAL[%d] %{public}@ (%{public}@)", i, c.text, c.romanization)
                 }
 
-                candidates = suggestionsWithSingleChars
+                if isFiltering {
+                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "CrossFilter"), "suggest: isFiltering=true, filterText=%{public}@, original=%d", self.filterText, suggestionsWithSingleChars.count)
+                        candidates = filterCandidates(suggestionsWithSingleChars)
+                } else {
+                        candidates = suggestionsWithSingleChars
+                }
         }
+
+        // MARK: - Cross-Reference Filter
+
+        /// Cross-reference filter: use filterText to find the common syllable between
+        /// bufferText and filterText, then return single-character candidates for that
+        /// syllable filtered by characters that appear in the filter words.
+        /// User can then pick a character and enter word creation mode for the rest.
+        private func filterCandidates(_ original: [Candidate]) -> [Candidate] {
+                let logCF = OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "CrossFilter")
+                let filterSegmentation = PinyinSegmentor.segment(text: filterText)
+                guard let filterScheme = filterSegmentation.first, filterScheme.isNotEmpty else {
+                        os_log(.debug, log: logCF, "no complete syllables in filterText=%{public}@", self.filterText)
+                        return []
+                }
+
+                // Buffer segmentation
+                let bufferSegmentation = PinyinSegmentor.segment(text: bufferText)
+                guard let bufferScheme = bufferSegmentation.first else {
+                        os_log(.debug, log: logCF, "no buffer segmentation for bufferText=%{public}@", self.bufferText)
+                        return []
+                }
+
+                // Find the first common syllable (matching buffer order)
+                let filterSyllableSet = Set(filterScheme.map(\.origin))
+                guard let commonBufferToken = bufferScheme.first(where: { filterSyllableSet.contains($0.origin) }) else {
+                        os_log(.debug, log: logCF, "no common syllable, buffer=%{public}@, filter=%{public}@", "\(bufferScheme.map(\.origin))", "\(filterScheme.map(\.origin))")
+                        return []
+                }
+                let commonSyllable = commonBufferToken.origin
+                let commonInput = commonBufferToken.text
+                os_log(.debug, log: logCF, "commonSyllable=%{public}@, commonInput=%{public}@", commonSyllable, commonInput)
+
+                // Query filter candidates from Engine and UserLexicon
+                let filterEngineCandidates = Engine.suggest(text: filterText, segmentation: filterSegmentation, needsSymbols: false)
+                let filterUserCandidates = AppSettings.isInputMemoryOn ? UserLexicon.suggest(text: filterText, segmentation: filterSegmentation) : []
+                let allFilterCandidates = filterEngineCandidates + filterUserCandidates
+                os_log(.debug, log: logCF, "filter query: engine=%d, user=%d", filterEngineCandidates.count, filterUserCandidates.count)
+
+                // Extract allowed characters at the common syllable position from filter words
+                var allowedChars = Set<Character>()
+                for candidate in allFilterCandidates {
+                        let pinyinParts = candidate.romanization.split(separator: " ")
+                        let chars = Array(candidate.text)
+                        for (i, pinyin) in pinyinParts.enumerated() where i < chars.count {
+                                if String(pinyin) == commonSyllable {
+                                        allowedChars.insert(chars[i])
+                                }
+                        }
+                }
+                os_log(.debug, log: logCF, "allowedChars[%{public}@]: %{public}@ (%d chars)", commonSyllable, String(allowedChars.sorted()), allowedChars.count)
+                guard allowedChars.isNotEmpty else { return [] }
+
+                // Get all single-character candidates for the common syllable from Engine
+                let syllableSegmentation = PinyinSegmentor.segment(text: commonSyllable)
+                let allSingleChars = Engine.suggest(text: commonSyllable, segmentation: syllableSegmentation, needsSymbols: false)
+                        .filter({ $0.text.count == 1 && $0.isMandarin })
+
+                // Filter to only characters that appear in the filter words, preserving Engine order (by rowid/frequency)
+                let result = allSingleChars
+                        .filter({ allowedChars.contains($0.text.first!) })
+                        .map({ Candidate(text: $0.text, romanization: $0.romanization, input: commonInput, mark: commonInput, order: $0.order) })
+
+                os_log(.debug, log: logCF, "%d single chars -> %d filtered", allSingleChars.count, result.count)
+                for (i, c) in result.prefix(10).enumerated() {
+                        os_log(.debug, log: logCF, "  result[%d] %{public}@ (%{public}@)", i, c.text, c.romanization)
+                }
+                return result
+        }
+
+        /// Re-display marked text, appending filterText in uppercase brackets if filtering
+        private func updateMarkedText() {
+                let processingText = bufferText
+                guard processingText.isNotEmpty else { return }
+                let segmentation = PinyinSegmentor.segment(text: processingText)
+                let bestScheme = segmentation.first
+
+                let wordCreationPrefix = wordCreationCharacters.joined()
+                var markedString: String = {
+                        let hasSeparatorsOrTones: Bool = processingText.contains(where: \.isSeparatorOrTone)
+                        guard !hasSeparatorsOrTones else { return wordCreationPrefix + processingText.formattedForMark() }
+                        let userInputTextCount: Int = processingText.count
+                        if let firstCandidate = candidates.first, firstCandidate.input.count == userInputTextCount { return wordCreationPrefix + firstCandidate.mark }
+                        guard let bestScheme else { return wordCreationPrefix + processingText.formattedForMark() }
+                        let leadingLength: Int = bestScheme.length
+                        let leadingText: String = bestScheme.map(\.text).joined()
+                        guard leadingLength != userInputTextCount else { return wordCreationPrefix + leadingText }
+                        let tailText = processingText.dropFirst(leadingLength)
+                        return wordCreationPrefix + leadingText + String(tailText)
+                }()
+                if isFiltering {
+                        markedString += " \(filterText.uppercased())"
+                }
+                mark(text: markedString)
+        }
+
         private func pinyinReverseLookup() {
                 let text: String = String(bufferText.dropFirst(2))
                 guard text.isNotEmpty else {
@@ -861,6 +968,12 @@ final class PromptInputController: IMKInputController, Sendable {
                 case .alphabet(let letter):
                         switch currentInputForm {
                         case .mandarin:
+                                if isShifting && (isFiltering || (isBuffering && candidates.isNotEmpty)) {
+                                        filterText += letter
+                                        os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "CrossFilter"), "Shift+%{public}@, filterText=%{public}@, bufferText=%{public}@", letter, self.filterText, self.bufferText)
+                                        suggest()
+                                        return
+                                }
                                 let text: String = isShifting ? letter.uppercased() : letter
                                 bufferText += text
                         case .transparent:
@@ -1097,6 +1210,11 @@ final class PromptInputController: IMKInputController, Sendable {
                         case .mandarin:
                                 guard isBuffering else { return }
                                 guard hasControlShiftModifiers else {
+                                        if isFiltering {
+                                                filterText = ""
+                                                suggest()
+                                                return
+                                        }
                                         if wordCreationCharacters.isNotEmpty {
                                                 // Undo last word creation step: restore consumed pinyin
                                                 wordCreationCharacters.removeLast()
@@ -1137,6 +1255,11 @@ final class PromptInputController: IMKInputController, Sendable {
                         switch currentInputForm {
                         case .mandarin:
                                 guard isBuffering else { return }
+                                if isFiltering {
+                                        filterText = ""
+                                        suggest()
+                                        return
+                                }
                                 clearBufferText()
                         case .transparent:
                                 return
@@ -1259,6 +1382,7 @@ final class PromptInputController: IMKInputController, Sendable {
                 }
         }
         private func aftercareSelection(_ selected: DisplayCandidate, shouldProcessUserLexicon: Bool = true) {
+                filterText = ""
                 let candidate = candidates.fetch(selected.candidateIndex) ?? candidates.first(where: { $0 == selected.candidate })
                 guard let candidate, candidate.isMandarin else {
                         insert(selected.candidate.text)

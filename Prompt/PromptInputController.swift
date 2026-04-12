@@ -168,12 +168,13 @@ final class PromptInputController: IMKInputController, Sendable {
                         }
                         guard inputStage != .idle else { return }
                         if inputStage.isBuffering {
-                                let text: String = bufferText
                                 clearBufferText()
-                                client?.insertText(text as NSString, replacementRange: replacementRange())
                         } else {
                                 clearMarkedText()
                         }
+                        let emptyText = NSAttributedString(string: String(), attributes: markAttributes)
+                        let emptyRange = NSRange(location: 0, length: 0)
+                        client?.setMarkedText(emptyText, selectionRange: emptyRange, replacementRange: replacementRange())
                         let activatingWindowCount = NSApp.windows.count(where: { $0.windowNumber > 0 })
                         if activatingWindowCount > 20 {
                                 logger.warning("Prompt containing more than 20 windows, closing extras")
@@ -187,12 +188,12 @@ final class PromptInputController: IMKInputController, Sendable {
         override func commitComposition(_ sender: Any!) {
                 nonisolated(unsafe) let client: InputClient? = (sender as? InputClient) ?? client()
                 Task { @MainActor in
-                        // Guard: if a new composition has already started (e.g. user typed next char
-                        // before this Task ran), do not interfere. Some apps spuriously call
-                        // commitComposition after insertText/setMarkedText, which races with the
-                        // next process() Task and would otherwise clear the freshly-started buffer.
-                        // deactivateServer handles the legitimate mid-composition commit case.
-                        guard !inputStage.isBuffering else { return }
+                        if inputStage.isBuffering {
+                                clearBufferText()
+                                let emptyText = NSAttributedString(string: String(), attributes: markAttributes)
+                                let emptyRange = NSRange(location: 0, length: 0)
+                                client?.setMarkedText(emptyText, selectionRange: emptyRange, replacementRange: replacementRange())
+                        }
                         window.setFrame(.zero, display: true)
                         selectedCandidates = []
                         selectedNonFirst = false

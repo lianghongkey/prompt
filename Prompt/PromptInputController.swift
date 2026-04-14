@@ -414,7 +414,12 @@ final class PromptInputController: IMKInputController, Sendable {
         }
 
         /// Cross-reference filter: Shift+letter input for filtering candidates by intersection
-        private var filterText: String = ""
+        private var filterText: String = "" {
+                didSet {
+                        let indicator: String? = filterText.isEmpty ? nil : filterText
+                        appContext.updateFilterIndicator(indicator)
+                }
+        }
         private var isFiltering: Bool { filterText.isNotEmpty }
 
         /// Word creation state: tracks characters being composed
@@ -558,18 +563,17 @@ final class PromptInputController: IMKInputController, Sendable {
                 }()
 
                 let wordCreationPrefix = wordCreationCharacters.joined()
-                let filterSuffix = isFiltering ? " \(filterText.uppercased())" : ""
                 mark(text: {
                         let hasSeparatorsOrTones: Bool = processingText.contains(where: \.isSeparatorOrTone)
-                        guard !hasSeparatorsOrTones else { return wordCreationPrefix + processingText.formattedForMark() + filterSuffix }
+                        guard !hasSeparatorsOrTones else { return wordCreationPrefix + processingText.formattedForMark() }
                         let userInputTextCount: Int = processingText.count
-                        if let firstCandidate = suggestionsWithSingleChars.first, firstCandidate.input.count == userInputTextCount { return wordCreationPrefix + firstCandidate.mark + filterSuffix }
-                        guard let bestScheme else { return wordCreationPrefix + processingText.formattedForMark() + filterSuffix }
+                        if let firstCandidate = suggestionsWithSingleChars.first, firstCandidate.input.count == userInputTextCount { return wordCreationPrefix + firstCandidate.mark }
+                        guard let bestScheme else { return wordCreationPrefix + processingText.formattedForMark() }
                         let leadingLength: Int = bestScheme.length
                         let leadingText: String = bestScheme.map(\.text).joined()
-                        guard leadingLength != userInputTextCount else { return wordCreationPrefix + leadingText + filterSuffix }
+                        guard leadingLength != userInputTextCount else { return wordCreationPrefix + leadingText }
                         let tailText = processingText.dropFirst(leadingLength)
-                        return wordCreationPrefix + leadingText + tailText + filterSuffix
+                        return wordCreationPrefix + leadingText + tailText
                 }())
 
                 if processingText == "bushi" {
@@ -667,7 +671,6 @@ final class PromptInputController: IMKInputController, Sendable {
                 return result
         }
 
-        /// Re-display marked text, appending filterText in uppercase brackets if filtering
         private func updateMarkedText() {
                 let processingText = bufferText
                 guard processingText.isNotEmpty else { return }
@@ -675,7 +678,7 @@ final class PromptInputController: IMKInputController, Sendable {
                 let bestScheme = segmentation.first
 
                 let wordCreationPrefix = wordCreationCharacters.joined()
-                var markedString: String = {
+                let markedString: String = {
                         let hasSeparatorsOrTones: Bool = processingText.contains(where: \.isSeparatorOrTone)
                         guard !hasSeparatorsOrTones else { return wordCreationPrefix + processingText.formattedForMark() }
                         let userInputTextCount: Int = processingText.count
@@ -687,9 +690,6 @@ final class PromptInputController: IMKInputController, Sendable {
                         let tailText = processingText.dropFirst(leadingLength)
                         return wordCreationPrefix + leadingText + String(tailText)
                 }()
-                if isFiltering {
-                        markedString += " \(filterText.uppercased())"
-                }
                 mark(text: markedString)
         }
 

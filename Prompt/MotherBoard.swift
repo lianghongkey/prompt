@@ -16,7 +16,7 @@ struct MotherBoard: View {
                                         .fixedSize()
                         } else if context.inputForm.isOptions {
                                 OptionsView()
-                        } else if context.isClean {
+                        } else if context.isClean && (context.filterIndicator == nil) {
                                 EmptyView()
                         } else {
                                 CandidateBoard()

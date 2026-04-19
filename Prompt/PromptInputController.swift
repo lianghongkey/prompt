@@ -442,7 +442,11 @@ final class PromptInputController: IMKInputController, Sendable {
                 guard candidateCount > 0 else {
                         indices = (0, 0)
                         appContext.resetDisplayContext()
-                        updateWindowFrame(.zero)
+                        if isFiltering {
+                                updateWindowFrame()
+                        } else {
+                                updateWindowFrame(.zero)
+                        }
                         return
                 }
                 let pageSize: Int = AppSettings.candidatePageSize

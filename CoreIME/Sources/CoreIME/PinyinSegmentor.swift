@@ -266,22 +266,25 @@ public struct PinyinSegmentor {
                 return nil
         }
 
-        /// 直接匹配数据库中的音节（带缓存）
+        /// 直接匹配数据库中的音节（带缓存）。`text` 是用户实际输入，
+        /// `syllable` 是规范形式（例如 `lue` → `lve`），用于后续数据库查询。
         private static func matchDirect<T: StringProtocol>(_ text: T) -> SegmentToken? {
                 guard let code: Int = text.charcode else { return nil }
+                let canonical: String
                 if let cached = syllableCache[code] {
-                        return SegmentToken(text: cached, origin: cached)
+                        canonical = cached
+                } else {
+                        let command: String = "SELECT syllable FROM pinyinsyllabletable WHERE code = ? LIMIT 1;"
+                        var statement: OpaquePointer? = nil
+                        defer { sqlite3_finalize(statement) }
+                        guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return nil }
+                        guard sqlite3_bind_int64(statement, 1, Int64(code)) == SQLITE_OK else { return nil }
+                        guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
+                        guard let syllablePtr = sqlite3_column_text(statement, 0) else { return nil }
+                        canonical = String(cString: syllablePtr)
+                        syllableCache[code] = canonical
                 }
-                let command: String = "SELECT syllable FROM pinyinsyllabletable WHERE code = ? LIMIT 1;"
-                var statement: OpaquePointer? = nil
-                defer { sqlite3_finalize(statement) }
-                guard sqlite3_prepare_v2(Engine.database, command, -1, &statement, nil) == SQLITE_OK else { return nil }
-                guard sqlite3_bind_int64(statement, 1, Int64(code)) == SQLITE_OK else { return nil }
-                guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
-                guard let syllablePtr = sqlite3_column_text(statement, 0) else { return nil }
-                let syllable: String = String(cString: syllablePtr)
-                syllableCache[code] = syllable
-                return SegmentToken(text: syllable, origin: syllable)
+                return SegmentToken(text: String(text), origin: canonical)
         }
 
         /// 使用模糊音匹配

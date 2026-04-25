@@ -167,7 +167,8 @@ lie
 lin
 liu
 lou
-lue
+lue	lve
+lve
 lun
 luo
 mai
@@ -189,7 +190,8 @@ nie
 nin
 niu
 nou
-nue
+nue	nve
+nve
 nun
 nuo
 pai

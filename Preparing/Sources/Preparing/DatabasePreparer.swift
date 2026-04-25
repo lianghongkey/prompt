@@ -153,11 +153,14 @@ struct DatabasePreparer {
                 guard let url = Bundle.module.url(forResource: "pinyin-syllable", withExtension: "txt") else { return }
                 guard let content = try? String(contentsOf: url, encoding: .utf8) else { return }
                 let sourceLines: [String] = content.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: .newlines)
-                let entries = sourceLines.compactMap { syllable -> String? in
-                        let trimmed = syllable.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: .controlCharacters)
-                        guard !trimmed.isEmpty else { return nil }
-                        guard let code = trimmed.charcode else { return nil }
-                        return "(\(code), '\(trimmed)')"
+                let entries = sourceLines.compactMap { line -> String? in
+                        let parts = line.split(separator: "\t")
+                                .map({ $0.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: .controlCharacters) })
+                                .filter({ !$0.isEmpty })
+                        guard let input = parts.first else { return nil }
+                        let canonical = parts.count >= 2 ? parts[1] : input
+                        guard let code = input.charcode else { return nil }
+                        return "(\(code), '\(canonical)')"
                 }
                 let values: String = entries.compactMap({ $0 }).joined(separator: ", ")
                 let insertValues: String = "INSERT INTO pinyinsyllabletable (code, syllable) VALUES \(values);"

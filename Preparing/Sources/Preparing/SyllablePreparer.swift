@@ -73,9 +73,14 @@ public struct SyllablePreparer {
                         .components(separatedBy: .newlines)
                         .map({ $0.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: .controlCharacters) })
                         .filter({ !($0.isEmpty) })
-                let entries = sourceLines.compactMap { syllable -> String? in
-                        guard let code = syllable.charcode else { return nil }
-                        return "(\(code), '\(syllable)')"
+                let entries = sourceLines.compactMap { line -> String? in
+                        let parts = line.split(separator: "\t")
+                                .map({ $0.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: .controlCharacters) })
+                                .filter({ !$0.isEmpty })
+                        guard let input = parts.first else { return nil }
+                        let canonical = parts.count >= 2 ? parts[1] : input
+                        guard let code = input.charcode else { return nil }
+                        return "(\(code), '\(canonical)')"
                 }
                 let values: String = entries.joined(separator: ", ")
                 let insertValues: String = "INSERT INTO pinyinsyllabletable (code, syllable) VALUES \(values);"

@@ -30,6 +30,7 @@ final class PromptInputController: IMKInputController, Sendable {
                 window.orderFrontRegardless()
         }
         private func updateWindowFrame(_ frame: CGRect? = nil) {
+                refreshQuadrant()
                 window.setFrame(frame ?? windowFrame, display: true)
         }
         private func isValidCursorBlock(_ rect: CGRect) -> Bool {
@@ -38,19 +39,40 @@ final class PromptInputController: IMKInputController, Sendable {
                 return (origin.x >= screenOrigin.x) && (origin.x < maxPointX) && (origin.y >= screenOrigin.y) && (origin.y < maxPointY)
         }
 
+        private func resolvedCursorBlock() -> CGRect? {
+                if let cached = currentCursorBlock, isValidCursorBlock(cached) { return cached }
+                if let fresh = currentClient?.cursorBlock, isValidCursorBlock(fresh) {
+                        currentCursorBlock = fresh
+                        return fresh
+                }
+                return nil
+        }
+
+        /// Decide which quadrant to grow the candidate window into, based on remaining screen space around the caret.
+        private func quadrant(forCursorOrigin position: CGPoint) -> Quadrant {
+                let isPositiveHorizontal: Bool = (maxPointX - position.x) > 300
+                let isPositiveVertical: Bool = (position.y - screenOrigin.y) < 300
+                return switch (isPositiveHorizontal, isPositiveVertical) {
+                case (true, true): .upperRight
+                case (false, true): .upperLeft
+                case (true, false): .bottomRight
+                case (false, false): .bottomLeft
+                }
+        }
+
+        /// Re-evaluate quadrant on every frame update so the window flips when the caret crosses near a screen edge while typing.
+        private func refreshQuadrant() {
+                guard let cursorBlock = resolvedCursorBlock() else { return }
+                let newQuadrant = quadrant(forCursorOrigin: cursorBlock.origin)
+                if newQuadrant != appContext.quadrant {
+                        appContext.updateQuadrant(to: newQuadrant)
+                }
+        }
+
         private var windowFrame: CGRect {
                 let quadrant = appContext.quadrant
                 let position: CGPoint = {
-                        // Use cached position, or try fresh from client (after marked text is set)
-                        let cursorBlock: CGRect? = {
-                                if let cached = currentCursorBlock, isValidCursorBlock(cached) { return cached }
-                                if let fresh = currentClient?.cursorBlock, isValidCursorBlock(fresh) {
-                                        currentCursorBlock = fresh
-                                        return fresh
-                                }
-                                return nil
-                        }()
-                        guard let cursorBlock else {
+                        guard let cursorBlock = resolvedCursorBlock() else {
                                 return NSEvent.mouseLocation
                         }
                         let x: CGFloat = quadrant.isNegativeHorizontal ? cursorBlock.origin.x : cursorBlock.maxX
@@ -59,8 +81,11 @@ final class PromptInputController: IMKInputController, Sendable {
                 }()
                 let width: CGFloat = 800
                 let height: CGFloat = 300
-                let x: CGFloat = quadrant.isNegativeHorizontal ? (position.x - width) : position.x
-                let y: CGFloat = quadrant.isNegativeVertical ? (position.y - height) : position.y
+                let rawX: CGFloat = quadrant.isNegativeHorizontal ? (position.x - width) : position.x
+                let rawY: CGFloat = quadrant.isNegativeVertical ? (position.y - height) : position.y
+                // Final safety clamp so the panel never goes off-screen, even if quadrant heuristic underestimates content width.
+                let x: CGFloat = min(max(rawX, screenOrigin.x), maxPointX - width)
+                let y: CGFloat = min(max(rawY, screenOrigin.y), maxPointY - height)
                 return CGRect(x: x, y: y, width: width, height: height)
         }
 
@@ -85,18 +110,7 @@ final class PromptInputController: IMKInputController, Sendable {
                                 guard (point.x >= screenOrigin.x) && (point.x < maxPointX) && (point.y >= screenOrigin.y) && (point.y < maxPointY) else { return screenOrigin }
                                 return point
                         }()
-                        let isPositiveHorizontal: Bool = (maxPointX - position.x) > 300
-                        let isPositiveVertical: Bool = (position.y - screenOrigin.y) < 300
-                        let newQuadrant: Quadrant = switch (isPositiveHorizontal, isPositiveVertical) {
-                        case (true, true):
-                                Quadrant.upperRight
-                        case (false, true):
-                                Quadrant.upperLeft
-                        case (true, false):
-                                Quadrant.bottomRight
-                        case (false, false):
-                                Quadrant.bottomLeft
-                        }
+                        let newQuadrant = quadrant(forCursorOrigin: position)
                         if newQuadrant != appContext.quadrant {
                                 appContext.updateQuadrant(to: newQuadrant)
                         }

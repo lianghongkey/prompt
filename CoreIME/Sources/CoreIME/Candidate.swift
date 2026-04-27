@@ -163,41 +163,24 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 }
         }
 
-        // Comparable
         public static func < (lhs: Candidate, rhs: Candidate) -> Bool {
-                // 1. Input length first (longer input = more complete match of what user typed)
-                // This ensures "这里面" (input="zhelimian") beats "这里" (input="zheli")
-                // regardless of whether either is from user lexicon or engine.
-                guard lhs.input.count == rhs.input.count else { return lhs.input.count > rhs.input.count }
-
-                // 2. User lexicon (order < 0) before system lexicon, within same input length
                 let lhsIsUser = lhs.order < 0
                 let rhsIsUser = rhs.order < 0
                 if lhsIsUser != rhsIsUser {
-                        return lhsIsUser  // user lexicon comes before system lexicon
+                        return lhsIsUser
                 }
-
-                // 3. Within user lexicon, sort by frequency (order = -frequency, so more negative = higher frequency)
                 if lhsIsUser && rhsIsUser {
-                        return lhs.order < rhs.order  // higher frequency (more negative) comes first
+                        return lhs.order < rhs.order
                 }
 
-                // 4. Prioritize candidates whose character count matches the estimated syllable count
-                // For input "liangh" (2 syllables), prefer 2-character words over 1-character words
+                // For shortcut/initials queries like "lh", prefer text whose char count
                 let lhsMatchesSyllables = lhs.text.count == lhs.syllableCount
                 let rhsMatchesSyllables = rhs.text.count == rhs.syllableCount
                 if lhsMatchesSyllables != rhsMatchesSyllables {
-                        return lhsMatchesSyllables  // matching syllable count comes first
+                        return lhsMatchesSyllables
                 }
 
-                // 5. Then by text length (shorter text = more common, but only within same syllable-match group)
-                guard lhs.text.count == rhs.text.count else { return lhs.text.count < rhs.text.count }
-
-                // 6. Then by database order (rowid, lower = more common)
-                // This ensures zi and zhi candidates are interleaved by frequency
-                guard lhs.order == rhs.order else { return lhs.order < rhs.order }
-
-                return false
+                return lhs.order < rhs.order
         }
 
         public static func +(lhs: Candidate, rhs: Candidate) -> Candidate? {
@@ -229,6 +212,17 @@ public struct Candidate: Hashable, Comparable, Sendable {
 }
 
 extension Array where Element == Candidate {
+
+        /// Place candidates whose `input` covers the entire user text at the top,
+        /// then fall through to `Candidate.<` for everything else.
+        public func sortedWithFullMatchFirst(fullInputLength: Int) -> [Candidate] {
+                return sorted(by: { lhs, rhs in
+                        let lhsFull = lhs.input.count == fullInputLength
+                        let rhsFull = rhs.input.count == fullInputLength
+                        if lhsFull != rhsFull { return lhsFull }
+                        return lhs < rhs
+                })
+        }
 
         /// Returns a new Candidate by concatenating this Candidate sequence.
         /// - Returns: Single, concatenated Candidate.

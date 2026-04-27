@@ -159,22 +159,10 @@ public struct Engine {
                         }
                 }
 
-                // Always also collect candidates from shorter prefix schemes (not only as a fallback).
-                // This ensures e.g. "视频" appears when typing "shipingzhu" (with in/ing fuzzy),
-                // and "现象" appears when typing "xianxiansi" (with ian/iang fuzzy).
-                //
-                // Run the tail-dropping fallback for every top scheme — otherwise ties at max
-                // length (e.g. "gengaoxiao" → [gen,gao,xiao] vs [geng,ao,xiao]) only produce
-                // partial matches for whichever scheme won an unstable sort.
-                //
-                // Drop all the way down to a single syllable so every prefix interpretation
-                // at every length is queried. Because topSchemes cover every full-length
-                // segmentation, iterating their tail-drops covers every reachable prefix —
-                // e.g. for "gengaoxiao" topScheme [ge,ng,ao,xiao] produces [ge,ng,ao],
-                // [ge,ng], [ge], reaching the "ge" single-char interpretation that isn't
-                // reachable from [gen,gao,xiao] or [geng,ao,xiao]. Candidate.Comparable
-                // orders by input length so single-syllable matches naturally fall to the
-                // bottom of the list without displacing longer prefix matches.
+                // Tail-drop every top scheme down to a single syllable so every reachable
+                // prefix interpretation is queried — otherwise alternate segmentations
+                // (e.g. "gengaoxiao" → [ge,ng,ao,xiao] vs [gen,gao,xiao]) lose the
+                // single-char "ge" interpretation that only one chain can reach.
                 for topScheme in topSchemes {
                         var fallbackScheme = topScheme
                         while fallbackScheme.count > 1 {
@@ -192,7 +180,6 @@ public struct Engine {
                                         }
                                 }
 
-                                // Also apply fuzzy expansion for shorter prefixes
                                 if FuzzyPinyinSettings.isAnyEnabled {
                                         let pinyinArray = fallbackScheme.map(\.origin)
                                         let expandedArrays = FuzzyPinyinExpander.expandArray(pinyinArray)
@@ -212,8 +199,7 @@ public struct Engine {
                         }
                 }
 
-                // Sort: longer input first (more specific), user lexicon first, then by rowid
-                allCandidates.sort(by: <)
+                allCandidates = allCandidates.sortedWithFullMatchFirst(fullInputLength: text.count)
 
                 if allCandidates.isEmpty {
                         let standardPinyin = bestScheme.map(\.origin).joined()

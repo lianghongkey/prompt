@@ -533,7 +533,7 @@ final class PromptInputController: IMKInputController, Sendable {
                 }
 
                 let suggestions: [Candidate] = {
-                        let combined = (userLexiconCandidates + engineCandidates).sorted(by: <)
+                        let combined = (userLexiconCandidates + engineCandidates).sortedWithFullMatchFirst(fullInputLength: processingText.count)
                         os_log(.debug, log: OSLog(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Candidates"), "Combined: %d candidates", combined.count)
                         let hasUserLexicon = userLexiconCandidates.isNotEmpty
                         if hasUserLexicon {

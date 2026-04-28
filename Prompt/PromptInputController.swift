@@ -140,9 +140,13 @@ final class PromptInputController: IMKInputController, Sendable {
                         }
                         inputStage = .standby
                         isPunctuationFullWidth = true
-                        if inputForm.isOptions {
-                                updateInputForm()
-                        }
+                        clearShiftTapState()
+                        modeIndicatorClearTask?.cancel()
+                        appContext.updateModeIndicator(nil)
+                        // Always start a freshly-activated session in Mandarin.
+                        // Switching back from another input method should not remember
+                        // the previous shift-toggled English/Chinese state.
+                        updateInputForm(to: .mandarin)
                         currentClient = client
                         // Try to update cursor from new client; if invalid, keep last known good position
                         if let block = client?.cursorBlock, isValidCursorBlock(block) {
@@ -175,6 +179,9 @@ final class PromptInputController: IMKInputController, Sendable {
                         isIntendingToRecord = false
                         isPunctuationFullWidth = true
                         filterText = ""
+                        clearShiftTapState()
+                        modeIndicatorClearTask?.cancel()
+                        appContext.updateModeIndicator(nil)
                         appContext.updateRecordingIndicator(nil)
                         Self.sharedVoiceRecorder.stopRecording()
                         if inputForm.isOptions {
@@ -226,6 +233,54 @@ final class PromptInputController: IMKInputController, Sendable {
         private static var whisperModelObserver: NSObjectProtocol?
 
         private var isIntendingToRecord: Bool = false
+
+        // Shift-tap IME mode toggle: a clean single-tap of left/right Shift
+        // (no other key/modifier in between, < 1.0s hold) switches input mode.
+        // Left Shift → ABC (transparent), Right Shift → Mandarin.
+        private var pendingShiftKey: UInt16? = nil
+        private var shiftDownTime: Date? = nil
+        private var shiftTapInvalidated: Bool = false
+        // Tracks the previous overall .shift state, so we only react on real transitions
+        // and ignore duplicate / no-op flagsChanged events.
+        private var wasShiftHeld: Bool = false
+        private func clearShiftTapState() {
+                pendingShiftKey = nil
+                shiftDownTime = nil
+                shiftTapInvalidated = false
+                wasShiftHeld = false
+        }
+        private func switchInputMethodMode(to mode: InputMethodMode) {
+                // Runtime-only switch. Do NOT persist to Options — every time the IME
+                // is re-activated (e.g. switching back from another input method)
+                // we want to start fresh in Mandarin, not remember the last toggled state.
+                let newForm: InputForm = mode.isMandarin ? .mandarin : .transparent
+                updateInputForm(to: newForm)
+                logger.debug("switchInputMethodMode (runtime): -> \(String(describing: mode))")
+                // Only show the indicator when entering ABC mode. In Mandarin mode the
+                // indicator panel would occupy the candidate window slot in MotherBoard
+                // and delay the appearance of pinyin candidates.
+                if !mode.isMandarin {
+                        showModeIndicator(for: mode)
+                } else {
+                        // Make sure no stale indicator lingers when switching back to Mandarin.
+                        modeIndicatorClearTask?.cancel()
+                        appContext.updateModeIndicator(nil)
+                }
+        }
+        private var modeIndicatorClearTask: Task<Void, Never>?
+        private func showModeIndicator(for mode: InputMethodMode) {
+                let label: String = mode.isMandarin ? "中" : "A"
+                appContext.updateModeIndicator(label)
+                updateWindowFrame()
+                modeIndicatorClearTask?.cancel()
+                modeIndicatorClearTask = Task { @MainActor [weak self] in
+                        try? await Task.sleep(nanoseconds: 800_000_000)
+                        guard !Task.isCancelled else { return }
+                        guard let self else { return }
+                        self.appContext.updateModeIndicator(nil)
+                        self.updateWindowFrame()
+                }
+        }
 
         private func setupWhisperModelObserver() {
                 guard Self.whisperModelObserver == nil else { return }
@@ -757,10 +812,90 @@ final class PromptInputController: IMKInputController, Sendable {
                 // Note: do NOT reset isIntendingToRecord here — Space key may still be physically held.
                 // We keep blocking Space events until the Space keyUp arrives.
                 if event.type == .flagsChanged {
-                        if !event.modifierFlags.contains(.shift) {
+                        let isAnyShiftHeld: Bool = event.modifierFlags.contains(.shift)
+                        if !isAnyShiftHeld {
                                 Self.sharedVoiceRecorder.stopRecording()
                         }
+                        // Currently-held non-shift modifiers (Control / Option / Command / Caps Lock / fn).
+                        let nonShiftModifierHeld: Bool = event.modifierFlags.contains(.control)
+                                || event.modifierFlags.contains(.option)
+                                || event.modifierFlags.contains(.command)
+                                || event.modifierFlags.contains(.capsLock)
+                                || event.modifierFlags.contains(.function)
+                        let changedKey: UInt16 = event.keyCode
+                        let isLeftShift: Bool = (changedKey == KeyCode.Modifier.VK_SHIFT_LEFT)
+                        let isRightShift: Bool = (changedKey == KeyCode.Modifier.VK_SHIFT_RIGHT)
+                        // Use the real transition of the .shift bit to drive press/release.
+                        // Duplicate flagsChanged events that don't actually flip .shift are no-ops,
+                        // which is critical because IMK is observed to deliver them in tight pairs.
+                        let priorShiftHeld: Bool = wasShiftHeld
+                        wasShiftHeld = isAnyShiftHeld
+                        let isShiftPress: Bool = !priorShiftHeld && isAnyShiftHeld
+                        let isShiftRelease: Bool = priorShiftHeld && !isAnyShiftHeld
+                        let isShiftTransition: Bool = isShiftPress || isShiftRelease
+                        if isShiftTransition && (isLeftShift || isRightShift) {
+                                logger.debug("flagsChanged shift: keyCode=\(changedKey), press=\(isShiftPress), anyHeld=\(isAnyShiftHeld), other=\(nonShiftModifierHeld)")
+                                if isShiftPress {
+                                        // Just pressed — start tracking ONLY. No mode change, no indicator.
+                                        pendingShiftKey = changedKey
+                                        shiftDownTime = Date()
+                                        shiftTapInvalidated = false
+                                } else {
+                                        // Released — this is the ONLY place the toggle can fire.
+                                        // Rule: fire only if at this release moment,
+                                        //   1) no other key was pressed during the hold (`!invalidated`)
+                                        //   2) no other modifier is currently held
+                                        //   3) the released side matches the pressed side
+                                        //   4) hold was under 1s
+                                        //   5) IME is idle (not buffering / recording / in options)
+                                        let downKey = pendingShiftKey
+                                        let downTime = shiftDownTime
+                                        let invalidated = shiftTapInvalidated
+                                        pendingShiftKey = nil
+                                        shiftDownTime = nil
+                                        shiftTapInvalidated = false
+                                        let elapsed: TimeInterval = downTime.map { Date().timeIntervalSince($0) } ?? .infinity
+                                        let qualifiesAsTap: Bool = {
+                                                guard let downKey, downKey == changedKey else { return false }
+                                                guard !invalidated else { return false }
+                                                guard !nonShiftModifierHeld else { return false }
+                                                guard elapsed < 1.0 else { return false }
+                                                guard !inputStage.isBuffering else { return false }
+                                                guard !Self.sharedVoiceRecorder.isRecording else { return false }
+                                                guard !isIntendingToRecord else { return false }
+                                                guard !inputForm.isOptions else { return false }
+                                                return true
+                                        }()
+                                        logger.debug("shift release: changedKey=\(changedKey), elapsed=\(elapsed), invalidated=\(invalidated), other=\(nonShiftModifierHeld), qualifies=\(qualifiesAsTap)")
+                                        if qualifiesAsTap {
+                                                if isLeftShift {
+                                                        switchInputMethodMode(to: .abc)
+                                                } else {
+                                                        switchInputMethodMode(to: .mandarin)
+                                                }
+                                                return true
+                                        }
+                                }
+                        } else if isLeftShift || isRightShift {
+                                // Shift keyCode but no .shift transition. Two cases:
+                                //   (a) Duplicate event for the SAME side (IMK quirk) → ignore.
+                                //   (b) The OTHER shift moved while this side is held → invalidate the pending tap.
+                                if let pending = pendingShiftKey, pending != changedKey {
+                                        shiftTapInvalidated = true
+                                }
+                        } else {
+                                // A non-shift modifier transitioned (Control / Option / Command / Caps Lock / fn).
+                                // If this happened during a shift hold it disqualifies the tap.
+                                if pendingShiftKey != nil {
+                                        shiftTapInvalidated = true
+                                }
+                        }
                         return false
+                }
+                // From here on, the event is a keyDown. Any keystroke while a shift is held
+                // disqualifies that shift hold from being treated as a single-key tap.
+                if pendingShiftKey != nil {
+                        shiftTapInvalidated = true
                 }
                 let modifiers = event.modifierFlags
                 let code: UInt16 = event.keyCode

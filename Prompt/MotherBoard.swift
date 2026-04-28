@@ -14,6 +14,16 @@ struct MotherBoard: View {
                                         .roundedHUDVisualEffect()
                                         .padding(10)
                                         .fixedSize()
+                        } else if let mode = context.modeIndicator {
+                                Text(mode)
+                                        .font(.candidate)
+                                        .foregroundStyle(Color.primary)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 4)
+                                        .padding(4)
+                                        .roundedHUDVisualEffect()
+                                        .padding(10)
+                                        .fixedSize()
                         } else if context.inputForm.isOptions {
                                 OptionsView()
                         } else if context.isClean && (context.filterIndicator == nil) {

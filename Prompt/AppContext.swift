@@ -3,6 +3,7 @@ import Combine
 final class AppContext: ObservableObject {
 
         @Published private(set) var recordingIndicator: String? = nil
+        @Published private(set) var modeIndicator: String? = nil
         @Published private(set) var filterIndicator: String? = nil
         @Published private(set) var isClean: Bool = true
         @Published private(set) var displayCandidates: [DisplayCandidate] = []
@@ -55,6 +56,9 @@ final class AppContext: ObservableObject {
         }
         func updateRecordingIndicator(_ indicator: String?) {
                 recordingIndicator = indicator
+        }
+        func updateModeIndicator(_ indicator: String?) {
+                modeIndicator = indicator
         }
         func updateFilterIndicator(_ indicator: String?) {
                 filterIndicator = indicator

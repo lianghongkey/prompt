@@ -108,10 +108,37 @@ aftercareSelection() → insert(candidate.text) + updates bufferText
 - `UserLexicon.swift` — Stores at `~/Library/userlexicon.sqlite3`. Has prepared statements for ping/shortcut/find queries. `handle(_:)` boosts selected word by +1000 and decays same-pinyin siblings by 10% (`frequency * 9 / 10`, min 1). All selections (including first candidate) are recorded so frequency reflects long-term usage proportions. Initial frequency: 1000.
 - `AppContext.swift` — `@MainActor ObservableObject` holding `displayCandidates`, `highlightedIndex`, `inputForm`, `quadrant`. The SwiftUI environment object for the candidate window.
 - `CandidateWindow.swift` — `NSPanel` with `ignoresMouseEvents = true`; all selection is keyboard-driven.
-- `Options.swift` — Runtime character form (half/full width) and punctuation form settings.
-- `AppSettings.swift` — Persistent settings in UserDefaults (page size, input memory on/off, etc.). Also holds `whisperModelPath` (persisted) and `whisperModelLoadState` (runtime, updated by `VoiceRecorder`). Additionally holds `llamaServerPath`, `llamaModelPath` (persisted), and `correctorServerState` (runtime, updated by `CorrectorEngine`).
+- `Options.swift` — Runtime character form (half/full width), punctuation form, and `inputMethodMode` (mandarin/abc) settings.
+- `AppSettings.swift` — Persistent settings in UserDefaults (page size, input memory on/off, `defaultInputModeOnActivation`, etc.). Also holds `whisperModelPath` (persisted) and `whisperModelLoadState` (runtime, updated by `VoiceRecorder`). Additionally holds `llamaModelPath` (persisted) and `correctorServerState` (runtime, updated by `CorrectorEngine`).
 - `VoiceRecorder.swift` — Captures 16kHz mono Float32 PCM audio via `AVAudioEngine` (`AudioCapture`) and transcribes using a whisper GGML model (`.bin`) via `whisper.cpp`. Model path is configured as `.mlmodelc` in Settings; the `.bin` sibling is derived automatically. Transcription result is inserted as text via `onTranscription` callback.
 - `CorrectorEngine.swift` — Singleton (`CorrectorEngine.shared`) that manages a llama.cpp server for post-transcription error correction. Launches `llama-server` as a child `Process`, connects to `http://127.0.0.1:8081`, and calls the OpenAI-compatible `/v1/chat/completions` endpoint. On startup, checks if an existing server is already running on the port before attempting to launch a new process.
+
+### Shift-Tap Input Mode Toggle (中英文切换)
+
+A clean single tap of either Shift key (no other key/modifier in between, hold < 1.0s) toggles between Mandarin and ABC (transparent) modes — runtime-only, not persisted.
+
+**Mapping:**
+- Left Shift tap → ABC (transparent)
+- Right Shift tap → Mandarin
+- Left Shift tap **while buffering pinyin** → commit current `bufferText` as raw text via `passBuffer()`, then switch to ABC
+
+**Disqualifiers (do not toggle):**
+- Any non-Shift key was pressed during the hold (`shiftTapInvalidated = true`)
+- Any non-Shift modifier was held at release time (Control / Option / Command / Caps Lock / fn)
+- The released Shift side does not match the pressed side
+- Hold duration ≥ 1.0s
+- Voice recording is active or `isIntendingToRecord == true`
+- `inputForm.isOptions`
+
+**State:** `pendingShiftKey: UInt16?`, `shiftDownTime: Date?`, `shiftTapInvalidated: Bool`, `wasShiftHeld: Bool` (tracks the prior `.shift` flag to ignore IMK's duplicate `flagsChanged` events that don't actually flip `.shift`). All cleared by `clearShiftTapState()` on `activateServer` / `deactivateServer`.
+
+**Implementation (`flagsChanged` branch in `handle(_:client:)`):** the toggle fires *only* on the Shift release transition (`isShiftRelease`). The press transition only records pending state; press time is checked against release time for the < 1s window. Any keyDown observed while `pendingShiftKey != nil` sets `shiftTapInvalidated = true`.
+
+**No on-screen "A/中" indicator:** the previous indicator was removed; mode is conveyed via the candidate window state alone.
+
+### Default Input Mode on Activation
+
+`AppSettings.defaultInputModeOnActivation: InputMethodMode` (persisted, default `.mandarin`) controls which mode `activateServer` selects when the IME is (re)activated by the system. The hardcoded `updateInputForm(to: .mandarin)` was replaced with `defaultForm = AppSettings.defaultInputModeOnActivation.isMandarin ? .mandarin : .transparent`. User-controllable from General Settings via a Picker. Important: Shift-tap toggles `inputForm` *at runtime only* — it does NOT update this setting, so re-activation always returns to the configured default.
 
 ### Voice Recognition Feature
 
@@ -257,4 +284,4 @@ Applies to all punctuation insertion points in Chinese mode: number keys + shift
 - After modifying `DatabasePreparer.swift` hash logic, the DB must be rebuilt AND `deterministicHash` in CoreIME must match
 - `rebuild.sh` also deletes the user lexicon — do not run it if you want to preserve user data
 - Bundle identifier: `hk.eduhk.inputmethod.Prompt`
-- Default mode is **English (transparent)** — Mandarin mode requires switching via system input menu
+- On (re)activation, the IME enters whichever mode is set by `AppSettings.defaultInputModeOnActivation` (default Mandarin). Shift-taps toggle at runtime only and do not persist.

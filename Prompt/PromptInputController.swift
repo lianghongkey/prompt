@@ -141,8 +141,6 @@ final class PromptInputController: IMKInputController, Sendable {
                         inputStage = .standby
                         isPunctuationFullWidth = true
                         clearShiftTapState()
-                        modeIndicatorClearTask?.cancel()
-                        appContext.updateModeIndicator(nil)
                         // Always start a freshly-activated session in Mandarin.
                         // Switching back from another input method should not remember
                         // the previous shift-toggled English/Chinese state.
@@ -180,8 +178,6 @@ final class PromptInputController: IMKInputController, Sendable {
                         isPunctuationFullWidth = true
                         filterText = ""
                         clearShiftTapState()
-                        modeIndicatorClearTask?.cancel()
-                        appContext.updateModeIndicator(nil)
                         appContext.updateRecordingIndicator(nil)
                         Self.sharedVoiceRecorder.stopRecording()
                         if inputForm.isOptions {
@@ -256,30 +252,6 @@ final class PromptInputController: IMKInputController, Sendable {
                 let newForm: InputForm = mode.isMandarin ? .mandarin : .transparent
                 updateInputForm(to: newForm)
                 logger.debug("switchInputMethodMode (runtime): -> \(String(describing: mode))")
-                // Only show the indicator when entering ABC mode. In Mandarin mode the
-                // indicator panel would occupy the candidate window slot in MotherBoard
-                // and delay the appearance of pinyin candidates.
-                if !mode.isMandarin {
-                        showModeIndicator(for: mode)
-                } else {
-                        // Make sure no stale indicator lingers when switching back to Mandarin.
-                        modeIndicatorClearTask?.cancel()
-                        appContext.updateModeIndicator(nil)
-                }
-        }
-        private var modeIndicatorClearTask: Task<Void, Never>?
-        private func showModeIndicator(for mode: InputMethodMode) {
-                let label: String = mode.isMandarin ? "中" : "A"
-                appContext.updateModeIndicator(label)
-                updateWindowFrame()
-                modeIndicatorClearTask?.cancel()
-                modeIndicatorClearTask = Task { @MainActor [weak self] in
-                        try? await Task.sleep(nanoseconds: 800_000_000)
-                        guard !Task.isCancelled else { return }
-                        guard let self else { return }
-                        self.appContext.updateModeIndicator(nil)
-                        self.updateWindowFrame()
-                }
         }
 
         private func setupWhisperModelObserver() {
@@ -847,7 +819,9 @@ final class PromptInputController: IMKInputController, Sendable {
                                         //   2) no other modifier is currently held
                                         //   3) the released side matches the pressed side
                                         //   4) hold was under 1s
-                                        //   5) IME is idle (not buffering / recording / in options)
+                                        //   5) IME is not recording / in options
+                                        // Buffering is allowed: in that case we commit the raw
+                                        // pinyin buffer as direct text and switch to ABC.
                                         let downKey = pendingShiftKey
                                         let downTime = shiftDownTime
                                         let invalidated = shiftTapInvalidated
@@ -860,7 +834,6 @@ final class PromptInputController: IMKInputController, Sendable {
                                                 guard !invalidated else { return false }
                                                 guard !nonShiftModifierHeld else { return false }
                                                 guard elapsed < 1.0 else { return false }
-                                                guard !inputStage.isBuffering else { return false }
                                                 guard !Self.sharedVoiceRecorder.isRecording else { return false }
                                                 guard !isIntendingToRecord else { return false }
                                                 guard !inputForm.isOptions else { return false }
@@ -868,7 +841,10 @@ final class PromptInputController: IMKInputController, Sendable {
                                         }()
                                         logger.debug("shift release: changedKey=\(changedKey), elapsed=\(elapsed), invalidated=\(invalidated), other=\(nonShiftModifierHeld), qualifies=\(qualifiesAsTap)")
                                         if qualifiesAsTap {
-                                                if isLeftShift {
+                                                if inputStage.isBuffering {
+                                                        passBuffer()
+                                                        switchInputMethodMode(to: .abc)
+                                                } else if isLeftShift {
                                                         switchInputMethodMode(to: .abc)
                                                 } else {
                                                         switchInputMethodMode(to: .mandarin)

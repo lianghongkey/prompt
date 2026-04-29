@@ -141,10 +141,11 @@ final class PromptInputController: IMKInputController, Sendable {
                         inputStage = .standby
                         isPunctuationFullWidth = true
                         clearShiftTapState()
-                        // Always start a freshly-activated session in Mandarin.
+                        // Start a freshly-activated session in the user-configured default mode.
                         // Switching back from another input method should not remember
                         // the previous shift-toggled English/Chinese state.
-                        updateInputForm(to: .mandarin)
+                        let defaultForm: InputForm = AppSettings.defaultInputModeOnActivation.isMandarin ? .mandarin : .transparent
+                        updateInputForm(to: defaultForm)
                         currentClient = client
                         // Try to update cursor from new client; if invalid, keep last known good position
                         if let block = client?.cursorBlock, isValidCursorBlock(block) {

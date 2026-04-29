@@ -8,6 +8,7 @@ struct GeneralSettingsView: View {
 
         @State private var isEmojiSuggestionsOn: Bool = Options.isEmojiSuggestionsOn
         @State private var isInputMemoryOn: Bool = AppSettings.isInputMemoryOn
+        @State private var defaultInputMode: InputMethodMode = AppSettings.defaultInputModeOnActivation
 
         @State private var isClearInputMemoryConfirmDialogPresented: Bool = false
         @State private var isPerformingClearInputMemory: Bool = false
@@ -97,6 +98,19 @@ struct GeneralSettingsView: View {
                                         .scaledToFit()
                                         .onChange(of: pageSize) { newPageSize in
                                                 AppSettings.updateCandidatePageSize(to: newPageSize)
+                                        }
+                                        Spacer()
+                                }
+                                .block()
+                                HStack {
+                                        Picker("切换到本输入法时默认模式", selection: $defaultInputMode) {
+                                                Text("中文").tag(InputMethodMode.mandarin)
+                                                Text("英文").tag(InputMethodMode.abc)
+                                        }
+                                        .pickerStyle(.menu)
+                                        .scaledToFit()
+                                        .onChange(of: defaultInputMode) { newMode in
+                                                AppSettings.updateDefaultInputModeOnActivation(to: newMode)
                                         }
                                         Spacer()
                                 }

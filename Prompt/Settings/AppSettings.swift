@@ -119,6 +119,25 @@ struct AppSettings: Sendable {
 
         /// Current corrector server state. Updated by CorrectorEngine; read by GeneralSettingsView.
         static var correctorServerState: CorrectorServerState = .notConfigured
+
+        // MARK: - Default input mode on activation
+
+        /// 切换到本输入法时的默认模式（中文 / 英文）
+        private(set) static var defaultInputModeOnActivation: InputMethodMode = {
+                let savedValue: Int = UserDefaults.standard.integer(forKey: SettingsKey.DefaultInputModeOnActivation)
+                switch savedValue {
+                case 2:
+                        return .abc
+                case 0, 1:
+                        return .mandarin
+                default:
+                        return .mandarin
+                }
+        }()
+        static func updateDefaultInputModeOnActivation(to mode: InputMethodMode) {
+                defaultInputModeOnActivation = mode
+                UserDefaults.standard.set(mode.rawValue, forKey: SettingsKey.DefaultInputModeOnActivation)
+        }
 }
 
 struct SettingsKey {
@@ -128,6 +147,7 @@ struct SettingsKey {
         static let UserLexiconInputMemory: String = "UserLexiconInputMemory"
         static let WhisperModelPath: String = "WhisperModelPath"
         static let LlamaModelPath: String = "LlamaModelPath"
+        static let DefaultInputModeOnActivation: String = "DefaultInputModeOnActivation"
 }
 
 extension Notification.Name {

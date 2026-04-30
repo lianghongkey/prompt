@@ -36,13 +36,15 @@ struct UserLexicon: Sendable {
 
         private static let pingQueryStatement: OpaquePointer? = {
                 var stmt: OpaquePointer? = nil
-                sqlite3_prepare_v2(database, "SELECT word, romanization, frequency FROM userlexicontable WHERE ping = ? ORDER BY frequency DESC LIMIT 5;", -1, &stmt, nil)
+                sqlite3_prepare_v2(database, "SELECT word, romanization, frequency FROM userlexicontable WHERE ping = ? ORDER BY frequency DESC LIMIT 20;", -1, &stmt, nil)
                 return stmt
         }()
 
+        /// Higher LIMIT than legacy (5) so per-token prefix filter still finds the
+        /// most-frequent matches after Swift-side narrowing.
         private static let shortcutQueryStatement: OpaquePointer? = {
                 var stmt: OpaquePointer? = nil
-                sqlite3_prepare_v2(database, "SELECT word, romanization, frequency FROM userlexicontable WHERE shortcut = ? ORDER BY frequency DESC LIMIT 5;", -1, &stmt, nil)
+                sqlite3_prepare_v2(database, "SELECT word, romanization, frequency FROM userlexicontable WHERE shortcut = ? ORDER BY frequency DESC LIMIT 100;", -1, &stmt, nil)
                 return stmt
         }()
 
@@ -170,141 +172,135 @@ struct UserLexicon: Sendable {
 
         // MARK: - Suggestion
 
+        /// Suggest user-lexicon candidates for `text`. Mirrors Engine's hybrid model:
+        /// every top-quality scheme is queried (full → ping index, hybrid → shortcut
+        /// index + per-token prefix filter), then tail-drop fallback runs to surface
+        /// shorter prefix matches.
         static func suggest(text: String, segmentation: Segmentation) -> [Candidate] {
                 logger.debug("UserLexicon.suggest: text=\(text), segmentation.count=\(segmentation.count)")
 
-                let matches = query(text: text, input: text, isShortcut: false, isFuzzyMatch: false)
-                logger.debug("UserLexicon.suggest: direct matches=\(matches.count)")
+                // Direct ping lookup against the raw input (no spaces). Catches the case
+                // where romanization in the DB was stored without spaces between syllables.
+                let directPingMatches = pingQuery(pingText: text, input: text, mark: nil, isFuzzy: false)
 
-                let shortcuts = query(text: text, input: text, mark: text.spaceSeparated(), isShortcut: true, isFuzzyMatch: false)
-                logger.debug("UserLexicon.suggest: shortcuts=\(shortcuts.count)")
+                guard let bestScheme = segmentation.first else {
+                        return dedupByText(directPingMatches)
+                }
 
-                let searches: [Candidate] = {
-                        let textCount = text.count
-                        let schemes = segmentation.filter({ $0.length == textCount })
-                        guard schemes.isNotEmpty else { return [] }
+                let bestQuality = SchemeQuality(scheme: bestScheme)
+                let topSchemes = segmentation.filter { SchemeQuality(scheme: $0) == bestQuality }
 
-                        var allCandidates: [Candidate] = []
-                        var seen = Set<String>() // Track word+romanization to avoid duplicates
+                var allCandidates: [Candidate] = directPingMatches
+                var seenKeys = Set<String>()
+                for c in directPingMatches {
+                        seenKeys.insert(c.text + c.romanization)
+                }
 
-                        for scheme in schemes {
-                                let pingText = scheme.map(\.origin).joined()
-                                logger.debug("UserLexicon.suggest: scheme origins=\(scheme.map(\.origin)), pingText=\(pingText), pingHash=\(pingText.deterministicHash)")
+                for scheme in topSchemes {
+                        runScheme(scheme,
+                                  fuzzyEnabled: FuzzyPinyinSettings.isAnyEnabled,
+                                  seenKeys: &seenKeys,
+                                  out: &allCandidates)
+                }
 
-                                let matched = query(text: pingText, input: text, isShortcut: false, isFuzzyMatch: false)
-                                logger.debug("UserLexicon.suggest: matched \(matched.count) candidates for pingText=\(pingText)")
-
-                                let text2mark = scheme.map(\.text).joined()
-                                let syllables = scheme.map(\.origin).joined()
-
-                                for candidate in matched {
-                                        logger.debug("UserLexicon.suggest: checking candidate '\(candidate.text)', mark=\(candidate.mark), syllables=\(syllables), match=\(candidate.mark == syllables)")
-                                        if candidate.mark == syllables {
-                                                let key = candidate.text + candidate.romanization
-                                                if seen.insert(key).inserted {
-                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: candidate.input, mark: text2mark, order: candidate.order, isFuzzyMatch: false))
-                                                }
-                                        }
-                                }
-
-                                // Also try fuzzy pinyin matching if enabled
-                                if FuzzyPinyinSettings.isAnyEnabled {
-                                        let expandedArrays = FuzzyPinyinExpander.expandArray(scheme.map(\.origin))
-                                        logger.debug("UserLexicon.suggest: fuzzy expanded to \(expandedArrays.count) variants")
-                                        for expandedArray in expandedArrays {
-                                                let expandedPingText = expandedArray.joined()
-                                                let isFuzzy = expandedPingText != pingText
-                                                let fuzzyMatched = query(text: expandedPingText, input: text, isShortcut: false, isFuzzyMatch: isFuzzy)
-                                                logger.debug("UserLexicon.suggest: fuzzy matched \(fuzzyMatched.count) for \(expandedPingText)")
-                                                for candidate in fuzzyMatched {
-                                                        let key = candidate.text + candidate.romanization
-                                                        if seen.insert(key).inserted {
-                                                                allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: candidate.input, mark: text2mark, order: candidate.order, isFuzzyMatch: isFuzzy))
-                                                        }
-                                                }
-                                        }
-                                }
-                        }
-
-                        // Also try shorter prefix schemes from user lexicon (drop trailing syllables)
-                        if let bestScheme = schemes.first, bestScheme.count > 2 {
-                                var queriedPings = Set<Int>()
-                                for scheme in schemes {
-                                        queriedPings.insert(scheme.map(\.origin).joined().deterministicHash)
-                                }
-                                var fallbackScheme = bestScheme
-                                while fallbackScheme.count > 1 {
-                                        fallbackScheme = Array(fallbackScheme.dropLast())
-                                        guard fallbackScheme.count >= 2 else { break }
-                                        let pingText = fallbackScheme.map(\.origin).joined()
-                                        let fallbackInput = fallbackScheme.map(\.text).joined()
-                                        let text2mark = fallbackInput
-                                        let syllables = pingText
-
-                                        let pingHash = pingText.deterministicHash
-                                        if queriedPings.insert(pingHash).inserted {
-                                                let matched = query(text: pingText, input: fallbackInput, isShortcut: false, isFuzzyMatch: false)
-                                                for candidate in matched {
-                                                        if candidate.mark == syllables {
-                                                                let key = candidate.text + candidate.romanization
-                                                                if seen.insert(key).inserted {
-                                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: fallbackInput, mark: text2mark, order: candidate.order, isFuzzyMatch: false))
-                                                                }
-                                                        }
-                                                }
-                                        }
-
-                                        if FuzzyPinyinSettings.isAnyEnabled {
-                                                let expandedArrays = FuzzyPinyinExpander.expandArray(fallbackScheme.map(\.origin))
-                                                for expandedArray in expandedArrays {
-                                                        let expandedPingText = expandedArray.joined()
-                                                        let expandedHash = expandedPingText.deterministicHash
-                                                        guard queriedPings.insert(expandedHash).inserted else { continue }
-                                                        let isFuzzy = expandedPingText != pingText
-                                                        let fuzzyMatched = query(text: expandedPingText, input: fallbackInput, isShortcut: false, isFuzzyMatch: isFuzzy)
-                                                        for candidate in fuzzyMatched {
-                                                                let key = candidate.text + candidate.romanization
-                                                                if seen.insert(key).inserted {
-                                                                        allCandidates.append(Candidate(text: candidate.text, romanization: candidate.romanization, input: fallbackInput, mark: text2mark, order: candidate.order, isFuzzyMatch: isFuzzy))
-                                                                }
-                                                        }
-                                                }
-                                        }
-                                }
-                        }
-
-                        return allCandidates
-                }()
-
-                logger.debug("UserLexicon.suggest: total searches=\(searches.count)")
-
-                // Deduplicate across matches, shortcuts, and searches
-                // For user lexicon, deduplicate by text only (ignore romanization variations)
-                // This prevents showing multiple entries like "不是 (bushi)", "不是 (bu shi)", "不是 (busi)"
-                var seen = Set<String>()
-                var allResults: [Candidate] = []
-                for candidate in matches + shortcuts + searches {
-                        let key = candidate.text  // Only use text for deduplication
-                        if seen.insert(key).inserted {
-                                allResults.append(candidate)
+                // Tail-drop fallback: drop trailing tokens to surface shorter prefix matches.
+                for topScheme in topSchemes {
+                        var fallback = topScheme
+                        while fallback.count > 1 {
+                                fallback = Array(fallback.dropLast())
+                                guard fallback.count >= 2 else { break }
+                                runScheme(fallback,
+                                          fuzzyEnabled: FuzzyPinyinSettings.isAnyEnabled,
+                                          seenKeys: &seenKeys,
+                                          out: &allCandidates)
                         }
                 }
 
-                logger.debug("UserLexicon.suggest: returning \(allResults.count) candidates (before: \(matches.count + shortcuts.count + searches.count))")
-
-                return allResults
+                logger.debug("UserLexicon.suggest: total candidates=\(allCandidates.count)")
+                return dedupByText(allCandidates)
         }
 
-        private static func query(text: String, input: String, mark: String? = nil, isShortcut: Bool, isFuzzyMatch: Bool = false) -> [Candidate] {
-                var candidates: [Candidate] = []
-                let code: Int = isShortcut ? text.replacingOccurrences(of: "y", with: "j").deterministicHash : text.deterministicHash
-                guard let stmt = isShortcut ? shortcutQueryStatement : pingQueryStatement else { return candidates }
+        private struct SchemeQuality: Hashable {
+                let count: Int
+                let abbrevCount: Int
+                init(scheme: SegmentScheme) {
+                        self.count = scheme.count
+                        self.abbrevCount = scheme.abbrevCount
+                }
+        }
+
+        private static func runScheme(_ scheme: SegmentScheme,
+                                      fuzzyEnabled: Bool,
+                                      seenKeys: inout Set<String>,
+                                      out: inout [Candidate]) {
+                let combinedInput = scheme.map(\.text).joined()
+                let mark = combinedInput
+
+                let beforePingCount = out.count
+                if scheme.isAllFull {
+                        let pingText = scheme.map(\.origin).joined()
+                        let matched = pingQuery(pingText: pingText, input: combinedInput, mark: mark, isFuzzy: false)
+                        appendUnique(matched, into: &out, seen: &seenKeys)
+
+                        if fuzzyEnabled {
+                                let expandedArrays = FuzzyPinyinExpander.expandArray(scheme.map(\.origin))
+                                for expanded in expandedArrays {
+                                        let expandedPing = expanded.joined()
+                                        guard expandedPing != pingText else { continue }
+                                        let fuzzyMatched = pingQuery(pingText: expandedPing,
+                                                                     input: combinedInput,
+                                                                     mark: mark,
+                                                                     isFuzzy: true)
+                                        appendUnique(fuzzyMatched, into: &out, seen: &seenKeys)
+                                }
+                        }
+                        if out.count > beforePingCount { return }
+                }
+
+                // Hybrid path (or all-full fallback when ping returned nothing): query by
+                // shortcut intercode, filter via per-position prefix match.
+                let shortcutMatched = shortcutSchemeQuery(scheme: scheme,
+                                                          input: combinedInput,
+                                                          mark: mark,
+                                                          fuzzyEnabled: fuzzyEnabled)
+                appendUnique(shortcutMatched, into: &out, seen: &seenKeys)
+        }
+
+        private static func appendUnique(_ candidates: [Candidate],
+                                         into out: inout [Candidate],
+                                         seen: inout Set<String>) {
+                for c in candidates {
+                        let key = c.text + c.romanization
+                        if seen.insert(key).inserted {
+                                out.append(c)
+                        }
+                }
+        }
+
+        /// Final dedup before returning: keep only the first entry per word text. This
+        /// prevents the candidate list from showing the same word twice with slightly
+        /// different romanizations (e.g. "不是 (bushi)" and "不是 (bu shi)").
+        private static func dedupByText(_ candidates: [Candidate]) -> [Candidate] {
+                var seen = Set<String>()
+                var out: [Candidate] = []
+                for c in candidates {
+                        if seen.insert(c.text).inserted {
+                                out.append(c)
+                        }
+                }
+                return out
+        }
+
+        // MARK: - Ping (full pinyin) query
+
+        private static func pingQuery(pingText: String, input: String, mark: String?, isFuzzy: Bool) -> [Candidate] {
+                guard let stmt = pingQueryStatement else { return [] }
+                let code: Int = pingText.deterministicHash
                 sqlite3_reset(stmt)
-                guard sqlite3_bind_int64(stmt, 1, Int64(code)) == SQLITE_OK else { return candidates }
+                guard sqlite3_bind_int64(stmt, 1, Int64(code)) == SQLITE_OK else { return [] }
 
-                // Calculate max syllable count from input
                 let maxSyllableCount = PinyinSegmentor.maxSyllableCount(for: input)
-
+                var candidates: [Candidate] = []
                 while sqlite3_step(stmt) == SQLITE_ROW {
                         guard let wordPtr = sqlite3_column_text(stmt, 0) else { continue }
                         guard let romanizationPtr = sqlite3_column_text(stmt, 1) else { continue }
@@ -312,15 +308,91 @@ struct UserLexicon: Sendable {
                         let romanization: String = String(cString: romanizationPtr)
                         let frequency: Int = Int(sqlite3_column_int64(stmt, 2))
 
-                        // Filter: word character count must not exceed syllable count
                         guard word.count <= maxSyllableCount else { continue }
 
-                        let mark: String = mark ?? romanization.removedTones().removedSpaces()
-                        // Use negative frequency as order so higher frequency sorts first
-                        let candidate: Candidate = Candidate(text: word, romanization: romanization, input: input, mark: mark, order: -frequency, isFuzzyMatch: isFuzzyMatch)
+                        let resolvedMark = mark ?? romanization.removedTones().removedSpaces()
+                        let candidate = Candidate(text: word,
+                                                  romanization: romanization,
+                                                  input: input,
+                                                  mark: resolvedMark,
+                                                  order: -frequency,
+                                                  isFuzzyMatch: isFuzzy)
                         candidates.append(candidate)
                 }
                 return candidates
+        }
+
+        // MARK: - Shortcut (hybrid) query
+
+        /// Compute shortcut intercode by taking the first character of each token. Mirrors
+        /// `String.shortcut` (used at insert time) so lookup hash matches storage hash.
+        private static func schemeShortcutCode(_ scheme: SegmentScheme) -> Int? {
+                let firstChars: [Character] = scheme.compactMap { $0.text.first }
+                guard firstChars.count == scheme.count else { return nil }
+                let str = String(firstChars)
+                return str.deterministicHash
+        }
+
+        private static func shortcutSchemeQuery(scheme: SegmentScheme,
+                                                input: String,
+                                                mark: String,
+                                                fuzzyEnabled: Bool) -> [Candidate] {
+                guard let code = schemeShortcutCode(scheme) else { return [] }
+                guard let stmt = shortcutQueryStatement else { return [] }
+                sqlite3_reset(stmt)
+                guard sqlite3_bind_int64(stmt, 1, Int64(code)) == SQLITE_OK else { return [] }
+
+                let schemeSyllableCount = scheme.count
+                var candidates: [Candidate] = []
+                while sqlite3_step(stmt) == SQLITE_ROW {
+                        guard let wordPtr = sqlite3_column_text(stmt, 0) else { continue }
+                        guard let romanizationPtr = sqlite3_column_text(stmt, 1) else { continue }
+                        let word: String = String(cString: wordPtr)
+                        let romanization: String = String(cString: romanizationPtr)
+                        let frequency: Int = Int(sqlite3_column_int64(stmt, 2))
+
+                        guard word.count == schemeSyllableCount else { continue }
+
+                        let parts = romanization.split(separator: " ")
+                        guard parts.count == schemeSyllableCount else { continue }
+
+                        var matched = true
+                        var anyFuzzy = false
+                        for (token, syl) in zip(scheme, parts) {
+                                let syllable = String(syl)
+                                let (ok, fuzzy) = tokenMatches(token: token, syllable: syllable, fuzzyEnabled: fuzzyEnabled)
+                                if !ok { matched = false; break }
+                                if fuzzy { anyFuzzy = true }
+                        }
+                        guard matched else { continue }
+
+                        let candidate = Candidate(text: word,
+                                                  romanization: romanization,
+                                                  input: input,
+                                                  mark: mark,
+                                                  order: -frequency,
+                                                  isFuzzyMatch: anyFuzzy)
+                        candidates.append(candidate)
+                }
+                return candidates
+        }
+
+        /// See Engine.tokenMatches — same prefix-match semantics.
+        private static func tokenMatches(token: SegmentToken,
+                                         syllable: String,
+                                         fuzzyEnabled: Bool) -> (Bool, Bool) {
+                let needle = token.text
+                if syllable.hasPrefix(needle) { return (true, false) }
+                if !fuzzyEnabled { return (false, false) }
+                for v in FuzzyPinyinExpander.expand(syllable) where v.hasPrefix(needle) {
+                        return (true, true)
+                }
+                if token.kind == .full {
+                        for v in FuzzyPinyinExpander.expand(token.origin) where syllable.hasPrefix(v) {
+                                return (true, true)
+                        }
+                }
+                return (false, false)
         }
 
 

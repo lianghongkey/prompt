@@ -71,7 +71,6 @@ public struct Engine {
         }()
 
 
-
         // MARK: - Suggestion
 
         /// Suggestion - Uses Pinyin table for Mandarin input
@@ -86,182 +85,262 @@ public struct Engine {
                 case 0:
                         return []
                 case 1:
-                        // Single character input - try pinyin match and shortcut
+                        // Single character input - try ping (full syllable like a/o/e) then shortcut.
                         let pinyinMatches = pinyinMatchInternal(text: text, input: text)
-                        return pinyinMatches.isEmpty ? pinyinShortcutInternal(text: text, limit: 100) : pinyinMatches
+                        if !pinyinMatches.isEmpty { return pinyinMatches }
+                        // Fall through to scheme-based query so single-letter abbrevs work.
+                        return pinyinSuggestMulti(text: text, segmentation: segmentation)
                 default:
-                        // Multi-character input - use segmentation to build spaced pinyin
                         return pinyinSuggestMulti(text: text, segmentation: segmentation)
                 }
         }
 
+        // MARK: - Multi-character / hybrid suggestion
+
         private static func pinyinSuggestMulti(text: String, segmentation: Segmentation) -> [Candidate] {
-                // Use segmentation to build spaced pinyin for database query
-                // For example: "ganshenme" -> ["gan", "shen", "me"] -> "gan shen me"
-
-                // Apply fuzzy pinyin correction if enabled and segmentation failed
-                if FuzzyPinyinSettings.isAnyEnabled && segmentation.isEmpty {
-                        // Try to correct the input using fuzzy pinyin mappings
-                        let correctedInputs = generateCorrectedInputs(text)
-                        for correctedInput in correctedInputs {
-                                let correctedSegmentation = PinyinSegmentor.segment(text: correctedInput)
-                                if !correctedSegmentation.isEmpty {
-                                        return pinyinSuggestMulti(text: text, segmentation: correctedSegmentation)
-                                }
-                        }
-                }
-
                 guard let bestScheme = segmentation.first else {
-                        return pinyinShortcutInternal(text: text, limit: 100)
+                        // Segmentation truly empty (input has non-letter chars). Final fallback.
+                        return shortcutQueryFallback(text: text)
                 }
 
-                // Try all schemes with the same max length (different segmentations may yield different candidates)
-                let maxLength = bestScheme.length
-                let topSchemes = segmentation.filter({ $0.length == maxLength })
+                // Pick all top-quality schemes (same token count and abbrev count as bestScheme).
+                let bestQuality = SchemeQuality(scheme: bestScheme)
+                let topSchemes = segmentation.filter { SchemeQuality(scheme: $0) == bestQuality }
 
                 var allCandidates: [Candidate] = []
-                var seen = Set<Int>()
-                // Share queried hashes across all scheme queries to avoid redundant DB hits
+                var seenOrders = Set<Int>()
                 var queriedHashes = Set<Int>()
 
                 for scheme in topSchemes {
-                        let spacedPinyin = scheme.map(\.origin).joined(separator: " ")
-                        let combinedInput = scheme.map(\.text).joined()
-
-                        let spacedPinyinHash = spacedPinyin.deterministicHash
-                        queriedHashes.insert(spacedPinyinHash)
-
-                        // Query database with spaced pinyin (exact match)
-                        let directCandidates = pinyinMatchInternal(text: spacedPinyin, input: combinedInput, isFuzzyMatch: false)
-                        for candidate in directCandidates {
-                                if seen.insert(candidate.order).inserted {
-                                        allCandidates.append(candidate)
-                                }
-                        }
-
-                        // Apply fuzzy pinyin if enabled
-                        if FuzzyPinyinSettings.isAnyEnabled {
-                                let pinyinArray = scheme.map(\.origin)
-                                let expandedArrays = FuzzyPinyinExpander.expandArray(pinyinArray)
-                                for expandedArray in expandedArrays {
-                                        let expandedSpacedPinyin = expandedArray.joined(separator: " ")
-                                        let hash = expandedSpacedPinyin.deterministicHash
-                                        guard queriedHashes.insert(hash).inserted else { continue }
-                                        // Mark fuzzy match candidates
-                                        let isFuzzy = expandedSpacedPinyin != spacedPinyin
-                                        let fuzzyCandidates = pinyinMatchInternal(text: expandedSpacedPinyin, input: combinedInput, isFuzzyMatch: isFuzzy)
-                                        for candidate in fuzzyCandidates {
-                                                if seen.insert(candidate.order).inserted {
-                                                        allCandidates.append(candidate)
-                                                }
-                                        }
-                                }
-                        }
+                        runScheme(scheme,
+                                  fuzzyEnabled: FuzzyPinyinSettings.isAnyEnabled,
+                                  isFallback: false,
+                                  seenOrders: &seenOrders,
+                                  queriedHashes: &queriedHashes,
+                                  out: &allCandidates)
                 }
 
-                // Tail-drop every top scheme down to a single syllable so every reachable
-                // prefix interpretation is queried — otherwise alternate segmentations
-                // (e.g. "gengaoxiao" → [ge,ng,ao,xiao] vs [gen,gao,xiao]) lose the
-                // single-char "ge" interpretation that only one chain can reach.
+                // Tail-drop fallback: drop trailing tokens to surface shorter prefix matches
+                // (single-character candidates needed for word creation).
                 for topScheme in topSchemes {
                         var fallbackScheme = topScheme
                         while fallbackScheme.count > 1 {
                                 fallbackScheme = Array(fallbackScheme.dropLast())
-                                let fallbackPinyin = fallbackScheme.map(\.origin).joined(separator: " ")
-                                let fallbackInput = fallbackScheme.map(\.text).joined()
-
-                                let hash = fallbackPinyin.deterministicHash
-                                if queriedHashes.insert(hash).inserted {
-                                        let fallbackCandidates = pinyinMatchInternal(text: fallbackPinyin, input: fallbackInput)
-                                        for candidate in fallbackCandidates {
-                                                if seen.insert(candidate.order).inserted {
-                                                        allCandidates.append(candidate)
-                                                }
-                                        }
-                                }
-
-                                if FuzzyPinyinSettings.isAnyEnabled {
-                                        let pinyinArray = fallbackScheme.map(\.origin)
-                                        let expandedArrays = FuzzyPinyinExpander.expandArray(pinyinArray)
-                                        for expandedArray in expandedArrays {
-                                                let expandedSpacedPinyin = expandedArray.joined(separator: " ")
-                                                let expandedHash = expandedSpacedPinyin.deterministicHash
-                                                guard queriedHashes.insert(expandedHash).inserted else { continue }
-                                                let isFuzzy = expandedSpacedPinyin != fallbackPinyin
-                                                let fuzzyCandidates = pinyinMatchInternal(text: expandedSpacedPinyin, input: fallbackInput, isFuzzyMatch: isFuzzy)
-                                                for candidate in fuzzyCandidates {
-                                                        if seen.insert(candidate.order).inserted {
-                                                                allCandidates.append(candidate)
-                                                        }
-                                                }
-                                        }
-                                }
+                                runScheme(fallbackScheme,
+                                          fuzzyEnabled: FuzzyPinyinSettings.isAnyEnabled,
+                                          isFallback: true,
+                                          seenOrders: &seenOrders,
+                                          queriedHashes: &queriedHashes,
+                                          out: &allCandidates)
                         }
                 }
 
                 allCandidates = allCandidates.sortedWithFullMatchFirst(fullInputLength: text.count)
-
-                if allCandidates.isEmpty {
-                        let standardPinyin = bestScheme.map(\.origin).joined()
-                        return pinyinShortcutInternal(text: standardPinyin, limit: 100)
-                }
-
                 return allCandidates
         }
 
-        /// Generate corrected inputs by applying fuzzy pinyin mappings (both directions)
-        /// For example: "don" -> ["dong"] when on/ong is enabled
-        private static func generateCorrectedInputs(_ text: String) -> Set<String> {
-                var results = Set<String>()
-                let mappings = FuzzyPinyinSettings.allMappings
+        /// Quality tuple used to select top schemes. Smaller is better.
+        private struct SchemeQuality: Hashable {
+                let count: Int
+                let abbrevCount: Int
+                init(scheme: SegmentScheme) {
+                        self.count = scheme.count
+                        self.abbrevCount = scheme.abbrevCount
+                }
+        }
 
-                // Generate all possible corrections
-                for mapping in mappings {
-                        // Handle initial mappings (bidirectional: z <-> zh)
-                        for (initial, alternatives) in mapping.initials {
-                                for alternative in alternatives {
-                                        // Replace initial with alternative
-                                        if text.contains(initial) {
-                                                let corrected = text.replacingOccurrences(of: initial, with: alternative)
-                                                results.insert(corrected)
-                                                if results.count >= 5 { break }
-                                        }
-                                        // Replace alternative with initial
-                                        if text.contains(alternative) {
-                                                let corrected = text.replacingOccurrences(of: alternative, with: initial)
-                                                results.insert(corrected)
-                                                if results.count >= 5 { break }
-                                        }
-                                }
-                                if results.count >= 5 { break }
-                        }
-                        if results.count >= 5 { break }
+        /// Dispatch a single scheme to the right query path (ping vs shortcut+filter),
+        /// applying fuzzy expansion when enabled.
+        private static func runScheme(_ scheme: SegmentScheme,
+                                      fuzzyEnabled: Bool,
+                                      isFallback: Bool,
+                                      seenOrders: inout Set<Int>,
+                                      queriedHashes: inout Set<Int>,
+                                      out: inout [Candidate]) {
+                let combinedInput = scheme.map(\.text).joined()
 
-                        // Handle final mappings (bidirectional: on <-> ong)
-                        for (final, alternatives) in mapping.finals {
-                                for alternative in alternatives {
-                                        // Replace final with alternative
-                                        if text.contains(final) {
-                                                let corrected = text.replacingOccurrences(of: final, with: alternative)
-                                                results.insert(corrected)
-                                                if results.count >= 5 { break }
-                                        }
-                                        // Replace alternative with final
-                                        if text.contains(alternative) {
-                                                let corrected = text.replacingOccurrences(of: alternative, with: final)
-                                                results.insert(corrected)
-                                                if results.count >= 5 { break }
-                                        }
-                                }
-                                if results.count >= 5 { break }
+                let beforePingCount = out.count
+
+                if scheme.isAllFull {
+                        // Fast path: exact `ping` lookup using B-tree index.
+                        let spacedPinyin = scheme.map(\.origin).joined(separator: " ")
+                        let hash = spacedPinyin.deterministicHash
+                        if queriedHashes.insert(hash).inserted {
+                                let candidates = pinyinMatchInternal(text: spacedPinyin, input: combinedInput, isFuzzyMatch: false)
+                                appendUnique(candidates, into: &out, seen: &seenOrders)
                         }
-                        if results.count >= 5 { break }
+                        if fuzzyEnabled {
+                                let pinyinArray = scheme.map(\.origin)
+                                let expandedArrays = FuzzyPinyinExpander.expandArray(pinyinArray)
+                                for expandedArray in expandedArrays {
+                                        let expanded = expandedArray.joined(separator: " ")
+                                        let h = expanded.deterministicHash
+                                        guard queriedHashes.insert(h).inserted else { continue }
+                                        let isFuzzy = expanded != spacedPinyin
+                                        let candidates = pinyinMatchInternal(text: expanded, input: combinedInput, isFuzzyMatch: isFuzzy)
+                                        appendUnique(candidates, into: &out, seen: &seenOrders)
+                                }
+                        }
+                        // If ping found exact matches, we're done — exact full-pinyin
+                        // typing should not get noisy prefix extensions. If ping returned
+                        // nothing (e.g. user typed "zenmeyan" intending 怎么样), fall
+                        // through to the shortcut+prefix path so prefix matches surface.
+                        if out.count > beforePingCount { return }
                 }
 
-                // Remove the original input
-                results.remove(text)
+                // Hybrid (or all-abbrev, or fallback for empty ping) path: query by
+                // shortcut intercode, filter in Swift via per-token prefix match.
+                guard let shortcutCode = schemeShortcutCode(scheme) else { return }
+                guard queriedHashes.insert(shortcutCode).inserted else { return }
+                let candidates = shortcutSchemeQuery(scheme: scheme,
+                                                     shortcutCode: shortcutCode,
+                                                     input: combinedInput,
+                                                     fuzzyEnabled: fuzzyEnabled,
+                                                     isFallback: isFallback)
+                appendUnique(candidates, into: &out, seen: &seenOrders)
+        }
+
+        private static func appendUnique(_ candidates: [Candidate],
+                                         into out: inout [Candidate],
+                                         seen: inout Set<Int>) {
+                for c in candidates {
+                        if seen.insert(c.order).inserted {
+                                out.append(c)
+                        }
+                }
+        }
+
+        // MARK: - Shortcut scheme query (hybrid path)
+
+        /// Compute the shortcut intercode from a scheme by taking the first character
+        /// of each token. Returns nil if any token is empty or non-ASCII.
+        private static func schemeShortcutCode(_ scheme: SegmentScheme) -> Int? {
+                let firstChars: [Character] = scheme.compactMap { $0.text.first }
+                guard firstChars.count == scheme.count else { return nil }
+                let codes: [Int] = firstChars.compactMap(\.intercode)
+                guard codes.count == firstChars.count else { return nil }
+                let combined = codes.combined()
+                return combined > 0 ? combined : nil
+        }
+
+        /// Query `pinyintable WHERE shortcut = ?`, then in-Swift filter so that
+        /// each scheme token's `text` is a (possibly fuzzy) prefix of the corresponding
+        /// space-separated pinyin syllable in the row.
+        private static func shortcutSchemeQuery(scheme: SegmentScheme,
+                                                shortcutCode: Int,
+                                                input: String,
+                                                fuzzyEnabled: Bool,
+                                                isFallback: Bool) -> [Candidate] {
+                guard let stmt = shortcutStatement else { return [] }
+                sqlite3_reset(stmt)
+                sqlite3_bind_int64(stmt, 1, Int64(shortcutCode))
+                // Higher LIMIT than legacy (200) so per-position filter still has enough
+                // candidates to pick the most frequent matches from. Wider scheme.count
+                // shortcuts can have thousands of entries; cap at 1000 indexed rows.
+                sqlite3_bind_int64(stmt, 2, 1000)
+
+                let schemeSyllableCount = scheme.count
+                var results: [Candidate] = []
+
+                while sqlite3_step(stmt) == SQLITE_ROW {
+                        let rowID: Int = Int(sqlite3_column_int64(stmt, 0))
+                        guard let wordPtr = sqlite3_column_text(stmt, 1) else { continue }
+                        guard let pinyinPtr = sqlite3_column_text(stmt, 2) else { continue }
+                        let word: String = String(cString: wordPtr)
+                        let pinyin: String = String(cString: pinyinPtr)
+
+                        // Word's character count must equal scheme.count (one syllable per character).
+                        // Compound / multi-syllable-per-char entries are rare; the equality check
+                        // matches the convention used by the rest of the suggest pipeline.
+                        guard word.count == schemeSyllableCount else { continue }
+
+                        let parts = pinyin.split(separator: " ")
+                        guard parts.count == schemeSyllableCount else { continue }
+
+                        var matched = true
+                        var anyFuzzy = false
+                        for (token, syl) in zip(scheme, parts) {
+                                let syllable = String(syl)
+                                let (ok, fuzzy) = tokenMatches(token: token, syllable: syllable, fuzzyEnabled: fuzzyEnabled)
+                                if !ok { matched = false; break }
+                                if fuzzy { anyFuzzy = true }
+                        }
+                        guard matched else { continue }
+
+                        let candidate = Candidate(text: word,
+                                                  romanization: pinyin,
+                                                  input: input,
+                                                  mark: input,
+                                                  order: rowID,
+                                                  isFuzzyMatch: anyFuzzy)
+                        results.append(candidate)
+
+                        // Cap output so a popular shortcut (e.g. wsm) does not flood the list.
+                        if results.count >= 200 { break }
+                }
+
+                _ = isFallback // currently unused; reserved for future tuning of fallback weight
                 return results
         }
+
+        /// Match one scheme token against one space-separated pinyin syllable.
+        /// Both `.full` and `.abbrev` tokens use **prefix match**: the token's text
+        /// (which equals `origin` for full, equals the initial(s) for abbrev) must be
+        /// a prefix of the stored syllable, or a fuzzy variant of it.
+        ///
+        /// Why prefix for `.full` too: a user-typed full syllable like "yan" should
+        /// match canonical "yang" (since "yan" is a prefix of "yang"). This is
+        /// what makes "zmyan" match 怎么样 (zen me **yang**). Exact-only matching is
+        /// reserved for the `ping` fast path in `runScheme`, which the all-full
+        /// branch tries first to keep frequent full-pinyin input clean.
+        ///
+        /// Returns (matched, usedFuzzy).
+        private static func tokenMatches(token: SegmentToken,
+                                         syllable: String,
+                                         fuzzyEnabled: Bool) -> (Bool, Bool) {
+                let needle = token.text
+                if syllable.hasPrefix(needle) { return (true, false) }
+                if !fuzzyEnabled { return (false, false) }
+                for v in FuzzyPinyinExpander.expand(syllable) where v.hasPrefix(needle) {
+                        return (true, true)
+                }
+                if token.kind == .full {
+                        // Also try fuzzy variants of the canonical token form. "yan" has
+                        // no fuzzy variants but a token like "in" has "ing", so the user
+                        // typing "in" can match a stored "ing"-syllable.
+                        for v in FuzzyPinyinExpander.expand(token.origin) where syllable.hasPrefix(v) {
+                                return (true, true)
+                        }
+                }
+                return (false, false)
+        }
+
+        // MARK: - Shortcut fallback for non-letter / unparseable input
+
+        /// Last-resort fallback when segmentation is empty (e.g. input contains
+        /// characters with no `intercode`). Walks the raw text and treats every
+        /// valid initial as a 1-letter abbrev token.
+        private static func shortcutQueryFallback(text: String) -> [Candidate] {
+                var fakeScheme: SegmentScheme = []
+                for ch in text {
+                        guard ch.intercode != nil else { continue }
+                        let s = String(ch)
+                        if PinyinSegmentor.validAbbrevs.contains(s) {
+                                fakeScheme.append(SegmentToken(text: s, origin: s, kind: .abbrev))
+                        } else if PinyinSegmentor.zeroInitialVowels.contains(ch) {
+                                fakeScheme.append(SegmentToken(text: s, origin: s, kind: .full))
+                        }
+                }
+                guard !fakeScheme.isEmpty,
+                      let code = schemeShortcutCode(fakeScheme) else { return [] }
+                return shortcutSchemeQuery(scheme: fakeScheme,
+                                           shortcutCode: code,
+                                           input: text,
+                                           fuzzyEnabled: FuzzyPinyinSettings.isAnyEnabled,
+                                           isFallback: true)
+        }
+
+        // MARK: - Ping path (full pinyin exact match)
 
         private static func pinyinMatchInternal(text: String, input: String, isFuzzyMatch: Bool = false) -> [Candidate] {
                 let code: Int = text.deterministicHash
@@ -270,7 +349,6 @@ public struct Engine {
                 sqlite3_bind_int64(stmt, 1, Int64(code))
                 sqlite3_bind_int64(stmt, 2, 100)
 
-                // Calculate max syllable count from the input
                 let maxSyllableCount = PinyinSegmentor.maxSyllableCount(for: input)
 
                 var candidates: [Candidate] = []
@@ -281,146 +359,11 @@ public struct Engine {
                         let word: String = String(cString: wordPtr)
                         let pinyin: String = String(cString: pinyinPtr)
 
-                        // Filter: word character count must not exceed syllable count
                         guard word.count <= maxSyllableCount else { continue }
 
                         let candidate = Candidate(text: word, romanization: pinyin, input: input, mark: input, order: rowID, isFuzzyMatch: isFuzzyMatch)
                         candidates.append(candidate)
                 }
                 return candidates
-        }
-
-        private static func pinyinShortcutInternal(text: String, limit: Int) -> [Candidate] {
-                guard !text.isEmpty else { return [] }
-
-                // Calculate max syllable count from input
-                let maxSyllableCount = PinyinSegmentor.maxSyllableCount(for: text)
-
-                // Extract initials from the input for shortcut matching
-                // For "lh", we want to match words with pinyin starting with "l" and "h"
-                // For "lianh", we want to match "liang h..." so initials are "l" and "h"
-                let initials = extractInitials(from: text, maxCount: maxSyllableCount)
-                guard !initials.isEmpty else { return [] }
-
-                // Query using the combined shortcut code of all initials
-                // e.g. "wsm" -> ['w','s','m'] -> 423832, which directly matches 为什么
-                let combinedCode = initials.compactMap(\.intercode).combined()
-                guard combinedCode > 0 else { return [] }
-                guard let stmt = shortcutStatement else { return [] }
-                sqlite3_reset(stmt)
-                sqlite3_bind_int64(stmt, 1, Int64(combinedCode))
-                sqlite3_bind_int64(stmt, 2, Int64(limit * 2))  // Get more results to filter
-
-                var candidates: [Candidate] = []
-                while sqlite3_step(stmt) == SQLITE_ROW {
-                        let rowID: Int = Int(sqlite3_column_int64(stmt, 0))
-                        guard let wordPtr = sqlite3_column_text(stmt, 1) else { continue }
-                        guard let pinyinPtr = sqlite3_column_text(stmt, 2) else { continue }
-                        let word: String = String(cString: wordPtr)
-                        let pinyin: String = String(cString: pinyinPtr)
-
-                        // Filter: word character count must not exceed syllable count
-                        guard word.count <= maxSyllableCount else { continue }
-
-                        if initials.count == 1 {
-                                // Single initial: check if pinyin starts with the input
-                                guard pinyin.hasPrefix(text) else { continue }
-                        }
-
-                        let candidate = Candidate(text: word, romanization: pinyin, input: text, mark: text, order: rowID)
-                        candidates.append(candidate)
-                }
-                return candidates
-        }
-
-        /// Extract initials from input text based on syllable structure
-        /// For "lh" -> ["l", "h"]
-        /// For "lianh" -> ["l", "h"] (lian + h)
-        /// For "liang" -> ["l"]
-        private static func extractInitials(from text: String, maxCount: Int) -> [Character] {
-                guard !text.isEmpty else { return [] }
-
-                var initials: [Character] = []
-                let segmentation = PinyinSegmentor.segment(text: text)
-
-                if let bestScheme = segmentation.first, bestScheme.length > 0 {
-                        // Add initials from segmented syllables
-                        for token in bestScheme {
-                                if let firstChar = token.origin.first {
-                                        initials.append(firstChar)
-                                }
-                        }
-
-                        // Check for remaining text after segmentation
-                        let coveredLength = bestScheme.length
-                        if coveredLength < text.count {
-                                let remaining = String(text.dropFirst(coveredLength))
-                                // Add initials from remaining text
-                                initials.append(contentsOf: extractInitialsFromUnsegmented(remaining))
-                        }
-                } else {
-                        // No segmentation, extract initials directly
-                        initials = extractInitialsFromUnsegmented(text)
-                }
-
-                return Array(initials.prefix(maxCount))
-        }
-
-        /// Extract initials from text that couldn't be segmented
-        private static func extractInitialsFromUnsegmented(_ text: String) -> [Character] {
-                let singleLetterInitials = PinyinSegmentor.singleLetterInitials
-                let zeroInitialVowels = PinyinSegmentor.zeroInitialVowels
-
-                var initials: [Character] = []
-                var i = text.startIndex
-                var isAtStart = true
-
-                while i < text.endIndex {
-                        let char = text[i]
-
-                        // Check for two-letter initials (zh, ch, sh)
-                        let nextIndex = text.index(after: i)
-                        if nextIndex < text.endIndex {
-                                let twoChars = String(text[i...nextIndex])
-                                if twoChars == "zh" || twoChars == "ch" || twoChars == "sh" {
-                                        initials.append(char)  // Use first letter as initial
-                                        isAtStart = false
-                                        i = text.index(after: nextIndex)
-                                        while i < text.endIndex && !singleLetterInitials.contains(text[i]) {
-                                                i = text.index(after: i)
-                                        }
-                                        continue
-                                }
-                        }
-
-                        if singleLetterInitials.contains(char) {
-                                initials.append(char)
-                                isAtStart = false
-                                i = text.index(after: i)
-                                while i < text.endIndex && !singleLetterInitials.contains(text[i]) {
-                                        i = text.index(after: i)
-                                }
-                        } else if zeroInitialVowels.contains(char) && isAtStart {
-                                initials.append(char)
-                                isAtStart = false
-                                i = text.index(after: i)
-                                while i < text.endIndex && !singleLetterInitials.contains(text[i]) {
-                                        i = text.index(after: i)
-                                }
-                        } else {
-                                isAtStart = false
-                                i = text.index(after: i)
-                        }
-                }
-
-                return initials
-        }
-
-        /// Extract initials from a pinyin string (space-separated syllables)
-        /// "liang hong" -> ["l", "h"]
-        private static func extractPinyinInitials(from pinyin: String) -> [Character] {
-                return pinyin.split(separator: " ").compactMap { syllable in
-                        syllable.first
-                }
         }
 }

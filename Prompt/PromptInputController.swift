@@ -663,20 +663,28 @@ final class PromptInputController: IMKInputController, Sendable {
                         return []
                 }
 
-                // Find the first common syllable (matching buffer order, with fuzzy pinyin support)
-                let filterVariantSets: [Set<String>] = filterScheme.map { Set(FuzzyPinyinExpander.expand($0.origin)) }
-                let allFilterVariants: Set<String> = filterVariantSets.reduce(into: Set<String>()) { $0.formUnion($1) }
-                guard let commonBufferToken = bufferScheme.first(where: { token in
-                        let expanded = Set(FuzzyPinyinExpander.expand(token.origin))
-                        return !expanded.isDisjoint(with: allFilterVariants)
-                }) else {
+                // Find the first buffer token whose interpretation overlaps any filter
+                // token's interpretation. Tokens compare as predicates over real syllables:
+                // - .full token accepts any syllable in its fuzzy expansion;
+                // - .abbrev token accepts any syllable that starts with its `text`.
+                // Two tokens are "common" iff their predicate sets can both be satisfied
+                // by some real syllable.
+                var commonBufferToken: SegmentToken? = nil
+                outer: for bToken in bufferScheme {
+                        for fToken in filterScheme {
+                                if tokensCanOverlap(bToken, fToken) {
+                                        commonBufferToken = bToken
+                                        break outer
+                                }
+                        }
+                }
+                guard let commonBufferToken else {
                         os_log(.debug, log: logCF, "no common syllable, buffer=%{public}@, filter=%{public}@", "\(bufferScheme.map(\.origin))", "\(filterScheme.map(\.origin))")
                         return []
                 }
                 let commonSyllable = commonBufferToken.origin
                 let commonInput = commonBufferToken.text
-                let commonVariants = Set(FuzzyPinyinExpander.expand(commonSyllable))
-                os_log(.debug, log: logCF, "commonSyllable=%{public}@, commonInput=%{public}@, variants=%{public}@", commonSyllable, commonInput, "\(commonVariants)")
+                os_log(.debug, log: logCF, "commonBufferToken=(%{public}@, kind=%{public}@)", commonSyllable, commonBufferToken.kind == .abbrev ? "abbrev" : "full")
 
                 // Query filter candidates from Engine and UserLexicon
                 let filterEngineCandidates = Engine.suggest(text: filterText, segmentation: filterSegmentation, needsSymbols: false)
@@ -686,13 +694,14 @@ final class PromptInputController: IMKInputController, Sendable {
                         .filter({ $0.romanization.split(separator: " ").count == filterSyllableCount })
                 os_log(.debug, log: logCF, "filter query: engine=%d, user=%d, after syllable-count filter=%d", filterEngineCandidates.count, filterUserCandidates.count, allFilterCandidates.count)
 
-                // Extract allowed characters at the common syllable position from filter words
+                // Extract allowed characters at the common syllable position from filter
+                // words. The position-match rule depends on commonBufferToken.kind.
                 var allowedChars = Set<Character>()
                 for candidate in allFilterCandidates {
                         let pinyinParts = candidate.romanization.split(separator: " ")
                         let chars = Array(candidate.text)
                         for (i, pinyin) in pinyinParts.enumerated() where i < chars.count {
-                                if commonVariants.contains(String(pinyin)) {
+                                if syllableMatchesBufferToken(String(pinyin), token: commonBufferToken) {
                                         allowedChars.insert(chars[i])
                                 }
                         }
@@ -715,6 +724,41 @@ final class PromptInputController: IMKInputController, Sendable {
                         os_log(.debug, log: logCF, "  result[%d] %{public}@ (%{public}@)", i, c.text, c.romanization)
                 }
                 return result
+        }
+
+        /// True iff there exists a real syllable that satisfies both `a`'s and `b`'s
+        /// interpretation predicates. Used to detect a "common token" between buffer
+        /// and filter schemes in cross-reference filtering.
+        private func tokensCanOverlap(_ a: SegmentToken, _ b: SegmentToken) -> Bool {
+                switch (a.kind, b.kind) {
+                case (.full, .full):
+                        let ea = Set(FuzzyPinyinExpander.expand(a.origin))
+                        let eb = Set(FuzzyPinyinExpander.expand(b.origin))
+                        return !ea.isDisjoint(with: eb)
+                case (.full, .abbrev):
+                        return FuzzyPinyinExpander.expand(a.origin).contains(where: { $0.hasPrefix(b.text) })
+                case (.abbrev, .full):
+                        return FuzzyPinyinExpander.expand(b.origin).contains(where: { $0.hasPrefix(a.text) })
+                case (.abbrev, .abbrev):
+                        return a.text.hasPrefix(b.text) || b.text.hasPrefix(a.text)
+                }
+        }
+
+        /// True iff `syllable` (a stored space-split pinyin syllable) is matched by
+        /// `token`'s interpretation rule. `.full` requires equality (modulo fuzzy);
+        /// `.abbrev` requires prefix (modulo fuzzy).
+        private func syllableMatchesBufferToken(_ syllable: String, token: SegmentToken) -> Bool {
+                switch token.kind {
+                case .full:
+                        if syllable == token.origin { return true }
+                        if FuzzyPinyinExpander.expand(syllable).contains(token.origin) { return true }
+                        if FuzzyPinyinExpander.expand(token.origin).contains(syllable) { return true }
+                        return false
+                case .abbrev:
+                        if syllable.hasPrefix(token.text) { return true }
+                        if FuzzyPinyinExpander.expand(syllable).contains(where: { $0.hasPrefix(token.text) }) { return true }
+                        return false
+                }
         }
 
         private func updateMarkedText() {

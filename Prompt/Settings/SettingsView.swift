@@ -7,6 +7,7 @@ struct SettingsView: View {
 
         // macOS 12
         @State private var isGeneralSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .general
+        @State private var isVoiceSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .voice
         @State private var isFuzzyPinyinSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .fuzzyPinyin
         @State private var isAboutViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .about
 
@@ -15,6 +16,7 @@ struct SettingsView: View {
                         NavigationSplitView {
                                 List(selection: $selection) {
                                         Label("设置", systemImage: "gear").tag(SettingsSidebarRow.general)
+                                        Label("语音输入", systemImage: "mic").tag(SettingsSidebarRow.voice)
                                         Label("模糊音", systemImage: "speaker.wave.2").tag(SettingsSidebarRow.fuzzyPinyin)
                                         Label("关于", systemImage: "info.circle").tag(SettingsSidebarRow.about)
                                 }
@@ -30,6 +32,9 @@ struct SettingsView: View {
                                 List {
                                         NavigationLink(destination: GeneralSettingsView(), isActive: $isGeneralSettingsViewActive) {
                                                 Label("设置", systemImage: "gear")
+                                        }
+                                        NavigationLink(destination: VoiceSettingsView(), isActive: $isVoiceSettingsViewActive) {
+                                                Label("语音输入", systemImage: "mic")
                                         }
                                         NavigationLink(destination: FuzzyPinyinSettingsView(), isActive: $isFuzzyPinyinSettingsViewActive) {
                                                 Label("模糊音", systemImage: "speaker.wave.2")
@@ -51,6 +56,8 @@ struct SettingsView: View {
                 switch selection {
                 case .general:
                         GeneralSettingsView()
+                case .voice:
+                        VoiceSettingsView()
                 case .fuzzyPinyin:
                         FuzzyPinyinSettingsView()
                 case .about:
@@ -65,6 +72,7 @@ struct SettingsView: View {
 
 enum SettingsSidebarRow: Int, Hashable, Identifiable, CaseIterable {
         case general
+        case voice
         case fuzzyPinyin
         case about
         var id: Int {

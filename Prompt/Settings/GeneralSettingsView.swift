@@ -10,79 +10,89 @@ struct GeneralSettingsView: View {
         @State private var isInputMemoryOn: Bool = AppSettings.isInputMemoryOn
         @State private var defaultInputMode: InputMethodMode = AppSettings.defaultInputModeOnActivation
         @State private var useCapsLockForMandarin: Bool = AppSettings.useCapsLockForMandarin
+        @State private var excludedApps: [String] = AppSettings.appsExcludedFromInputMemory
+        @State private var newExcludedBundleID: String = ""
 
         @State private var isClearInputMemoryConfirmDialogPresented: Bool = false
         @State private var isPerformingClearInputMemory: Bool = false
         @State private var clearInputMemoryProgress: Double = 0
         private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
-        @State private var whisperModelPath: String = AppSettings.whisperModelPath
-        @State private var whisperModelLoadState: WhisperModelLoadState = AppSettings.whisperModelLoadState
-
-        @State private var llamaModelPath: String = AppSettings.llamaModelPath
-        @State private var correctorServerState: CorrectorServerState = AppSettings.correctorServerState
-        @State private var correctorStatusText: String = {
-                switch AppSettings.correctorServerState {
-                case .notConfigured: return "未设置"
-                case .starting: return "启动中…"
-                case .running: return "运行中"
-                case .stopped: return "已停止"
-                case .failed: return "启动失败"
-                }
-        }()
-
-        @ViewBuilder
-        private var whisperStatusDot: some View {
-                switch whisperModelLoadState {
-                case .notConfigured:
-                        Circle().fill(Color.secondary).frame(width: 8, height: 8)
-                case .loading:
-                        Circle().fill(Color.yellow).frame(width: 8, height: 8)
-                case .loaded:
-                        Circle().fill(Color.green).frame(width: 8, height: 8)
-                case .failed:
-                        Circle().fill(Color.red).frame(width: 8, height: 8)
-                }
+        private func refreshExcludedApps() {
+                excludedApps = AppSettings.appsExcludedFromInputMemory
         }
 
-        private var whisperStatusText: String {
-                switch whisperModelLoadState {
-                case .notConfigured: return "未设置"
-                case .loading:      return "加载中…"
-                case .loaded:       return "已加载"
-                case .failed:       return "加载失败（请检查路径或 .bin 文件）"
+        private func runningRegularApps() -> [NSRunningApplication] {
+                NSWorkspace.shared.runningApplications
+                        .filter({ $0.activationPolicy == .regular })
+                        .filter({ ($0.bundleIdentifier ?? "").isEmpty == false })
+                        .sorted(by: { ($0.localizedName ?? "") < ($1.localizedName ?? "") })
+        }
+
+        private func appDisplayName(for bundleID: String) -> String {
+                if let running = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first,
+                   let name = running.localizedName {
+                        return "\(name) (\(bundleID))"
                 }
+                if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID),
+                   let values = try? url.resourceValues(forKeys: [.localizedNameKey]),
+                   let name = values.localizedName {
+                        return "\(name) (\(bundleID))"
+                }
+                return bundleID
         }
 
         @ViewBuilder
-        private var correctorStatusDot: some View {
-                switch correctorServerState {
-                case .notConfigured:
-                        Circle().fill(Color.secondary).frame(width: 8, height: 8)
-                case .starting:
-                        Circle().fill(Color.yellow).frame(width: 8, height: 8)
-                case .running:
-                        Circle().fill(Color.green).frame(width: 8, height: 8)
-                case .stopped:
-                        Circle().fill(Color.orange).frame(width: 8, height: 8)
-                case .failed:
-                        Circle().fill(Color.red).frame(width: 8, height: 8)
-                }
-        }
-
-        private func applyCorrectorModelPath() {
-                AppSettings.updateLlamaModelPath(to: llamaModelPath)
-                NotificationCenter.default.post(name: .correctorPathsDidChange, object: nil)
-        }
-
-        private func applyWhisperModelPath() {
-                AppSettings.updateWhisperModelPath(to: whisperModelPath)
-                if whisperModelPath.isEmpty {
-                        whisperModelLoadState = .notConfigured
-                        NotificationCenter.default.post(name: .whisperModelPathDidChange, object: nil)
-                } else {
-                        whisperModelLoadState = .loading
-                        NotificationCenter.default.post(name: .whisperModelPathDidChange, object: nil)
+        private var excludedAppsSection: some View {
+                VStack(alignment: .leading, spacing: 8) {
+                        Text("不记忆输入法状态的 App")
+                                .font(.headline)
+                        Text("这些 app 每次激活都会重置为默认输入模式，忽略上次切换记录")
+                                .font(.caption)
+                                .foregroundStyle(Color.secondary)
+                        if excludedApps.isEmpty {
+                                Text("（暂无）")
+                                        .font(.caption)
+                                        .foregroundStyle(Color.secondary)
+                        } else {
+                                ForEach(excludedApps, id: \.self) { bundleID in
+                                        HStack {
+                                                Text(appDisplayName(for: bundleID))
+                                                        .font(.callout)
+                                                Spacer()
+                                                Button {
+                                                        AppSettings.removeAppExcludedFromInputMemory(bundleID)
+                                                        refreshExcludedApps()
+                                                } label: {
+                                                        Image(systemName: "minus.circle.fill")
+                                                                .foregroundStyle(Color.red)
+                                                }
+                                                .buttonStyle(.plain)
+                                        }
+                                }
+                        }
+                        HStack {
+                                NativeTextField(placeholder: "Bundle ID 例如 com.apple.Safari", text: $newExcludedBundleID)
+                                        .frame(height: 22)
+                                Button("添加") {
+                                        AppSettings.addAppExcludedFromInputMemory(newExcludedBundleID)
+                                        newExcludedBundleID = ""
+                                        refreshExcludedApps()
+                                }
+                                .disabled(newExcludedBundleID.trimmingCharacters(in: .whitespaces).isEmpty)
+                                Menu("从运行中的 App 选择") {
+                                        ForEach(runningRegularApps(), id: \.processIdentifier) { app in
+                                                if let bundleID = app.bundleIdentifier {
+                                                        Button(app.localizedName ?? bundleID) {
+                                                                AppSettings.addAppExcludedFromInputMemory(bundleID)
+                                                                refreshExcludedApps()
+                                                        }
+                                                        .disabled(excludedApps.contains(bundleID))
+                                                }
+                                        }
+                                }
+                                .frame(maxWidth: 180)
+                        }
                 }
         }
 
@@ -116,6 +126,8 @@ struct GeneralSettingsView: View {
                                         Spacer()
                                 }
                                 .block()
+                                excludedAppsSection
+                                        .block()
                                 HStack {
                                         Toggle("使用 Caps Lock 键切换到中文", isOn: $useCapsLockForMandarin)
                                                 .toggleStyle(.switch)
@@ -182,92 +194,6 @@ struct GeneralSettingsView: View {
                                         }
                                 }
                                 .block()
-                                VStack(alignment: .leading, spacing: 8) {
-                                        HStack(spacing: 6) {
-                                                Text("语音识别模型路径（.mlmodelc）")
-                                                        .font(.headline)
-                                                whisperStatusDot
-                                                Text(whisperStatusText)
-                                                        .font(.caption)
-                                                        .foregroundStyle(Color.secondary)
-                                        }
-                                        NativeTextField(placeholder: "粘贴 .mlmodelc 文件路径", text: $whisperModelPath)
-                                                .frame(height: 22)
-                                        HStack {
-                                                Button("应用") {
-                                                        applyWhisperModelPath()
-                                                }
-                                                if !whisperModelPath.isEmpty {
-                                                        Button("清除") {
-                                                                whisperModelPath = ""
-                                                                AppSettings.updateWhisperModelPath(to: "")
-                                                                whisperModelLoadState = .notConfigured
-                                                                NotificationCenter.default.post(name: .whisperModelPathDidChange, object: nil)
-                                                        }
-                                                        .foregroundStyle(Color.red)
-                                                }
-                                                Spacer()
-                                        }
-                                        Text("在 Finder 中 Option+右键 → 「将 XX 拷贝为路径名」，粘贴后点应用")
-                                                .font(.caption)
-                                                .foregroundStyle(Color.secondary)
-                                }
-                                .block()
-                                .onReceive(NotificationCenter.default.publisher(for: .whisperModelLoadStateDidChange)) { notification in
-                                        if let raw = notification.userInfo?["state"] as? String,
-                                           let state = WhisperModelLoadState(rawValue: raw) {
-                                                whisperModelLoadState = state
-                                        }
-                                }
-                                .textSelection(.enabled)
-                                VStack(alignment: .leading, spacing: 8) {
-                                        HStack(spacing: 6) {
-                                                Text("语音纠错服务")
-                                                        .font(.headline)
-                                                correctorStatusDot
-                                                Text(correctorStatusText)
-                                                        .font(.caption)
-                                                        .foregroundStyle(Color.secondary)
-                                        }
-                                        NativeTextField(placeholder: "粘贴 .gguf 模型文件路径", text: $llamaModelPath)
-                                                .frame(height: 22)
-                                        HStack {
-                                                Button("应用") {
-                                                        applyCorrectorModelPath()
-                                                }
-                                                if correctorServerState == .running {
-                                                        Button("停止服务") {
-                                                                CorrectorEngine.shared.stopServer()
-                                                        }
-                                                        .foregroundStyle(Color.red)
-                                                } else if correctorServerState != .starting {
-                                                        Button("启动服务") {
-                                                                applyCorrectorModelPath()
-                                                                Task {
-                                                                        await CorrectorEngine.shared.startServer(userInitiated: true)
-                                                                }
-                                                        }
-                                                        .disabled(llamaModelPath.isEmpty)
-                                                }
-                                                Spacer()
-                                        }
-                                        Text("语音识别后自动调用 LLM 纠正文本错误。只需提供 GGUF 模型文件路径。")
-                                                .font(.caption)
-                                                .foregroundStyle(Color.secondary)
-                                }
-                                .block()
-                                .onReceive(NotificationCenter.default.publisher(for: .correctorServerStateDidChange)) { notification in
-                                        if let raw = notification.userInfo?["state"] as? String,
-                                           let state = CorrectorServerState(rawValue: raw) {
-                                                correctorServerState = state
-                                        }
-                                        if let status = notification.userInfo?["status"] as? String, !status.isEmpty {
-                                                correctorStatusText = status
-                                        }
-                                }
-                                .textSelection(.enabled)
-                                MicrophoneTestView()
-                                        .block()
                         }
                         .padding()
                         .frame(minWidth: 300)
@@ -278,7 +204,7 @@ struct GeneralSettingsView: View {
 }
 
 /// NSTextField wrapper that reliably handles paste (Cmd+V) regardless of IME state.
-private struct NativeTextField: NSViewRepresentable {
+struct NativeTextField: NSViewRepresentable {
         let placeholder: String
         @Binding var text: String
 

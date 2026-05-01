@@ -141,19 +141,25 @@ final class PromptInputController: IMKInputController, Sendable {
                         inputStage = .standby
                         isPunctuationFullWidth = true
                         clearShiftTapState()
-                        // Apply the user-configured default mode only on the very first activation
-                        // of this controller instance. IMK keeps one controller per text-input
-                        // session, so subsequent activate/deactivate cycles (focus leaving and
-                        // returning to the same text field) should preserve the runtime mode the
-                        // user shift-toggled to. Switching to another input method tears the
-                        // controller down, so the next launch naturally starts from the default.
-                        if !hasInitializedInputForm {
-                                let defaultForm: InputForm = AppSettings.defaultInputModeOnActivation.isMandarin ? .mandarin : .transparent
-                                updateInputForm(to: defaultForm)
-                                hasInitializedInputForm = true
-                        } else {
-                                updateInputForm(to: inputForm)
-                        }
+                        // Resolve the input form to apply on activation:
+                        //   - If host bundle ID is on the user's excluded list → always default.
+                        //   - Else if we have a previously-saved form for this bundle → restore it.
+                        //   - Else → user-configured default.
+                        let bundleID: String? = client?.bundleIdentifier()
+                        let isExcluded: Bool = bundleID.map(AppSettings.isAppExcludedFromInputMemory) ?? false
+                        let resolvedForm: InputForm = {
+                                if isExcluded {
+                                        return AppSettings.defaultInputModeOnActivation.isMandarin ? .mandarin : .transparent
+                                }
+                                if let key = bundleID, let stored = Self.bundleInputForms[key] {
+                                        return stored
+                                }
+                                return AppSettings.defaultInputModeOnActivation.isMandarin ? .mandarin : .transparent
+                        }()
+                        updateInputForm(to: resolvedForm)
+                        // Seed the focus-change tracker so the per-event sync in handle()
+                        // doesn't fire spuriously on the first event after activate.
+                        lastObservedWindowKey = Self.frontmostWindowKey(for: client)
                         currentClient = client
                         // Try to update cursor from new client; if invalid, keep last known good position
                         if let block = client?.cursorBlock, isValidCursorBlock(block) {
@@ -192,6 +198,15 @@ final class PromptInputController: IMKInputController, Sendable {
                         if inputForm.isOptions {
                                 updateInputForm()
                         }
+                        // Remember this app's current input mode so the next activate can
+                        // restore it. Skip excluded apps (always reset to default) and
+                        // skip .options (transient — already cleaned up above).
+                        if let bundleID = client?.bundleIdentifier(),
+                           !inputForm.isOptions,
+                           !AppSettings.isAppExcludedFromInputMemory(bundleID) {
+                                Self.bundleInputForms[bundleID] = inputForm
+                        }
+                        lastObservedWindowKey = nil
                         guard inputStage != .idle else { return }
                         if inputStage.isBuffering {
                                 clearBufferText()
@@ -323,10 +338,68 @@ final class PromptInputController: IMKInputController, Sendable {
         private lazy var appContext: AppContext = AppContext()
 
         private lazy var inputForm: InputForm = InputForm.matchInputMethodMode()
-        // Set to true the first time activateServer runs on this instance. Used to decide
-        // whether to apply AppSettings.defaultInputModeOnActivation (first activation) or
-        // preserve the existing runtime inputForm (subsequent activations on the same field).
-        private var hasInitializedInputForm: Bool = false
+        // Per-app input mode memory, shared across all controller instances in this IME
+        // process. Keyed by host bundle identifier. Apps listed in
+        // AppSettings.appsExcludedFromInputMemory are never written to or read from this
+        // map — they always use the configured default. .options is never stored.
+        private static var bundleInputForms: [String: InputForm] = [:]
+
+        /// Last frontmost-window key seen by this controller. Used by excluded apps to
+        /// detect inter-window focus changes (which the host does NOT surface as
+        /// activate/deactivate) and reset to default on each detected change.
+        private var lastObservedWindowKey: String? = nil
+
+        /// Compose a "bundleID:CGWindowID" key for the host's currently-frontmost window,
+        /// or just the bundle ID when the window number can't be resolved. Window ID is
+        /// derived from `CGWindowListCopyWindowInfo` filtered to the host PID, taking
+        /// the first match in front-to-back z-order.
+        private static func frontmostWindowKey(for client: InputClient?) -> String? {
+                guard let client else { return nil }
+                let bundleID: String = client.bundleIdentifier() ?? "unknown"
+                guard let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier else {
+                        return bundleID
+                }
+                guard let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
+                        return bundleID
+                }
+                let front = windows.first { window in
+                        (window[kCGWindowOwnerPID as String] as? pid_t) == pid
+                }
+                guard let windowNumber = front?[kCGWindowNumber as String] as? UInt32 else {
+                        return bundleID
+                }
+                return "\(bundleID):\(windowNumber)"
+        }
+
+        /// For excluded apps only: detect frontmost-window changes per-event and reset
+        /// inputForm to the configured default whenever focus moves to a different
+        /// window. Skipped while the user is mid-buffering so we don't interrupt an
+        /// in-progress pinyin input.
+        private func resetExcludedAppOnFocusChangeIfNeeded(client: InputClient?) {
+                let bundle: String? = client?.bundleIdentifier()
+                let frontmostBundle: String? = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+                let excludedList = AppSettings.appsExcludedFromInputMemory
+                let bundleMatched: Bool = bundle.map(AppSettings.isAppExcludedFromInputMemory) ?? false
+                let frontmostMatched: Bool = frontmostBundle.map(AppSettings.isAppExcludedFromInputMemory) ?? false
+                logger.debug("resetCheck: clientBundle=\(bundle ?? "nil"), frontmost=\(frontmostBundle ?? "nil"), excludedList=\(excludedList), bundleMatched=\(bundleMatched), frontmostMatched=\(frontmostMatched)")
+                // Match either the client-reported bundle ID or the frontmost-app bundle ID,
+                // since some hosts return a delegate/wrapper bundle from client.bundleIdentifier().
+                let activeBundle: String? = bundleMatched ? bundle : (frontmostMatched ? frontmostBundle : nil)
+                guard let activeBundle else { return }
+                let currentKey = Self.frontmostWindowKey(for: client)
+                guard currentKey != lastObservedWindowKey else {
+                        logger.debug("excluded[\(activeBundle)]: window unchanged (\(currentKey ?? "nil"))")
+                        return
+                }
+                logger.debug("excluded[\(activeBundle)]: window \(self.lastObservedWindowKey ?? "nil") -> \(currentKey ?? "nil"), buffering=\(self.inputStage.isBuffering), inputForm=\(String(describing: self.inputForm))")
+                lastObservedWindowKey = currentKey
+                guard !inputStage.isBuffering else { return }
+                let defaultForm: InputForm = AppSettings.defaultInputModeOnActivation.isMandarin ? .mandarin : .transparent
+                if inputForm != defaultForm {
+                        updateInputForm(to: defaultForm)
+                        logger.debug("excluded[\(activeBundle)]: reset to \(String(describing: defaultForm))")
+                }
+        }
         func updateInputForm(to form: InputForm? = nil) {
                 let newForm = form ?? InputForm.matchInputMethodMode()
                 logger.debug("updateInputForm: old=\(String(describing: self.inputForm)), new=\(String(describing: newForm)), Options.inputMethodMode=\(String(describing: Options.inputMethodMode))")
@@ -832,6 +905,14 @@ final class PromptInputController: IMKInputController, Sendable {
         }
         override func handle(_ event: NSEvent!, client sender: Any!) -> Bool {
                 guard let event = event else { return false }
+                // For excluded apps: detect per-event focus changes (hosts often don't
+                // fire activate/deactivate when focus moves between windows in the same
+                // app) and reset inputForm to default. Skip on keyUp to halve the
+                // CGWindowList queries.
+                if event.type != .keyUp {
+                        let eventClient: InputClient? = (sender as? InputClient) ?? currentClient
+                        resetExcludedAppOnFocusChangeIfNeeded(client: eventClient)
+                }
                 // keyUp: stop recording when Space is released
                 if event.type == .keyUp {
                         if event.keyCode == KeyCode.Special.VK_SPACE && (isIntendingToRecord || Self.sharedVoiceRecorder.isRecording) {

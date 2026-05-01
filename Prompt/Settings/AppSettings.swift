@@ -139,6 +139,38 @@ struct AppSettings: Sendable {
                 UserDefaults.standard.set(mode.rawValue, forKey: SettingsKey.DefaultInputModeOnActivation)
         }
 
+        // MARK: - Apps excluded from input mode memory
+
+        /// 这些 app 不会记忆输入法状态，每次激活都回到默认输入模式。
+        /// Stored in UserDefaults as a comma-separated bundle-ID list.
+        private(set) static var appsExcludedFromInputMemory: [String] = {
+                guard let saved = UserDefaults.standard.string(forKey: SettingsKey.AppsExcludedFromInputMemory) else { return [] }
+                return saved
+                        .split(separator: ",")
+                        .map({ $0.trimmingCharacters(in: .whitespaces) })
+                        .filter({ !$0.isEmpty })
+                        .uniqued()
+        }()
+        static func isAppExcludedFromInputMemory(_ bundleID: String) -> Bool {
+                return appsExcludedFromInputMemory.contains(bundleID)
+        }
+        static func addAppExcludedFromInputMemory(_ bundleID: String) {
+                let trimmed = bundleID.trimmingCharacters(in: .whitespaces)
+                guard !trimmed.isEmpty else { return }
+                guard !appsExcludedFromInputMemory.contains(trimmed) else { return }
+                appsExcludedFromInputMemory = appsExcludedFromInputMemory + [trimmed]
+                persistAppsExcludedFromInputMemory()
+        }
+        static func removeAppExcludedFromInputMemory(_ bundleID: String) {
+                guard appsExcludedFromInputMemory.contains(bundleID) else { return }
+                appsExcludedFromInputMemory = appsExcludedFromInputMemory.filter({ $0 != bundleID })
+                persistAppsExcludedFromInputMemory()
+        }
+        private static func persistAppsExcludedFromInputMemory() {
+                let joined = appsExcludedFromInputMemory.joined(separator: ",")
+                UserDefaults.standard.set(joined, forKey: SettingsKey.AppsExcludedFromInputMemory)
+        }
+
         // MARK: - Caps Lock to Mandarin
 
         /// 是否使用 Caps Lock 键切换到中文输入
@@ -169,6 +201,7 @@ struct SettingsKey {
         static let LlamaModelPath: String = "LlamaModelPath"
         static let DefaultInputModeOnActivation: String = "DefaultInputModeOnActivation"
         static let UseCapsLockForMandarin: String = "UseCapsLockForMandarin"
+        static let AppsExcludedFromInputMemory: String = "AppsExcludedFromInputMemory"
 }
 
 extension Notification.Name {

@@ -138,7 +138,11 @@ A clean single tap of either Shift key (no other key/modifier in between, hold <
 
 ### Default Input Mode on Activation
 
-`AppSettings.defaultInputModeOnActivation: InputMethodMode` (persisted, default `.mandarin`) controls which mode `activateServer` selects when the IME is (re)activated by the system. The hardcoded `updateInputForm(to: .mandarin)` was replaced with `defaultForm = AppSettings.defaultInputModeOnActivation.isMandarin ? .mandarin : .transparent`. User-controllable from General Settings via a Picker. Important: Shift-tap toggles `inputForm` *at runtime only* — it does NOT update this setting, so re-activation always returns to the configured default.
+`AppSettings.defaultInputModeOnActivation: InputMethodMode` (persisted, default `.mandarin`) controls which mode is selected on the **first** `activateServer` of a given controller instance. User-controllable from General Settings via a Picker.
+
+Per-text-field memory: each `IMKInputController` instance corresponds to one input session (typically one text field). A `hasInitializedInputForm` flag is set after the first activation; subsequent activate/deactivate cycles on the same instance (focus leaving and returning to the same text field) preserve the runtime `inputForm` rather than overriding it back to the default. Switching to another input method tears the controller down, so the next session starts fresh from the configured default.
+
+Shift-tap toggles `inputForm` at runtime only — it does NOT update this setting.
 
 ### Voice Recognition Feature
 

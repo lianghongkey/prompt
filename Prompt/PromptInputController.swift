@@ -141,11 +141,19 @@ final class PromptInputController: IMKInputController, Sendable {
                         inputStage = .standby
                         isPunctuationFullWidth = true
                         clearShiftTapState()
-                        // Start a freshly-activated session in the user-configured default mode.
-                        // Switching back from another input method should not remember
-                        // the previous shift-toggled English/Chinese state.
-                        let defaultForm: InputForm = AppSettings.defaultInputModeOnActivation.isMandarin ? .mandarin : .transparent
-                        updateInputForm(to: defaultForm)
+                        // Apply the user-configured default mode only on the very first activation
+                        // of this controller instance. IMK keeps one controller per text-input
+                        // session, so subsequent activate/deactivate cycles (focus leaving and
+                        // returning to the same text field) should preserve the runtime mode the
+                        // user shift-toggled to. Switching to another input method tears the
+                        // controller down, so the next launch naturally starts from the default.
+                        if !hasInitializedInputForm {
+                                let defaultForm: InputForm = AppSettings.defaultInputModeOnActivation.isMandarin ? .mandarin : .transparent
+                                updateInputForm(to: defaultForm)
+                                hasInitializedInputForm = true
+                        } else {
+                                updateInputForm(to: inputForm)
+                        }
                         currentClient = client
                         // Try to update cursor from new client; if invalid, keep last known good position
                         if let block = client?.cursorBlock, isValidCursorBlock(block) {
@@ -315,6 +323,10 @@ final class PromptInputController: IMKInputController, Sendable {
         private lazy var appContext: AppContext = AppContext()
 
         private lazy var inputForm: InputForm = InputForm.matchInputMethodMode()
+        // Set to true the first time activateServer runs on this instance. Used to decide
+        // whether to apply AppSettings.defaultInputModeOnActivation (first activation) or
+        // preserve the existing runtime inputForm (subsequent activations on the same field).
+        private var hasInitializedInputForm: Bool = false
         func updateInputForm(to form: InputForm? = nil) {
                 let newForm = form ?? InputForm.matchInputMethodMode()
                 logger.debug("updateInputForm: old=\(String(describing: self.inputForm)), new=\(String(describing: newForm)), Options.inputMethodMode=\(String(describing: Options.inputMethodMode))")

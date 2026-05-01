@@ -240,11 +240,15 @@ final class PromptInputController: IMKInputController, Sendable {
         // Tracks the previous overall .shift state, so we only react on real transitions
         // and ignore duplicate / no-op flagsChanged events.
         private var wasShiftHeld: Bool = false
+        // Tracks the previous Caps Lock state so we only react on real transitions.
+        // Synced from the OS on activate to avoid spurious mode switches on first event.
+        private var wasCapsLockOn: Bool = false
         private func clearShiftTapState() {
                 pendingShiftKey = nil
                 shiftDownTime = nil
                 shiftTapInvalidated = false
                 wasShiftHeld = false
+                wasCapsLockOn = NSEvent.modifierFlags.contains(.capsLock)
         }
         private func switchInputMethodMode(to mode: InputMethodMode) {
                 // Runtime-only switch. Do NOT persist to Options — every time the IME
@@ -832,6 +836,30 @@ final class PromptInputController: IMKInputController, Sendable {
                         let isAnyShiftHeld: Bool = event.modifierFlags.contains(.shift)
                         if !isAnyShiftHeld {
                                 Self.sharedVoiceRecorder.stopRecording()
+                        }
+                        // Caps Lock → Mandarin (when enabled in settings).
+                        // Detect the .capsLock bit transition across ANY flagsChanged event:
+                        // IMK does not always deliver a separate event with
+                        // keyCode == VK_CAPS_LOCK when caps lock state changes.
+                        // After acting we forcibly clear the OS Caps Lock state via IOKit,
+                        // so the LED never stays on and subsequent letters aren't uppercased.
+                        let isCapsOn: Bool = event.modifierFlags.contains(.capsLock)
+                        if isCapsOn != wasCapsLockOn {
+                                wasCapsLockOn = isCapsOn
+                                logger.debug("capsLock transition: now=\(isCapsOn), keyCode=\(event.keyCode), enabled=\(AppSettings.useCapsLockForMandarin)")
+                                if AppSettings.useCapsLockForMandarin
+                                        && !Self.sharedVoiceRecorder.isRecording
+                                        && !isIntendingToRecord
+                                        && !inputForm.isOptions {
+                                        if !inputStage.isBuffering {
+                                                switchInputMethodMode(to: .mandarin)
+                                        }
+                                        // Always undo the OS-level toggle so caps lock never sticks.
+                                        if isCapsOn {
+                                                CapsLockState.forceOff()
+                                                wasCapsLockOn = false
+                                        }
+                                }
                         }
                         // Currently-held non-shift modifiers (Control / Option / Command / Caps Lock / fn).
                         let nonShiftModifierHeld: Bool = event.modifierFlags.contains(.control)

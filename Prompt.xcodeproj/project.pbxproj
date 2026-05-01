@@ -22,6 +22,7 @@
 		371B27CB2B3EB93A00EC1271 /* UserLexicon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27A52B3EB93900EC1271 /* UserLexicon.swift */; };
 		C2DB0967FDF4443FB5F59239 /* VoiceRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39C801959FF5413BAF5C25EC /* VoiceRecorder.swift */; };
 		CC000001CC000001CC000001 /* CorrectorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002CC000002CC000002 /* CorrectorEngine.swift */; };
+		CC100001CC100001CC100001 /* CapsLockState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC100002CC100002CC100002 /* CapsLockState.swift */; };
 		DD000001DD000001DD000001 /* llama-server in Resources */ = {isa = PBXBuildFile; fileRef = DD000002DD000002DD000002 /* llama-server */; };
 		371B27CC2B3EB93A00EC1271 /* DisplayCandidate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27A72B3EB93900EC1271 /* DisplayCandidate.swift */; };
 		371B27CD2B3EB93A00EC1271 /* Comment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27A82B3EB93900EC1271 /* Comment.swift */; };
@@ -102,6 +103,7 @@
 		371B27A52B3EB93900EC1271 /* UserLexicon.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserLexicon.swift; sourceTree = "<group>"; };
 		39C801959FF5413BAF5C25EC /* VoiceRecorder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VoiceRecorder.swift; sourceTree = "<group>"; };
 		CC000002CC000002CC000002 /* CorrectorEngine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CorrectorEngine.swift; sourceTree = "<group>"; };
+		CC100002CC100002CC100002 /* CapsLockState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CapsLockState.swift; sourceTree = "<group>"; };
 		371B27A72B3EB93900EC1271 /* DisplayCandidate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DisplayCandidate.swift; sourceTree = "<group>"; };
 		371B27A82B3EB93900EC1271 /* Comment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Comment.swift; sourceTree = "<group>"; };
 		371B27A92B3EB93900EC1271 /* Language.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Language.swift; sourceTree = "<group>"; };
@@ -223,6 +225,7 @@
 				371B27A52B3EB93900EC1271 /* UserLexicon.swift */,
 				39C801959FF5413BAF5C25EC /* VoiceRecorder.swift */,
 				CC000002CC000002CC000002 /* CorrectorEngine.swift */,
+				CC100002CC100002CC100002 /* CapsLockState.swift */,
 				371B27C22B3EB93A00EC1271 /* VisualEffect.swift */,
 				371B27AA2B3EB93A00EC1271 /* AppContext.swift */,
 				371B27BA2B3EB93A00EC1271 /* PageTransformation.swift */,
@@ -524,6 +527,7 @@
 				371B27CB2B3EB93A00EC1271 /* UserLexicon.swift in Sources */,
 				C2DB0967FDF4443FB5F59239 /* VoiceRecorder.swift in Sources */,
 				CC000001CC000001CC000001 /* CorrectorEngine.swift in Sources */,
+				CC100001CC100001CC100001 /* CapsLockState.swift in Sources */,
 				371B27D72B3EB93A00EC1271 /* NotationView.swift in Sources */,
 				371B27D02B3EB93A00EC1271 /* Direction.swift in Sources */,
 				37279F3B2B62873600CC50A4 /* AppSettings.swift in Sources */,

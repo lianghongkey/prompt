@@ -138,6 +138,26 @@ struct AppSettings: Sendable {
                 defaultInputModeOnActivation = mode
                 UserDefaults.standard.set(mode.rawValue, forKey: SettingsKey.DefaultInputModeOnActivation)
         }
+
+        // MARK: - Caps Lock to Mandarin
+
+        /// 是否使用 Caps Lock 键切换到中文输入
+        private(set) static var useCapsLockForMandarin: Bool = {
+                let savedValue: Int = UserDefaults.standard.integer(forKey: SettingsKey.UseCapsLockForMandarin)
+                switch savedValue {
+                case 2:
+                        return true
+                case 0, 1:
+                        return false
+                default:
+                        return false
+                }
+        }()
+        static func updateUseCapsLockForMandarin(to isOn: Bool) {
+                useCapsLockForMandarin = isOn
+                let value: Int = isOn ? 2 : 1
+                UserDefaults.standard.set(value, forKey: SettingsKey.UseCapsLockForMandarin)
+        }
 }
 
 struct SettingsKey {
@@ -148,6 +168,7 @@ struct SettingsKey {
         static let WhisperModelPath: String = "WhisperModelPath"
         static let LlamaModelPath: String = "LlamaModelPath"
         static let DefaultInputModeOnActivation: String = "DefaultInputModeOnActivation"
+        static let UseCapsLockForMandarin: String = "UseCapsLockForMandarin"
 }
 
 extension Notification.Name {

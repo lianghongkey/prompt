@@ -9,6 +9,7 @@ struct GeneralSettingsView: View {
         @State private var isEmojiSuggestionsOn: Bool = Options.isEmojiSuggestionsOn
         @State private var isInputMemoryOn: Bool = AppSettings.isInputMemoryOn
         @State private var defaultInputMode: InputMethodMode = AppSettings.defaultInputModeOnActivation
+        @State private var useCapsLockForMandarin: Bool = AppSettings.useCapsLockForMandarin
 
         @State private var isClearInputMemoryConfirmDialogPresented: Bool = false
         @State private var isPerformingClearInputMemory: Bool = false
@@ -112,6 +113,16 @@ struct GeneralSettingsView: View {
                                         .onChange(of: defaultInputMode) { newMode in
                                                 AppSettings.updateDefaultInputModeOnActivation(to: newMode)
                                         }
+                                        Spacer()
+                                }
+                                .block()
+                                HStack {
+                                        Toggle("使用 Caps Lock 键切换到中文", isOn: $useCapsLockForMandarin)
+                                                .toggleStyle(.switch)
+                                                .scaledToFit()
+                                                .onChange(of: useCapsLockForMandarin) { newState in
+                                                        AppSettings.updateUseCapsLockForMandarin(to: newState)
+                                                }
                                         Spacer()
                                 }
                                 .block()

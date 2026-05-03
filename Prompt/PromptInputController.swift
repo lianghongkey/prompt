@@ -297,6 +297,15 @@ final class PromptInputController: IMKInputController, Sendable {
                 // we want to start fresh in Mandarin, not remember the last toggled state.
                 let newForm: InputForm = mode.isMandarin ? .mandarin : .transparent
                 updateInputForm(to: newForm)
+                // Eagerly mirror to the per-app memory so a sibling instance's
+                // activateServer (multi-instance hosts like Safari/Notes/Mail can fire
+                // activate on a new instance BEFORE this one's deactivate runs) sees
+                // the just-toggled state. Without this the new instance reads stale /
+                // missing data and silently reverts to the configured default.
+                if let bundleID = (currentClient ?? client())?.bundleIdentifier(),
+                   !AppSettings.isAppExcludedFromInputMemory(bundleID) {
+                        Self.bundleInputForms[bundleID] = newForm
+                }
                 logger.debug("switchInputMethodMode (runtime): -> \(String(describing: mode))")
         }
 
@@ -1748,7 +1757,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         // Check if we should enter or continue word creation mode
                         let isInWordCreation = wordCreationCharacters.isNotEmpty
                         let segmentation = PinyinSegmentor.segment(text: bufferText)
-                        let hasMultipleSyllables = segmentation.first?.count ?? 0 >= 2
+                        let hasMultipleSyllables = (segmentation.first?.count ?? 0) >= 2
 
                         // If already in word creation mode, continue regardless of candidate length
                         if isInWordCreation && shouldProcessUserLexicon {

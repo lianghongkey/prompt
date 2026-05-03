@@ -265,4 +265,19 @@ final class CoreIMETests: XCTestCase {
                 XCTAssertEqual(scheme?.first?.kind, .full)
                 XCTAssertEqual(scheme?.first?.text, "ng")
         }
+
+        /// Regression: when an all-full scheme's `ping` query matches rows that the
+        /// caller already had (e.g. UserLexicon's directPingMatches priming), the
+        /// runScheme early-return must still fire — otherwise the noisy shortcut+
+        /// prefix fallback runs and surfaces unrelated longer words like 形成
+        /// (xing cheng) for input "xiche". Test the Engine half here; the
+        /// UserLexicon half is exercised in the app.
+        func testXicheAllFullDoesNotLeakLongerPrefix() throws {
+                Engine.prepare()
+                let text = "xiche"
+                let schemes = PinyinSegmentor.segment(text: text)
+                let candidates = Engine.suggest(text: text, segmentation: schemes, needsSymbols: false)
+                XCTAssertFalse(candidates.contains(where: { $0.text == "形成" }),
+                               "xiche must not surface 形成 (xing cheng); got top: \(candidates.prefix(10).map(\.text))")
+        }
 }

@@ -159,14 +159,18 @@ public struct Engine {
                                       out: inout [Candidate]) {
                 let combinedInput = scheme.map(\.text).joined()
 
-                let beforePingCount = out.count
-
                 if scheme.isAllFull {
                         // Fast path: exact `ping` lookup using B-tree index.
+                        // Track whether any DB ping query returned rows (regardless of dedup
+                        // against `out`) — a hit means exact full-pinyin matches exist and
+                        // we must NOT fall through to the prefix-matching shortcut path,
+                        // even if the matches were already added by an earlier scheme.
+                        var pingProducedAny = false
                         let spacedPinyin = scheme.map(\.origin).joined(separator: " ")
                         let hash = spacedPinyin.deterministicHash
                         if queriedHashes.insert(hash).inserted {
                                 let candidates = pinyinMatchInternal(text: spacedPinyin, input: combinedInput, isFuzzyMatch: false)
+                                if !candidates.isEmpty { pingProducedAny = true }
                                 appendUnique(candidates, into: &out, seen: &seenOrders)
                         }
                         if fuzzyEnabled {
@@ -178,6 +182,7 @@ public struct Engine {
                                         guard queriedHashes.insert(h).inserted else { continue }
                                         let isFuzzy = expanded != spacedPinyin
                                         let candidates = pinyinMatchInternal(text: expanded, input: combinedInput, isFuzzyMatch: isFuzzy)
+                                        if !candidates.isEmpty { pingProducedAny = true }
                                         appendUnique(candidates, into: &out, seen: &seenOrders)
                                 }
                         }
@@ -185,7 +190,7 @@ public struct Engine {
                         // typing should not get noisy prefix extensions. If ping returned
                         // nothing (e.g. user typed "zenmeyan" intending 怎么样), fall
                         // through to the shortcut+prefix path so prefix matches surface.
-                        if out.count > beforePingCount { return }
+                        if pingProducedAny { return }
                 }
 
                 // Hybrid (or all-abbrev, or fallback for empty ping) path: query by

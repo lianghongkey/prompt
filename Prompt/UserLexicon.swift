@@ -236,10 +236,17 @@ struct UserLexicon: Sendable {
                 let combinedInput = scheme.map(\.text).joined()
                 let mark = combinedInput
 
-                let beforePingCount = out.count
                 if scheme.isAllFull {
+                        // Track whether any ping query returned rows. Cannot use
+                        // `out.count > before` because `directPingMatches` (and earlier
+                        // schemes) already prime `seenKeys`, so a real ping hit can be
+                        // dedup'd to a no-op. Without this, the shortcut+prefix fallback
+                        // runs and surfaces unrelated longer prefix words (e.g. xiche
+                        // matching 形成 / xing cheng).
+                        var pingProducedAny = false
                         let pingText = scheme.map(\.origin).joined()
                         let matched = pingQuery(pingText: pingText, input: combinedInput, mark: mark, isFuzzy: false)
+                        if !matched.isEmpty { pingProducedAny = true }
                         appendUnique(matched, into: &out, seen: &seenKeys)
 
                         if fuzzyEnabled {
@@ -251,10 +258,11 @@ struct UserLexicon: Sendable {
                                                                      input: combinedInput,
                                                                      mark: mark,
                                                                      isFuzzy: true)
+                                        if !fuzzyMatched.isEmpty { pingProducedAny = true }
                                         appendUnique(fuzzyMatched, into: &out, seen: &seenKeys)
                                 }
                         }
-                        if out.count > beforePingCount { return }
+                        if pingProducedAny { return }
                 }
 
                 // Hybrid path (or all-full fallback when ping returned nothing): query by

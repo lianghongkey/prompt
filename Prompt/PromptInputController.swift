@@ -15,23 +15,32 @@ final class PromptInputController: IMKInputController, Sendable {
         private lazy var window = CandidateWindow.shared
 
         private func prepareWindow() {
-                let idealValue: Int = Int(CGShieldingWindowLevel())
-                let maxValue: Int = idealValue + 2
-                let minValue: Int = NSWindow.Level.floating.rawValue
-                let levelValue: Int = {
-                        guard let clientLevel = currentClient?.windowLevel() else { return idealValue }
-                        let preferredValue: Int = Int(clientLevel) + 1
-                        guard preferredValue > minValue else { return idealValue }
-                        guard preferredValue < maxValue else { return maxValue }
-                        return preferredValue
-                }()
-                window.level = NSWindow.Level(levelValue)
-                window.contentViewController = NSHostingController(rootView: MotherBoard().environmentObject(appContext))
+                // Always use CGShieldingWindowLevel so the candidate window stays above
+                // host popovers (Safari URL suggestions = NSPopUpMenuWindowLevel/101,
+                // autocomplete dropdowns, tooltips). The previous heuristic of
+                // `client.windowLevel() + 1` ended up at level 20 for Safari's address
+                // bar, which let the URL-suggestion popover (level 101) cover us.
+                window.level = NSWindow.Level(Int(CGShieldingWindowLevel()))
+                // Bind the shared window's contentViewController to the shared
+                // AppContext exactly once. Re-creating NSHostingController per activate
+                // both wastes work and (when multiple controllers race) could leave the
+                // window bound to a stale empty AppContext.
+                if window.contentViewController == nil {
+                        window.contentViewController = NSHostingController(rootView: MotherBoard().environmentObject(appContext))
+                }
                 window.orderFrontRegardless()
         }
         private func updateWindowFrame(_ frame: CGRect? = nil) {
                 refreshQuadrant()
-                window.setFrame(frame ?? windowFrame, display: true)
+                let resolved = frame ?? windowFrame
+                window.setFrame(resolved, display: true)
+                // Re-assert z-order on every non-zero frame update. Hosts can place
+                // popovers (e.g. Safari URL suggestions, autocomplete dropdowns) above
+                // us between activateServer and the user's first keystroke. Without
+                // this, our candidate window stays below them and looks invisible.
+                if !resolved.isEmpty {
+                        window.orderFrontRegardless()
+                }
         }
         private func isValidCursorBlock(_ rect: CGRect) -> Bool {
                 guard rect.height > 0 else { return false }
@@ -100,6 +109,13 @@ final class PromptInputController: IMKInputController, Sendable {
                         return
                 }
                 currentCursorBlock = rect
+        }
+        /// Force-clear the cached cursor block. Call on composition end / focus change
+        /// so a stale cache from the previous composition can't position the next
+        /// candidate window at an off-screen / wrong location when the new client
+        /// transiently returns an invalid cursorBlock (common in Safari / WebKit).
+        private func clearCurrentCursorBlock() {
+                currentCursorBlock = nil
         }
 
         private typealias InputClient = (IMKTextInput & NSObjectProtocol)
@@ -187,6 +203,7 @@ final class PromptInputController: IMKInputController, Sendable {
                 nonisolated(unsafe) let client: InputClient? = (sender as? InputClient) ?? client()
                 Task { @MainActor in
                         window.setFrame(.zero, display: true)
+                        clearCurrentCursorBlock()
                         selectedCandidates = []
                         selectedNonFirst = false
                         isIntendingToRecord = false
@@ -236,6 +253,7 @@ final class PromptInputController: IMKInputController, Sendable {
                                 client?.setMarkedText(emptyText, selectionRange: emptyRange, replacementRange: replacementRange())
                         }
                         window.setFrame(.zero, display: true)
+                        clearCurrentCursorBlock()
                         selectedCandidates = []
                         selectedNonFirst = false
                         clearMarkedText()
@@ -335,7 +353,18 @@ final class PromptInputController: IMKInputController, Sendable {
                 }
         }
 
-        private lazy var appContext: AppContext = AppContext()
+        // SHARED across all controller instances in this IME process. The previous
+        // per-instance AppContext caused the candidate window to appear empty in
+        // Safari Cmd+T new-tab address-bar input: Safari creates multiple
+        // PromptInputController instances during the auto-focus transition, each
+        // with its own AppContext. `prepareWindow()` rebinds the shared window's
+        // contentViewController to the *current* instance's appContext. If a later
+        // activate (different instance, fresh empty appContext) ran after the
+        // typing instance set up its content, the visible window pointed at the
+        // empty appContext while keystrokes updated a different (now invisible)
+        // appContext. Sharing one AppContext makes the binding stable.
+        private var appContext: AppContext { Self.sharedAppContext }
+        nonisolated(unsafe) private static let sharedAppContext: AppContext = AppContext()
 
         private lazy var inputForm: InputForm = InputForm.matchInputMethodMode()
         // Per-app input mode memory, shared across all controller instances in this IME

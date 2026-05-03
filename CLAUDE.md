@@ -104,10 +104,10 @@ aftercareSelection() → insert(candidate.text) + updates bufferText
 - `FuzzyPinyin.swift` / `FuzzyPinyinExpander.swift` — zh↔z, ch↔c, sh↔s, n↔l, etc. Settings stored in UserDefaults.
 
 **Prompt App** (`Prompt/`)
-- `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`/`wordCreationInputs`, `lastInsertedText`, `isPunctuationFullWidth`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder`, `static var whisperModelObserver`, and `static var correctorObserver`.
+- `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`/`wordCreationInputs`, `lastInsertedText`, `isPunctuationFullWidth`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder`, `static var whisperModelObserver`, `static var correctorObserver`, and `static let sharedAppContext` (see "Multi-instance controller invariants" below).
 - `UserLexicon.swift` — Stores at `~/Library/userlexicon.sqlite3`. Has prepared statements for ping/shortcut/find queries. `handle(_:)` boosts selected word by +1000 and decays same-pinyin siblings by 10% (`frequency * 9 / 10`, min 1). All selections (including first candidate) are recorded so frequency reflects long-term usage proportions. Initial frequency: 1000.
-- `AppContext.swift` — `@MainActor ObservableObject` holding `displayCandidates`, `highlightedIndex`, `inputForm`, `quadrant`. The SwiftUI environment object for the candidate window.
-- `CandidateWindow.swift` — `NSPanel` with `ignoresMouseEvents = true`; all selection is keyboard-driven.
+- `AppContext.swift` — `ObservableObject` holding `displayCandidates`, `highlightedIndex`, `inputForm`, `quadrant`. The SwiftUI environment object for the candidate window. **Process-wide singleton** via `PromptInputController.sharedAppContext`; do not instantiate per controller (see "Multi-instance controller invariants").
+- `CandidateWindow.swift` — `NSPanel` with `ignoresMouseEvents = true`; all selection is keyboard-driven. Process-wide singleton (`CandidateWindow.shared`). Window level set to `CGShieldingWindowLevel` in `prepareWindow()` so popovers (Safari URL suggestions = level 101, IDE autocomplete, etc.) cannot cover it. `updateWindowFrame()` re-asserts `orderFrontRegardless()` on every non-zero frame.
 - `Options.swift` — Runtime character form (half/full width), punctuation form, and `inputMethodMode` (mandarin/abc) settings.
 - `AppSettings.swift` — Persistent settings in UserDefaults (page size, input memory on/off, `defaultInputModeOnActivation`, etc.). Also holds `whisperModelPath` (persisted) and `whisperModelLoadState` (runtime, updated by `VoiceRecorder`). Additionally holds `llamaModelPath` (persisted) and `correctorServerState` (runtime, updated by `CorrectorEngine`).
 - `VoiceRecorder.swift` — Captures 16kHz mono Float32 PCM audio via `AVAudioEngine` (`AudioCapture`) and transcribes using a whisper GGML model (`.bin`) via `whisper.cpp`. Model path is configured as `.mlmodelc` in Settings; the `.bin` sibling is derived automatically. Transcription result is inserted as text via `onTranscription` callback.
@@ -287,6 +287,28 @@ Applies to all punctuation insertion points in Chinese mode: number keys + shift
 
 - `isBuffering` is true only for `.starting` and `.ongoing`
 - `commitComposition` is guarded to only run when NOT buffering (to avoid race with next keystroke Task)
+
+### Multi-instance Controller Invariants
+
+Hosts like Safari (per WebKit frame / address bar / popover), Mail, and Electron apps create **multiple `PromptInputController` instances** during focus transitions. The IME process runs many controllers concurrently; only one is "active" per IMK focus, but `activateServer` / `deactivateServer` cycles can interleave on the @MainActor queue.
+
+**Anything that backs the visible candidate window must be process-wide shared, not per-instance:**
+- `CandidateWindow.shared` — the NSPanel
+- `PromptInputController.sharedAppContext` — the `AppContext` SwiftUI environment object
+- `prepareWindow()` sets `contentViewController` only on first call (`if window.contentViewController == nil`); rebinding per activate would point the visible window at a different instance's appContext while keystrokes update yet another, leaving the window apparently empty
+- `static let sharedVoiceRecorder`, observers (`whisperModelObserver`, `correctorObserver`) — guarded with `guard Self.x == nil`
+
+**Per-instance is fine for composition session state** (`bufferText`, `inputStage`, `selectedCandidates`, `wordCreationCharacters`, `filterText`, Shift-tap state, `currentClient`, `currentCursorBlock`) — IMK guarantees keystrokes within one composition go to one instance. But never have a per-instance object back a UI element that lives across instances.
+
+**Window level** is `CGShieldingWindowLevel` (always), not `client.windowLevel() + 1`. Safari address bar reports level 19 → +1 = 20; Safari URL-suggestion popover sits at `NSPopUpMenuWindowLevel` = 101 and would cover us. `CGShieldingWindowLevel` (~2147483628) is higher than every host popover but lower than the screen lock.
+
+See `docs/2026-05-03-postmortem.md` for the discovery story (Safari Cmd+T new-tab address bar bug).
+
+### runScheme Early-Return Invariant
+
+In both `Engine.runScheme` and `UserLexicon.runScheme`, when the all-`.full` scheme's `ping` query returns rows, we must NOT fall through to the shortcut + per-token prefix path — otherwise prefix matching surfaces noisy longer words (e.g. `xiche` → 形成 via xi prefix-of xing, che prefix-of cheng).
+
+**Critical:** the early-return must be triggered by "did the DB query return rows", not by "did `out.count` increase". The latter fails when `out` was already primed (UserLexicon's `directPingMatches`, or Engine's earlier-scheme matches) and the new rows get dedup'd to a no-op. Track a local `var pingProducedAny: Bool` per scheme run and use that for the early return.
 
 ## Important Notes
 

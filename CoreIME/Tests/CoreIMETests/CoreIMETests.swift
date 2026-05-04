@@ -280,4 +280,38 @@ final class CoreIMETests: XCTestCase {
                 XCTAssertFalse(candidates.contains(where: { $0.text == "形成" }),
                                "xiche must not surface 形成 (xing cheng); got top: \(candidates.prefix(10).map(\.text))")
         }
+
+        /// Mirror of testXicheAllFullDoesNotLeakLongerPrefix: when "zhe kuai" has
+        /// exact ping matches (这块/这快...), the shortcut+prefix path must NOT
+        /// fall through and surface 整块 (zheng kuai) via "zhe prefix-of zheng".
+        func testZhekuaiAllFullDoesNotLeakLongerPrefix() throws {
+                Engine.prepare()
+                let text = "zhekuai"
+                let schemes = PinyinSegmentor.segment(text: text)
+                let candidates = Engine.suggest(text: text, segmentation: schemes, needsSymbols: false)
+                let topTexts = candidates.prefix(15).map(\.text)
+                XCTAssertFalse(candidates.contains(where: { $0.text == "整块" }),
+                               "zhekuai must not surface 整块 (zheng kuai); got top: \(topTexts)")
+        }
+
+        /// Same as above, but with the user's typical fuzzy set enabled.
+        func testZhekuaiWithFuzzyDoesNotLeakLongerPrefix() throws {
+                Engine.prepare()
+                let toEnable: [FuzzyPinyinType] = [.ian_iang, .en_eng, .ch_c, .zh_z, .an_ang, .uan_uang, .on_ong, .in_ing, .sh_s]
+                let original = FuzzyPinyinSettings.enabledTypes
+                for t in toEnable { FuzzyPinyinSettings.setType(t, enabled: true) }
+                PinyinSegmentor.resetCaches()
+                defer {
+                        for t in FuzzyPinyinType.allCases {
+                                FuzzyPinyinSettings.setType(t, enabled: original.contains(t))
+                        }
+                        PinyinSegmentor.resetCaches()
+                }
+                let text = "zhekuai"
+                let schemes = PinyinSegmentor.segment(text: text)
+                let candidates = Engine.suggest(text: text, segmentation: schemes, needsSymbols: false)
+                let topTexts = candidates.prefix(15).map(\.text)
+                XCTAssertFalse(candidates.contains(where: { $0.text == "整块" }),
+                               "zhekuai with fuzzy must not surface 整块; got top: \(topTexts)")
+        }
 }

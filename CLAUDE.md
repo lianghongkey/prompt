@@ -396,9 +396,9 @@ See `docs/2026-05-03-postmortem.md` for the discovery story (Safari Cmd+T new-ta
 
 ### runScheme Early-Return Invariant
 
-In both `Engine.runScheme` and `UserLexicon.runScheme`, when the all-`.full` scheme's `ping` query returns rows, we must NOT fall through to the shortcut + per-token prefix path — otherwise prefix matching surfaces noisy longer words (e.g. `xiche` → 形成 via xi prefix-of xing, che prefix-of cheng).
+In `Engine.runScheme`, when the all-`.full` scheme's `ping` query returns rows, do NOT fall through to the shortcut + per-token prefix path — otherwise prefix matching surfaces noisy longer words (e.g. `xiche` → 形成 via xi prefix-of xing, che prefix-of cheng). The early-return uses a local `var pingProducedAny: Bool`, not `out.count` — the latter fails when `out` was already primed by an earlier scheme and the new rows dedup to a no-op.
 
-**Critical:** the early-return must be triggered by "did the DB query return rows", not by "did `out.count` increase". The latter fails when `out` was already primed (UserLexicon's `directPingMatches`, or Engine's earlier-scheme matches) and the new rows get dedup'd to a no-op. Track a local `var pingProducedAny: Bool` per scheme run and use that for the early return.
+In `UserLexicon.runScheme`, all-`.full` schemes **never** fall through to the shortcut path, regardless of whether ping found rows. Reason: user lex is small and personal — when ping doesn't hit, prefix-extending the user's full syllables to longer ones (e.g. `zhe`→`zheng` surfacing `整块` for input `zhekuai`, when user only has `整块` not `这块`) is noise, not signal. The Engine path still surfaces "user typed shorter pinyin, system has longer canonical word" cases (`zenmeyan`→`怎么样`) via Engine's own shortcut+prefix fallback against the system dictionary; user lex doesn't need to duplicate that. See `docs/2026-05-03-postmortem.md` "Bug 1 没有被根治" for the discovery story.
 
 ## Important Notes
 

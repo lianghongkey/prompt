@@ -237,16 +237,8 @@ struct UserLexicon: Sendable {
                 let mark = combinedInput
 
                 if scheme.isAllFull {
-                        // Track whether any ping query returned rows. Cannot use
-                        // `out.count > before` because `directPingMatches` (and earlier
-                        // schemes) already prime `seenKeys`, so a real ping hit can be
-                        // dedup'd to a no-op. Without this, the shortcut+prefix fallback
-                        // runs and surfaces unrelated longer prefix words (e.g. xiche
-                        // matching 形成 / xing cheng).
-                        var pingProducedAny = false
                         let pingText = scheme.map(\.origin).joined()
                         let matched = pingQuery(pingText: pingText, input: combinedInput, mark: mark, isFuzzy: false)
-                        if !matched.isEmpty { pingProducedAny = true }
                         appendUnique(matched, into: &out, seen: &seenKeys)
 
                         if fuzzyEnabled {
@@ -258,15 +250,25 @@ struct UserLexicon: Sendable {
                                                                      input: combinedInput,
                                                                      mark: mark,
                                                                      isFuzzy: true)
-                                        if !fuzzyMatched.isEmpty { pingProducedAny = true }
                                         appendUnique(fuzzyMatched, into: &out, seen: &seenKeys)
                                 }
                         }
-                        if pingProducedAny { return }
+                        // All-full schemes never fall through to the shortcut+prefix path.
+                        // Whether or not ping found rows, prefix-extending the user's full
+                        // syllables to longer ones from user lex (e.g. zhe→zheng surfacing
+                        // 整块 for input "zhekuai", or xi→xing surfacing 形成 for "xiche")
+                        // is noise: when the user types complete pinyin, they want the
+                        // exact entry from user lex (which the ping path covers), not a
+                        // longer-syllable variant that just happens to share initials.
+                        // Engine still surfaces shorter-typing partials like
+                        // "zenmeyan"→怎么样 via its own shortcut+prefix fallback against
+                        // the system dictionary; user lex doesn't need to duplicate it.
+                        return
                 }
 
-                // Hybrid path (or all-full fallback when ping returned nothing): query by
-                // shortcut intercode, filter via per-position prefix match.
+                // Hybrid path (any scheme containing .abbrev tokens): query by shortcut
+                // intercode, filter via per-position prefix match. Prefix matching is
+                // the whole point of abbrev tokens, so it stays.
                 let shortcutMatched = shortcutSchemeQuery(scheme: scheme,
                                                           input: combinedInput,
                                                           mark: mark,

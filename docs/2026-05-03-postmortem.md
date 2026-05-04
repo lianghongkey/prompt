@@ -66,6 +66,47 @@ if pingProducedAny { return }
 
 无。模糊音的精确等价匹配（fuzzy ping query）也会让 `pingProducedAny = true`，仍然提前 return。唯一行为变化：当 ping/fuzzy ping 都只查到已被去重的候选时，原代码会误落入前缀路径，新代码不会 —— 这正是要修的 bug。
 
+### 后续（2026-05-04）：Bug 1 没有被根治
+
+`pingProducedAny` 的修复只能挡住"用户**有**正确条目"的场景。一周后用户发现新 case：
+
+- 输入 `zhekuai`，user lex 里**只有** `整块 (zheng kuai)` 没有 `这块` → 候选列表第一个就是 `整块`
+- 选了 `这块` 之后再打 `zhekuai`，`整块` 不再出现
+- 同类：`shuofa → 缩放`（fuzzy sh-s + 前缀）、`xichen → 形成`
+
+根因是同一个：UserLexicon.runScheme 的 all-full 分支在 ping query 真的没查到行时 `pingProducedAny = false`，按设计就该 fall through 到 shortcut+前缀路径。然后 `tokenMatches` 用 `syllable.hasPrefix(needle)`：`"zheng".hasPrefix("zhe") == true`，于是用户词库里所有"声母相同 + 第一段是输入的前缀扩展"的条目都被前缀匹配捞出来。
+
+第一次的修复只看了"用户已有正确条目，被错误去重判定为没命中"这条路径，没考虑"用户压根没有正确条目，ping 必然空"这条路径。`pingProducedAny` 在新场景里**正确地**为 false，但前缀路径本身就不该跑。
+
+#### 修复（2026-05-04）
+
+`UserLexicon.runScheme` 的 all-full 分支无条件 `return`，不再 fall through：
+
+```swift
+if scheme.isAllFull {
+    // ping + fuzzy ping
+    ...
+    return  // 永远 return
+}
+// 只有 hybrid（含 .abbrev token）才走 shortcut + per-token prefix
+```
+
+文件：`Prompt/UserLexicon.swift:239-269`
+
+#### 设计取舍
+
+新行为：用户打全拼，user lex 只参与**精确**ping 命中（含模糊音的精确等价）；不参与"前缀扩展到更长音节"。
+
+这会带来一个回归：如果用户曾经把 `怎么样 (zen me yang)` 加进 user lex，现在打 `zenmeyan`（漏个 g），原来 user lex 会把 `怎么样` 排在第一位（带频率加成），现在 user lex 不返回，但 Engine 仍然会通过自己的 shortcut+前缀回退把 `怎么样` 排上来 —— 只是失去了用户的频率加成。可接受。
+
+Engine 那一侧**不**做同样的改动。Engine 的 shortcut+前缀回退是 `zenmeyan → 怎么样` / `zmyan → 怎么样` 这类用户故意打缩写/漏字母的核心机制，依赖系统词典覆盖完整。Engine 不会有"用户词库污染"的问题，因为系统词典里的 `这块` 一直存在 → ping 一定命中 → 早返回 → shortcut 路径根本不跑。
+
+#### 同类场景扫描
+
+任何"用户词库里只有形如 `XY' (X 是 user 输入第一段的前缀扩展，Y 是同样的第二段)`"的条目，输入 `XY` 时都会被错误 surface。具体：声母相同、`stored_syl[0].hasPrefix(typed_syl[0]) && stored_syl[1] == typed_syl[1]`（或反过来）。模糊音开启时还会把这个条件松散到 fuzzy 等价。
+
+修复后这一整类场景统一被 all-full 早返回挡住。
+
 ---
 
 ## Bug 2: Safari Cmd+T 新 tab 地址栏候选窗不显示

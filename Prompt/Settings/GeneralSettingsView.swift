@@ -8,93 +8,11 @@ struct GeneralSettingsView: View {
 
         @State private var isEmojiSuggestionsOn: Bool = Options.isEmojiSuggestionsOn
         @State private var isInputMemoryOn: Bool = AppSettings.isInputMemoryOn
-        @State private var defaultInputMode: InputMethodMode = AppSettings.defaultInputModeOnActivation
-        @State private var useCapsLockForMandarin: Bool = AppSettings.useCapsLockForMandarin
-        @State private var excludedApps: [String] = AppSettings.appsExcludedFromInputMemory
-        @State private var newExcludedBundleID: String = ""
 
         @State private var isClearInputMemoryConfirmDialogPresented: Bool = false
         @State private var isPerformingClearInputMemory: Bool = false
         @State private var clearInputMemoryProgress: Double = 0
         private let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
-
-        private func refreshExcludedApps() {
-                excludedApps = AppSettings.appsExcludedFromInputMemory
-        }
-
-        private func runningRegularApps() -> [NSRunningApplication] {
-                NSWorkspace.shared.runningApplications
-                        .filter({ $0.activationPolicy == .regular })
-                        .filter({ ($0.bundleIdentifier ?? "").isEmpty == false })
-                        .sorted(by: { ($0.localizedName ?? "") < ($1.localizedName ?? "") })
-        }
-
-        private func appDisplayName(for bundleID: String) -> String {
-                if let running = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first,
-                   let name = running.localizedName {
-                        return "\(name) (\(bundleID))"
-                }
-                if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID),
-                   let values = try? url.resourceValues(forKeys: [.localizedNameKey]),
-                   let name = values.localizedName {
-                        return "\(name) (\(bundleID))"
-                }
-                return bundleID
-        }
-
-        @ViewBuilder
-        private var excludedAppsSection: some View {
-                VStack(alignment: .leading, spacing: 8) {
-                        Text("不记忆输入法状态的 App")
-                                .font(.headline)
-                        Text("这些 app 每次激活都会重置为默认输入模式，忽略上次切换记录")
-                                .font(.caption)
-                                .foregroundStyle(Color.secondary)
-                        if excludedApps.isEmpty {
-                                Text("（暂无）")
-                                        .font(.caption)
-                                        .foregroundStyle(Color.secondary)
-                        } else {
-                                ForEach(excludedApps, id: \.self) { bundleID in
-                                        HStack {
-                                                Text(appDisplayName(for: bundleID))
-                                                        .font(.callout)
-                                                Spacer()
-                                                Button {
-                                                        AppSettings.removeAppExcludedFromInputMemory(bundleID)
-                                                        refreshExcludedApps()
-                                                } label: {
-                                                        Image(systemName: "minus.circle.fill")
-                                                                .foregroundStyle(Color.red)
-                                                }
-                                                .buttonStyle(.plain)
-                                        }
-                                }
-                        }
-                        HStack {
-                                NativeTextField(placeholder: "Bundle ID 例如 com.apple.Safari", text: $newExcludedBundleID)
-                                        .frame(height: 22)
-                                Button("添加") {
-                                        AppSettings.addAppExcludedFromInputMemory(newExcludedBundleID)
-                                        newExcludedBundleID = ""
-                                        refreshExcludedApps()
-                                }
-                                .disabled(newExcludedBundleID.trimmingCharacters(in: .whitespaces).isEmpty)
-                                Menu("从运行中的 App 选择") {
-                                        ForEach(runningRegularApps(), id: \.processIdentifier) { app in
-                                                if let bundleID = app.bundleIdentifier {
-                                                        Button(app.localizedName ?? bundleID) {
-                                                                AppSettings.addAppExcludedFromInputMemory(bundleID)
-                                                                refreshExcludedApps()
-                                                        }
-                                                        .disabled(excludedApps.contains(bundleID))
-                                                }
-                                        }
-                                }
-                                .frame(maxWidth: 180)
-                        }
-                }
-        }
 
         var body: some View {
                 ScrollView {
@@ -110,31 +28,6 @@ struct GeneralSettingsView: View {
                                         .onChange(of: pageSize) { newPageSize in
                                                 AppSettings.updateCandidatePageSize(to: newPageSize)
                                         }
-                                        Spacer()
-                                }
-                                .block()
-                                HStack {
-                                        Picker("切换到本输入法时默认模式", selection: $defaultInputMode) {
-                                                Text("中文").tag(InputMethodMode.mandarin)
-                                                Text("英文").tag(InputMethodMode.abc)
-                                        }
-                                        .pickerStyle(.menu)
-                                        .scaledToFit()
-                                        .onChange(of: defaultInputMode) { newMode in
-                                                AppSettings.updateDefaultInputModeOnActivation(to: newMode)
-                                        }
-                                        Spacer()
-                                }
-                                .block()
-                                excludedAppsSection
-                                        .block()
-                                HStack {
-                                        Toggle("使用 Caps Lock 键切换到中文", isOn: $useCapsLockForMandarin)
-                                                .toggleStyle(.switch)
-                                                .scaledToFit()
-                                                .onChange(of: useCapsLockForMandarin) { newState in
-                                                        AppSettings.updateUseCapsLockForMandarin(to: newState)
-                                                }
                                         Spacer()
                                 }
                                 .block()

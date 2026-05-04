@@ -157,22 +157,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         inputStage = .standby
                         isPunctuationFullWidth = true
                         clearShiftTapState()
-                        // Resolve the input form to apply on activation:
-                        //   - If host bundle ID is on the user's excluded list → always default.
-                        //   - Else if we have a previously-saved form for this bundle → restore it.
-                        //   - Else → user-configured default.
-                        let bundleID: String? = client?.bundleIdentifier()
-                        let isExcluded: Bool = bundleID.map(AppSettings.isAppExcludedFromInputMemory) ?? false
-                        let resolvedForm: InputForm = {
-                                if isExcluded {
-                                        return AppSettings.defaultInputModeOnActivation.isMandarin ? .mandarin : .transparent
-                                }
-                                if let key = bundleID, let stored = Self.bundleInputForms[key] {
-                                        return stored
-                                }
-                                return AppSettings.defaultInputModeOnActivation.isMandarin ? .mandarin : .transparent
-                        }()
-                        updateInputForm(to: resolvedForm)
+                        updateInputForm(to: Self.resolveInitialInputForm(client: client))
                         // Seed the focus-change tracker so the per-event sync in handle()
                         // doesn't fire spuriously on the first event after activate.
                         lastObservedWindowKey = Self.frontmostWindowKey(for: client)
@@ -386,6 +371,22 @@ final class PromptInputController: IMKInputController, Sendable {
         /// detect inter-window focus changes (which the host does NOT surface as
         /// activate/deactivate) and reset to default on each detected change.
         private var lastObservedWindowKey: String? = nil
+
+        /// Resolve which InputForm to apply on (re)activation. Priority chain:
+        ///   1. Per-app memory — if this host bundle has a saved form from a
+        ///      previous deactivate, restore it. Skipped for bundles in the
+        ///      "excluded from input memory" list.
+        ///   2. User-configured default mode (Settings → 默认输入模式).
+        ///
+        /// Shift-tap toggles can override the result at any time after activation.
+        static func resolveInitialInputForm(client: (IMKTextInput & NSObjectProtocol)?) -> InputForm {
+                let bundleID: String? = client?.bundleIdentifier()
+                let isExcluded: Bool = bundleID.map(AppSettings.isAppExcludedFromInputMemory) ?? false
+                if !isExcluded, let key = bundleID, let stored = bundleInputForms[key] {
+                        return stored
+                }
+                return AppSettings.defaultInputModeOnActivation.isMandarin ? .mandarin : .transparent
+        }
 
         /// Compose a "bundleID:CGWindowID" key for the host's currently-frontmost window,
         /// or just the bundle ID when the window number can't be resolved. Window ID is

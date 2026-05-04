@@ -7,6 +7,7 @@ struct SettingsView: View {
 
         // macOS 12
         @State private var isGeneralSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .general
+        @State private var isInputModeSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .inputMode
         @State private var isVoiceSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .voice
         @State private var isFuzzyPinyinSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .fuzzyPinyin
         @State private var isAboutViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .about
@@ -16,6 +17,7 @@ struct SettingsView: View {
                         NavigationSplitView {
                                 List(selection: $selection) {
                                         Label("设置", systemImage: "gear").tag(SettingsSidebarRow.general)
+                                        Label("输入法选择", systemImage: "character.bubble").tag(SettingsSidebarRow.inputMode)
                                         Label("语音输入", systemImage: "mic").tag(SettingsSidebarRow.voice)
                                         Label("模糊音", systemImage: "speaker.wave.2").tag(SettingsSidebarRow.fuzzyPinyin)
                                         Label("关于", systemImage: "info.circle").tag(SettingsSidebarRow.about)
@@ -32,6 +34,9 @@ struct SettingsView: View {
                                 List {
                                         NavigationLink(destination: GeneralSettingsView(), isActive: $isGeneralSettingsViewActive) {
                                                 Label("设置", systemImage: "gear")
+                                        }
+                                        NavigationLink(destination: InputModeSettingsView(), isActive: $isInputModeSettingsViewActive) {
+                                                Label("输入法选择", systemImage: "character.bubble")
                                         }
                                         NavigationLink(destination: VoiceSettingsView(), isActive: $isVoiceSettingsViewActive) {
                                                 Label("语音输入", systemImage: "mic")
@@ -56,6 +61,8 @@ struct SettingsView: View {
                 switch selection {
                 case .general:
                         GeneralSettingsView()
+                case .inputMode:
+                        InputModeSettingsView()
                 case .voice:
                         VoiceSettingsView()
                 case .fuzzyPinyin:
@@ -72,6 +79,7 @@ struct SettingsView: View {
 
 enum SettingsSidebarRow: Int, Hashable, Identifiable, CaseIterable {
         case general
+        case inputMode
         case voice
         case fuzzyPinyin
         case about

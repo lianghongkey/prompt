@@ -171,19 +171,25 @@ A clean single tap of either Shift key (no other key/modifier in between, hold <
 
 **No on-screen "A/中" indicator:** the previous indicator was removed; mode is conveyed via the candidate window state alone.
 
-### Default Input Mode on Activation
+### Initial Input Form Resolution
 
-`AppSettings.defaultInputModeOnActivation: InputMethodMode` (persisted, default `.mandarin`) controls which mode is selected on activation when no per-client memory exists. User-controllable from General Settings via a Picker.
+`PromptInputController.resolveInitialInputForm(client:)` is the single entry point for deciding which `InputForm` to apply on (re)activation. Two-layer priority chain:
 
-Per-app memory: `PromptInputController.bundleInputForms` is a process-wide `static [String: InputForm]` keyed by `client.bundleIdentifier()`. On `deactivateServer` the current `inputForm` is stored under the bundle ID (skipping `.options`); on `activateServer` the table is consulted first, with a fall back to the user-configured default on miss.
+1. **Per-app memory** (`bundleInputForms`) — process-wide `static [String: InputForm]` keyed by `client.bundleIdentifier()`. On `deactivateServer` the current `inputForm` is stored under the bundle ID (skipping `.options` and excluded bundles). Bundles listed in `AppSettings.appsExcludedFromInputMemory` skip this layer entirely (never read or written) — they always fall through to layer 2.
 
-True per-window memory was attempted (via `CGWindowListCopyWindowInfo` + `NSWorkspace.frontmostApplication.processIdentifier` to derive a `bundleID:CGWindowID` key, both at activate/deactivate time and as a per-event sync inside `handle(_:client:)`) but did not work in practice: most hosts don't fire activate/deactivate when focus moves between windows of the same app, and frontmost-window queries during keystroke handling were too racy / unreliable to use as a substitute signal. The current implementation is simpler and per-app only.
+2. **Configured default** — `AppSettings.defaultInputModeOnActivation` (persisted, default `.mandarin`).
 
-Per-app opt-out (`AppSettings.appsExcludedFromInputMemory: [String]`, persisted as comma-separated bundle IDs in UserDefaults under key `AppsExcludedFromInputMemory`): bundles in this list are never written to or read from `bundleInputForms`. Every activation in an excluded app applies `defaultInputModeOnActivation` instead of restoring saved state. Managed in General Settings via `excludedAppsSection` — text-input + add button, or a "从运行中的 App 选择" menu populated from `NSWorkspace.shared.runningApplications` filtered to `.regular` activation policy. `appDisplayName(for:)` resolves a bundle ID to "Name (bundleID)" via running app first, then `NSWorkspace.urlForApplication` + `localizedNameKey` resource value.
+Shift-tap toggles `inputForm` at runtime only and propagates to `bundleInputForms` (so a sibling controller's activate sees the just-toggled state) but does NOT update `defaultInputModeOnActivation`.
+
+A "read 1 char before the caret" auto-detection layer was tried on top of these and removed: in practice IMK API limits make it unreliable. Empty input fields (e.g. WeChat's compose box, fresh document) report `selectedRange.location == 0` so there's nothing to read; some Electron hosts (VSCode) report `NSNotFound`; and the case it could solve (mid-document mode switching based on surrounding text) is just as well served by per-app memory once the user shift-taps once. The retry-on-first-keystroke fallback worked but didn't add value in the failing cases. See git history around 2026-05-04 for the implementation if it ever needs to be revisited.
+
+True per-window memory was attempted (via `CGWindowListCopyWindowInfo` + `NSWorkspace.frontmostApplication.processIdentifier` to derive a `bundleID:CGWindowID` key, both at activate/deactivate time and as a per-event sync inside `handle(_:client:)`) but did not work in practice: most hosts don't fire activate/deactivate when focus moves between windows of the same app, and frontmost-window queries during keystroke handling were too racy / unreliable to use as a substitute signal.
+
+Per-app opt-out (`AppSettings.appsExcludedFromInputMemory: [String]`, persisted as comma-separated bundle IDs in UserDefaults under key `AppsExcludedFromInputMemory`): bundles in this list are never written to or read from `bundleInputForms`, so layer 1 above is skipped and every activation falls through to layer 2 (the configured default). Managed in `InputModeSettingsView` (its own sidebar tab — see `SettingsSidebarRow.inputMode`) via `excludedAppsSection` — text-input + add button, or a "从运行中的 App 选择" menu populated from `NSWorkspace.shared.runningApplications` filtered to `.regular` activation policy. `appDisplayName(for:)` resolves a bundle ID to "Name (bundleID)" via running app first, then `NSWorkspace.urlForApplication` + `localizedNameKey` resource value.
 
 Inter-window focus reset for excluded apps: because most hosts don't fire activate/deactivate when focus moves between windows of the same app, exclusion cannot rely solely on the activate path. `resetExcludedAppOnFocusChangeIfNeeded(client:)` runs at the top of every non-keyUp `handle(_:client:)` call. For excluded bundles only, it queries `frontmostWindowKey(for:)` (a `CGWindowListCopyWindowInfo` lookup that returns `"bundleID:CGWindowID"` of the host's frontmost window via `NSWorkspace.frontmostApplication.processIdentifier`); when this differs from the controller's `lastObservedWindowKey`, it updates the tracker and — if not currently buffering — resets `inputForm` to the configured default. `activateServer` seeds `lastObservedWindowKey`; `deactivateServer` clears it. Non-excluded apps skip this work entirely (no per-event CGWindowList query).
 
-Shift-tap toggles `inputForm` at runtime only — it does NOT update this setting.
+Shift-tap toggles `inputForm` at runtime only — it does NOT update `defaultInputModeOnActivation`.
 
 ### Voice Recognition Feature
 

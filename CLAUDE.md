@@ -123,7 +123,7 @@ aftercareSelection() → insert(candidate.text) + updates bufferText
 
 **Prompt App** (`Prompt/`)
 
-* `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`/`wordCreationInputs`, `lastInsertedText`, `isPunctuationFullWidth`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder`, `static var whisperModelObserver`, `static var correctorObserver`, and `static let sharedAppContext` (see "Multi-instance controller invariants" below).
+* `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`/`wordCreationInputs`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder`, `static var whisperModelObserver`, `static var correctorObserver`, and `static let sharedAppContext` (see "Multi-instance controller invariants" below).
 
 * `UserLexicon.swift` — Stores at `~/Library/userlexicon.sqlite3`. Has prepared statements for ping/shortcut/find queries. `handle(_:)` boosts selected word by +1000 and decays same-pinyin siblings by 10% (`frequency * 9 / 10`, min 1). All selections (including first candidate) are recorded so frequency reflects long-term usage proportions. Initial frequency: 1000.
 
@@ -342,28 +342,6 @@ Allows users to narrow down rare characters by typing an auxiliary word's pinyin
 * Returns single-character `Candidate` objects with `input` matching the buffer syllable's text (for correct word creation consumption)
 
 **Cleanup:** `filterText` is cleared in `clearBufferText()`, `deactivateServer()`, and `aftercareSelection()`.
-
-### Context-Aware Punctuation (State-Based Half/Full Width)
-
-When `Options.punctuationForm` is `.chinese`, punctuation width is determined by a persistent state variable `isPunctuationFullWidth` via `shouldUseHalfWidthPunctuation()`:
-
-* **Full-width** punctuation is the default state and is output when `isPunctuationFullWidth == true` (at start, after focus switch, or after Chinese text input)
-
-* **Half-width** only after ASCII letters/digits are inserted
-
-**State transitions** (updated in `insert()` via `updatePunctuationState(for:)`):
-
-* Inserted text contains CJK characters → `isPunctuationFullWidth = true`
-
-* Inserted text contains ASCII letters or digits → `isPunctuationFullWidth = false`
-
-* Inserted text is pure punctuation → state unchanged
-
-**Reset to full-width** on `deactivateServer` and `activateServer` (both reset `isPunctuationFullWidth = true`), so switching focus always starts in full-width state.
-
-**`isChineseCharacter`** on `Character` (in `CharacterExtensions.swift`) detects CJK Unified Ideographs (U+4E00–9FFF, U+3400–4DBF, U+F900–FAFF, U+20000–2A6DF).
-
-Applies to all punctuation insertion points in Chinese mode: number keys + shift, backquote, general punctuation keys (both buffering and non-buffering), and quote/separator key.
 
 ### suggest() Pipeline
 

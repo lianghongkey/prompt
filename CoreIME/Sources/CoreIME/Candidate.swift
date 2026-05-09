@@ -41,7 +41,13 @@ public struct Candidate: Hashable, Comparable, Sendable {
         /// Whether this candidate is from fuzzy pinyin matching
         public let isFuzzyMatch: Bool
 
-        /// Cached syllable count of input, used for sorting
+        /// Cached syllable count of this candidate's own pinyin (from `romanization`).
+        /// Used for sorting: a candidate whose `text.count` equals its own syllable
+        /// count is treated as a "natural" reading and sorted by raw frequency rank;
+        /// mismatched ones (e.g. 1-char from a partial-input tail-drop in a multi-syl
+        /// query) are demoted. Deliberately NOT the input's max syllable count: that
+        /// would unfairly demote a 2-char candidate from an alternative segmentation
+        /// (e.g. 图案 from `tu+an` when best scheme is `[tuan]`).
         let syllableCount: Int
 
         /// Lexicon detail information
@@ -71,7 +77,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 self.mark = mark ?? input
                 self.order = order
                 self.isFuzzyMatch = isFuzzyMatch
-                self.syllableCount = PinyinSegmentor.maxSyllableCount(for: input)
+                self.syllableCount = romanization.split(separator: " ", omittingEmptySubsequences: true).count
                 self.notation = notation
                 self.subNotations = subNotations
         }
@@ -92,7 +98,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 self.mark = input
                 self.order = 0
                 self.isFuzzyMatch = false
-                self.syllableCount = PinyinSegmentor.maxSyllableCount(for: input)
+                self.syllableCount = romanization.split(separator: " ", omittingEmptySubsequences: true).count
                 self.notation = nil
                 self.subNotations = []
         }
@@ -112,7 +118,7 @@ public struct Candidate: Hashable, Comparable, Sendable {
                 self.mark = input
                 self.order = 0
                 self.isFuzzyMatch = false
-                self.syllableCount = PinyinSegmentor.maxSyllableCount(for: input)
+                self.syllableCount = romanization.split(separator: " ", omittingEmptySubsequences: true).count
                 self.notation = nil
                 self.subNotations = []
         }
@@ -173,7 +179,11 @@ public struct Candidate: Hashable, Comparable, Sendable {
                         return lhs.order < rhs.order
                 }
 
-                // For shortcut/initials queries like "lh", prefer text whose char count
+                // Demote candidates whose char count doesn't match their own pinyin
+                // syllable count (rare; happens for compound/symbol candidates with
+                // unusual romanization). Most mandarin DB entries are 1-char-per-syllable
+                // so this is a no-op for the common case, leaving frequency (rowID) as
+                // the primary tiebreaker among full-input matches.
                 let lhsMatchesSyllables = lhs.text.count == lhs.syllableCount
                 let rhsMatchesSyllables = rhs.text.count == rhs.syllableCount
                 if lhsMatchesSyllables != rhsMatchesSyllables {

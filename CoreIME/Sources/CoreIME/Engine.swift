@@ -120,6 +120,22 @@ public struct Engine {
                                   out: &allCandidates)
                 }
 
+                // Alternative all-full segmentations (different token count from
+                // bestQuality). E.g. "tuan" → best is [tuan] (count=1) but the user
+                // may have intended [tu, an] for 图案. Probe these via ping only — no
+                // shortcut/prefix fallback, since prefix-matching segmentations the
+                // user didn't intend would just produce noise.
+                for scheme in segmentation where scheme.isAllFull {
+                        guard SchemeQuality(scheme: scheme) != bestQuality else { continue }
+                        runScheme(scheme,
+                                  fuzzyEnabled: FuzzyPinyinSettings.isAnyEnabled,
+                                  isFallback: false,
+                                  pingOnly: true,
+                                  seenOrders: &seenOrders,
+                                  queriedHashes: &queriedHashes,
+                                  out: &allCandidates)
+                }
+
                 // Tail-drop fallback: drop trailing tokens to surface shorter prefix matches
                 // (single-character candidates needed for word creation).
                 for topScheme in topSchemes {
@@ -151,9 +167,16 @@ public struct Engine {
 
         /// Dispatch a single scheme to the right query path (ping vs shortcut+filter),
         /// applying fuzzy expansion when enabled.
+        ///
+        /// `pingOnly`: when true, skip the shortcut+prefix fallback even if ping
+        /// returned no rows. Used for non-best alternative segmentations (e.g. when
+        /// best is `[tuan]` and we additionally probe `[tu, an]` for 图案) — those
+        /// should only contribute exact full-pinyin hits, never prefix noise from
+        /// segmentations the user didn't intend.
         private static func runScheme(_ scheme: SegmentScheme,
                                       fuzzyEnabled: Bool,
                                       isFallback: Bool,
+                                      pingOnly: Bool = false,
                                       seenOrders: inout Set<Int>,
                                       queriedHashes: inout Set<Int>,
                                       out: inout [Candidate]) {
@@ -169,7 +192,7 @@ public struct Engine {
                         let spacedPinyin = scheme.map(\.origin).joined(separator: " ")
                         let hash = spacedPinyin.deterministicHash
                         if queriedHashes.insert(hash).inserted {
-                                let candidates = pinyinMatchInternal(text: spacedPinyin, input: combinedInput, isFuzzyMatch: false)
+                                let candidates = pinyinMatchInternal(text: spacedPinyin, input: combinedInput, isFuzzyMatch: false, maxSyllableCount: scheme.count)
                                 if !candidates.isEmpty { pingProducedAny = true }
                                 appendUnique(candidates, into: &out, seen: &seenOrders)
                         }
@@ -181,7 +204,7 @@ public struct Engine {
                                         let h = expanded.deterministicHash
                                         guard queriedHashes.insert(h).inserted else { continue }
                                         let isFuzzy = expanded != spacedPinyin
-                                        let candidates = pinyinMatchInternal(text: expanded, input: combinedInput, isFuzzyMatch: isFuzzy)
+                                        let candidates = pinyinMatchInternal(text: expanded, input: combinedInput, isFuzzyMatch: isFuzzy, maxSyllableCount: scheme.count)
                                         if !candidates.isEmpty { pingProducedAny = true }
                                         appendUnique(candidates, into: &out, seen: &seenOrders)
                                 }
@@ -191,6 +214,9 @@ public struct Engine {
                         // nothing (e.g. user typed "zenmeyan" intending 怎么样), fall
                         // through to the shortcut+prefix path so prefix matches surface.
                         if pingProducedAny { return }
+                        if pingOnly { return }
+                } else if pingOnly {
+                        return
                 }
 
                 // Hybrid (or all-abbrev, or fallback for empty ping) path: query by
@@ -347,14 +373,18 @@ public struct Engine {
 
         // MARK: - Ping path (full pinyin exact match)
 
-        private static func pinyinMatchInternal(text: String, input: String, isFuzzyMatch: Bool = false) -> [Candidate] {
+        /// `maxSyllableCount`: cap on `word.count` for returned rows. When nil,
+        /// derives it from the input's best segmentation. Callers that probe a
+        /// specific scheme should pass `scheme.count` directly so 2-char rows
+        /// (e.g. 图案 from `[tu, an]`) aren't filtered out by a best-scheme cap of 1.
+        private static func pinyinMatchInternal(text: String, input: String, isFuzzyMatch: Bool = false, maxSyllableCount: Int? = nil) -> [Candidate] {
                 let code: Int = text.deterministicHash
                 guard let stmt = pingStatement else { return [] }
                 sqlite3_reset(stmt)
                 sqlite3_bind_int64(stmt, 1, Int64(code))
                 sqlite3_bind_int64(stmt, 2, 100)
 
-                let maxSyllableCount = PinyinSegmentor.maxSyllableCount(for: input)
+                let cap: Int = maxSyllableCount ?? PinyinSegmentor.maxSyllableCount(for: input)
 
                 var candidates: [Candidate] = []
                 while sqlite3_step(stmt) == SQLITE_ROW {
@@ -364,7 +394,7 @@ public struct Engine {
                         let word: String = String(cString: wordPtr)
                         let pinyin: String = String(cString: pinyinPtr)
 
-                        guard word.count <= maxSyllableCount else { continue }
+                        guard word.count <= cap else { continue }
 
                         let candidate = Candidate(text: word, romanization: pinyin, input: input, mark: input, order: rowID, isFuzzyMatch: isFuzzyMatch)
                         candidates.append(candidate)

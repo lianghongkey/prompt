@@ -188,7 +188,14 @@ struct UserLexicon: Sendable {
                 }
 
                 let bestQuality = SchemeQuality(scheme: bestScheme)
-                let topSchemes = segmentation.filter { SchemeQuality(scheme: $0) == bestQuality }
+                // Include all all-full schemes regardless of token count: they only run
+                // the ping path (no shortcut prefix-extension), so alternative segmentations
+                // like "tuan" → [tu, an] add 图案 as exact matches without prefix noise.
+                // Hybrid (with-abbrev) schemes are still gated to bestQuality.
+                let topSchemes = segmentation.filter { scheme in
+                        if scheme.isAllFull { return true }
+                        return SchemeQuality(scheme: scheme) == bestQuality
+                }
 
                 var allCandidates: [Candidate] = directPingMatches
                 var seenKeys = Set<String>()
@@ -238,7 +245,7 @@ struct UserLexicon: Sendable {
 
                 if scheme.isAllFull {
                         let pingText = scheme.map(\.origin).joined()
-                        let matched = pingQuery(pingText: pingText, input: combinedInput, mark: mark, isFuzzy: false)
+                        let matched = pingQuery(pingText: pingText, input: combinedInput, mark: mark, isFuzzy: false, maxSyllableCount: scheme.count)
                         appendUnique(matched, into: &out, seen: &seenKeys)
 
                         if fuzzyEnabled {
@@ -249,7 +256,8 @@ struct UserLexicon: Sendable {
                                         let fuzzyMatched = pingQuery(pingText: expandedPing,
                                                                      input: combinedInput,
                                                                      mark: mark,
-                                                                     isFuzzy: true)
+                                                                     isFuzzy: true,
+                                                                     maxSyllableCount: scheme.count)
                                         appendUnique(fuzzyMatched, into: &out, seen: &seenKeys)
                                 }
                         }
@@ -303,13 +311,16 @@ struct UserLexicon: Sendable {
 
         // MARK: - Ping (full pinyin) query
 
-        private static func pingQuery(pingText: String, input: String, mark: String?, isFuzzy: Bool) -> [Candidate] {
+        /// `maxSyllableCount`: cap on `word.count` for returned rows. When nil, derives
+        /// from input's best segmentation. Callers probing a specific scheme should pass
+        /// `scheme.count` so 2-char rows aren't filtered out by a single-token best cap.
+        private static func pingQuery(pingText: String, input: String, mark: String?, isFuzzy: Bool, maxSyllableCount: Int? = nil) -> [Candidate] {
                 guard let stmt = pingQueryStatement else { return [] }
                 let code: Int = pingText.deterministicHash
                 sqlite3_reset(stmt)
                 guard sqlite3_bind_int64(stmt, 1, Int64(code)) == SQLITE_OK else { return [] }
 
-                let maxSyllableCount = PinyinSegmentor.maxSyllableCount(for: input)
+                let cap: Int = maxSyllableCount ?? PinyinSegmentor.maxSyllableCount(for: input)
                 var candidates: [Candidate] = []
                 while sqlite3_step(stmt) == SQLITE_ROW {
                         guard let wordPtr = sqlite3_column_text(stmt, 0) else { continue }
@@ -318,7 +329,7 @@ struct UserLexicon: Sendable {
                         let romanization: String = String(cString: romanizationPtr)
                         let frequency: Int = Int(sqlite3_column_int64(stmt, 2))
 
-                        guard word.count <= maxSyllableCount else { continue }
+                        guard word.count <= cap else { continue }
 
                         let resolvedMark = mark ?? romanization.removedTones().removedSpaces()
                         let candidate = Candidate(text: word,

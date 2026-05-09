@@ -90,20 +90,57 @@ change (e.g. fuzzy pinyin toggle).
 ## Matching algorithm
 
 A scheme is checked against a stored `pinyin` (space-separated syllables) by
-running a per-position **prefix** test. For each `(token, syllable)` pair:
+running a per-position test that **differs by token kind**:
 
-```
-syllable.hasPrefix(token.text)
-```
+- `.abbrev` token: prefix match.
+  ```
+  syllable.hasPrefix(token.text)
+  ```
+  Prefix is the whole point of an abbrev token (`z` matches `zen`, `zhong`;
+  `zh` matches `zhong`).
 
-A `.full` token's `text` equals its canonical syllable, but it may still be a
-prefix of a longer syllable (e.g. `yan` is a prefix of `yang`). This is what
-makes `zmyan` match 怎么样 (zen me **yang**): the third token `yan` is a
-strict prefix of the third stored syllable `yang`.
+- `.full` token: equality against `token.origin` (the canonical syllable).
+  ```
+  syllable == token.origin
+  ```
+  Prefix on `.full` is **forbidden**: `ne` is a complete syllable and must
+  not silently extend to `neng`.
 
-If `FuzzyPinyinSettings.isAnyEnabled`, the prefix check is repeated against
-every fuzzy variant of `syllable` and (for `.full` tokens) every fuzzy variant
-of `token.origin`.
+If `FuzzyPinyinSettings.isAnyEnabled`, both rules are augmented with fuzzy
+expansion. For abbrev: the syllable's fuzzy variants are also tried as prefix
+targets (so `z` matches a stored `zhong` via `zh↔z`). For full: equality is
+checked under fuzzy expansion of either side (so `in` matches a stored
+`ing`-syllable when `in/ing` fuzzy is on; `yan` matches `yang` when `an/ang`
+fuzzy is on).
+
+### Sequential typo correction interplay
+
+`PinyinSegmentor` also expands the input through enabled `TypoCorrection`
+rules (currently `gn → ng`). Each corrected variant is segmented separately
+and the resulting tokens are remapped so `text` keeps the original chars and
+`origin` is the canonical syllable. All resulting schemes — including ones
+where the swapped pair straddles a syllable boundary — are kept; the matching
+algorithm above filters out incorrect interpretations. Concretely, typing
+`liagne` produces both `[liang, e]` (swapped pair inside `liang`) and
+`[lian, ge]` (swapped pair straddling lian|ge); the strict `.full` rule
+ensures only legitimate `lian ge` words (恋歌/连个/练个) and tail-drop single
+chars (两/亮/凉) surface — never 两根 (liang gen), because `gen ≠ ge` and
+`liang ≠ lian` without `ian/iang` fuzzy.
+
+### Why prefix-on-full was removed
+
+A previous version allowed `.full` tokens to also prefix-match (so a user-typed
+full syllable like `yan` would extend to `yang`). That sounded harmless on its
+own but compounded badly with fuzzy:
+
+- `gonne` with `on/ong` fuzzy → `gon` resolves to `gong` (full token).
+- ping `"gong ne"` finds nothing → fall through to shortcut+prefix.
+- Old rule: `"neng".hasPrefix("ne") == true` → 功能 (gong neng) surfaces.
+- Every token got "brain-expanded" twice — once by fuzzy, once by prefix.
+
+The new rule (full = equality-or-fuzzy) restricts each token to a single layer
+of correction. The user must opt into near-miss matching by enabling the
+relevant fuzzy rule, instead of getting it via an always-on prefix shortcut.
 
 ## Database query strategy
 
@@ -118,9 +155,13 @@ pinyin" case.
 
 ### Shortcut + filter path (general)
 
-Used when the scheme has any `.abbrev` token, or as a fallback when the ping
-path returns no rows (which happens for prefix-only typing like `zenmeyan`
-intending 怎么样).
+Used when the scheme has any `.abbrev` token, or as a fallback when the
+all-full ping path returns no rows. Note: for an all-full scheme the
+fall-through is now mostly a safety net — under the new tokenMatches rule
+each `.full` token requires equality, so the shortcut path can only surface
+rows whose every full-token slot equals (or is fuzzy-equivalent to) the typed
+syllable. The interesting cases are hybrid schemes with abbrevs in the
+leading positions and a full token at the tail (e.g. `[z, m, yang]`).
 
 1. Compute the shortcut intercode by taking the first character of each token
    (`schemeShortcutCode`). This matches how `pinyintable.shortcut` is stored
@@ -128,12 +169,13 @@ intending 怎么样).
 2. Query `pinyintable WHERE shortcut = ? LIMIT 1000`.
 3. For each row, split `pinyin` by space and filter:
    - the row's `word.count` must equal the scheme's token count;
-   - for each `(token, syllable)` pair, prefix-match (with optional fuzzy).
+   - for each `(token, syllable)` pair, run `tokenMatches` (kind-aware:
+     prefix for abbrev, equality-or-fuzzy for full).
 4. Cap the survivors at 200 to keep the candidate list bounded.
 
 The legacy single-initial-only `pinyin.hasPrefix(text)` post-filter and the
 `extractInitialsFromUnsegmented` walk are gone; both their responsibilities are
-subsumed by the prefix-match step above.
+subsumed by the per-token rule above.
 
 ### Tail-drop fallback
 
@@ -151,8 +193,10 @@ For `[z, m, yan]`:
 
 - A direct `text → ping` lookup catches stored entries where the user typed the
   exact pinyin form already in the DB.
-- For each top-quality scheme, the all-full ping fast path runs first. If it
-  returns nothing, fall through to shortcut + per-token prefix filter.
+- For each top-quality scheme, the all-full ping fast path runs first. All-full
+  schemes never fall through to shortcut+filter — see CLAUDE.md "runScheme
+  Early-Return Invariant". Hybrid schemes (with abbrev tokens) go straight to
+  shortcut+filter, applying the kind-aware `tokenMatches`.
 - Tail-drop fallback runs for schemes of length ≥ 3.
 
 A latent bug was fixed in passing: the previous shortcut lookup hashed
@@ -208,7 +252,7 @@ even though the user typed an abbreviated input.
 ### Newly supported
 
 - Mixed initials + full syllable inputs, in any position:
-  - `zmyan`, `zmyang` → 怎么样
+  - `zmyang` → 怎么样
   - `wsmyao` → 为什么要
   - `nhao` → 你好
   - `jrlmsx` → 今日来买什么 (etc.)
@@ -217,8 +261,11 @@ even though the user typed an abbreviated input.
 - Cross-reference filter accepts abbreviated filter text.
 - UserLexicon shortcut lookup actually finds entries (latent y→j hash bug
   fixed).
-- Full-pinyin typos that elide the final nasal still work via prefix backfill:
-  `zenmeyan` (intending 怎么样, missing `g`) surfaces 怎么样.
+- Near-miss full-pinyin (`zmyan` / `zenmeyan` for 怎么样, where the user
+  intended `yang` but typed `yan`) requires the user to enable the
+  corresponding fuzzy rule (`an/ang`). The previous always-on prefix
+  extension was removed because it produced compound noise with fuzzy on
+  other tokens. See `### Why prefix-on-full was removed` above.
 
 ### Changed semantics
 
@@ -226,10 +273,10 @@ even though the user typed an abbreviated input.
   a heuristic consonant-cluster estimate. For inputs where the trailing
   characters were not a real syllable (e.g. `liangho`), the new count reflects
   full segmentation: `[liang, h, o]` = 3 (was 2 under the heuristic).
-- A `.full` token now does prefix matching, not equality matching, in the
-  shortcut+filter path. This means `zenmeyan` will surface 怎么样 (yang)
-  alongside any exact yan-words. Exact full-pinyin input still gets exact
-  results first via the ping fast path.
+- A `.full` token does **equality** matching (modulo fuzzy), not prefix
+  matching, in the shortcut+filter path. `zenmeyan` no longer silently
+  surfaces 怎么样 (yang) — the user must enable `an/ang` fuzzy. Exact
+  full-pinyin input still gets exact results via the ping fast path.
 
 ### Removed
 
@@ -260,17 +307,24 @@ even though the user typed an abbreviated input.
 
 - Full-pinyin regressions: `putonghuapinyin`, `gengaoxiao` two-way ambiguity,
   `zhidao` ordering.
-- Hybrid acceptance: `zmyan`/`zmyang`/`wsmyao`/`nhao` produce the expected
-  Chinese word.
+- Hybrid acceptance: `zmyang`/`wsmyao`/`nhao` produce the expected Chinese
+  word with no fuzzy enabled (full token matches the canonical syllable
+  exactly).
 - Token-count invariants: `zmyan` is 3 tokens, `zmyang` is 3 tokens, partial
   `zmya` is 3 tokens.
 - Token-kind invariants: `a/o/e/an/ang/en/eng/ao/ng` are full; pure initials
   `b/p/.../zh/ch/sh` are abbrev.
 - Single-char fallback: `zhidao` surfaces both 知道 and 知.
-- Prefix backfill: `zenmeyan` still produces 怎么样 even though the ping path
-  finds no exact match.
-- Exact-first ranking: `zenme` puts 怎么 at the top of the candidate list
-  rather than prefix extensions.
+- Near-miss requires fuzzy: `zmyan` and `zenmeyan` only surface 怎么样 when
+  `an/ang` fuzzy is enabled; without fuzzy they don't.
+- Compound-extension regression: `gonne` with `on/ong` fuzzy must NOT
+  surface 功能 (gong neng) — `ne` is a complete syllable and shall not
+  silently extend to `neng`.
+- Typo-correction inclusiveness: `liagne` with `gn → ng` enabled produces
+  both `[liang, e]` and `[lian, ge]` schemes; `lian ge` words (恋歌/连个)
+  surface, while 两根 (liang gen) is still suppressed by the strict full
+  rule.
+- Exact-first ranking: `zenme` puts 怎么 at the top of the candidate list.
 - Single-letter syllable set: only `a/e/o` are full single-letter syllables;
   `b/n/z/y` are abbrev; `i/u/v` cannot segment.
 

@@ -101,6 +101,14 @@ if scheme.isAllFull {
 
 Engine 那一侧**不**做同样的改动。Engine 的 shortcut+前缀回退是 `zenmeyan → 怎么样` / `zmyan → 怎么样` 这类用户故意打缩写/漏字母的核心机制，依赖系统词典覆盖完整。Engine 不会有"用户词库污染"的问题，因为系统词典里的 `这块` 一直存在 → ping 一定命中 → 早返回 → shortcut 路径根本不跑。
 
+> **2026-05-09 补充**：上面这段"Engine 那一侧不做同样的改动"的判断后来被推翻。Engine 的 `tokenMatches` 对 `.full` token 也允许前缀匹配（`yan` 是 `yang` 的前缀 → 命中 `怎么样`），这条单独看没问题，但和模糊音叠加就出事：开启 `on/ong` 后输入 `gonne`，切分成 `[gon→gong, ne]`，ping `"gong ne"` 找不到 → fall through 到 shortcut，`"neng".hasPrefix("ne")` 通过，`功能` (gong neng) 被误命中 —— **每个 token 都被脑补了一次**，一次模糊一次前缀。
+>
+> 修复：把 `Engine.tokenMatches` 的 `.full` 分支从前缀改成"等值或模糊等值"。`.abbrev` 不变（前缀本来就是它存在的意义）。代价：`zmyan → 怎么样` / `zenmeyan → 怎么样` 不再隐式工作，需要用户开 `an/ang` 模糊音才能命中 —— 这正是模糊音该负责的事，比当前隐式 prefix 更可控。
+>
+> `UserLexicon.tokenMatches` 同步收紧。回归测试：`testGonneOnOngFuzzyDoesNotSurface功能`、`testZmyanRequiresAnAngFuzzyFor怎么样`、`testZenmeyanRequiresAnAngFuzzyFor怎么样`。详见 CLAUDE.md "tokenMatches: full = exact-or-fuzzy, abbrev = prefix"。
+>
+> **追加**：拆掉 prefix-on-full 同时也让 `PinyinSegmentor.schemeRespectsReplacements` 失去存在意义。它原本是为了拦 `[lian, ge]`（`liagne` 纠正后的另一种切分），怕它通过 prefix 撞到 `两根 (liang gen)`。现在 `tokenMatches` 严格 `.full` 等值，`gen ≠ ge` 不会匹配，`liang ≠ lian` 不会匹配（除非开 `ian/iang`，而即便开了 `gen` 也不等于 `ge`）—— 守卫已经多余，反而把 `liagne → 恋歌/连个/练个` 这类合法候选挡掉了。守卫整段删除，回归测试 `testLiagneTypoCorrectionSurfacesLiangeCandidates`。
+
 #### 同类场景扫描
 
 任何"用户词库里只有形如 `XY' (X 是 user 输入第一段的前缀扩展，Y 是同样的第二段)`"的条目，输入 `XY` 时都会被错误 surface。具体：声母相同、`stored_syl[0].hasPrefix(typed_syl[0]) && stored_syl[1] == typed_syl[1]`（或反过来）。模糊音开启时还会把这个条件松散到 fuzzy 等价。

@@ -400,11 +400,39 @@ Hosts like Safari (per WebKit frame / address bar / popover), Mail, and Electron
 
 See `docs/2026-05-03-postmortem.md` for the discovery story (Safari Cmd+T new-tab address bar bug).
 
+### Sequential Typo Correction (顺序纠错)
+
+`PinyinSegmentor.segment(text:)` runs typo correction at the input level: every enabled rule (currently `gn ↔ ng`) generates a corrected variant of the whole input, each variant is segmented independently, and the resulting tokens are remapped so `token.text` shows the **original** characters (preserving the user's typing in the marked text) while `token.origin` is the canonical syllable used for DB lookups.
+
+Every corrected segmentation is accepted, including ones where the swapped pair straddles a syllable boundary. For example `liagne` (gn→ng) yields both `[liang, e]` (swapped pair stays inside `liang`) and `[lian, ge]` (swapped pair straddles the lian|ge boundary). Both are queried; the first surfaces 两 / 亮 / 凉 single chars, the second surfaces 恋歌 / 连个 / 练个 etc. via exact `lian ge` ping.
+
+A previous "swapped pair must stay inside one token" guard existed to block 两根 (liang gen) from prefix-matching `[lian, ge]`. That guard was removed once the prefix-on-full path in `tokenMatches` was retired (see next section) — now `[lian, ge]` cannot match 两根 anyway because `gen ≠ ge` under the equality-or-fuzzy rule.
+
+Doing typo correction at input level (instead of inside `matchSyllable`) avoids a boundary-greedy bug: matching `liagn → liang` inside `matchSyllable` would consume the `g` that belongs to `ge` in the alternative segmentation. Substitutions are length-preserving so position-based remap is sound.
+
+### tokenMatches: full = exact-or-fuzzy, abbrev = prefix
+
+`Engine.tokenMatches` (and the mirrored copy in `UserLexicon.tokenMatches`) uses two different matching rules per token kind:
+
+* **`.abbrev`** — prefix match. The 1- or 2-letter initial must be a prefix of the stored syllable (`z` → `zen`, `zhong`; `zh` → `zhong`). Prefix is the whole point of an abbrev token, and fuzzy expansion is checked against the syllable for `z↔zh` etc.
+
+* **`.full`** — equality match against `token.origin` (modulo fuzzy-pinyin equivalence). Prefix on `.full` is **forbidden**: `ne` is a complete syllable and must not silently extend to `neng`. They are different syllables; the user typing `ne` did not type `neng`.
+
+The earlier design allowed prefix on `.full` so that `yan` → `yang` would surface 怎么样 for `zmyan`/`zenmeyan`. That single feature compounded into noise the moment fuzzy was also active: with `on/ong` enabled, `gonne` segments to `[gon→gong, ne]`; ping `"gong ne"` finds nothing, then prefix-on-full extended `ne → neng` and surfaced 功能 (gong neng) — every token got "brain-expanded" twice, once by fuzzy and once by prefix.
+
+Trade-off accepted with the new rule:
+
+* `zmy → 怎么样` still works (all-abbrev shortcut, prefix on abbrev is fine).
+* `zmyang → 怎么样`, `wsmyao → 为什么要`, `nhao → 你好` still work (the trailing full token is exactly the canonical syllable).
+* `zmyan → 怎么样` and `zenmeyan → 怎么样` no longer work via implicit prefix; they require the user to enable `an/ang` fuzzy. Near-miss semantics belong in fuzzy rules — explicit and toggleable — not in an always-on hidden behavior.
+
+Regression tests: `testZmyanRequiresAnAngFuzzyFor怎么样`, `testZenmeyanRequiresAnAngFuzzyFor怎么样`, `testGonneOnOngFuzzyDoesNotSurface功能` in `CoreIME/Tests/CoreIMETests/CoreIMETests.swift`.
+
 ### runScheme Early-Return Invariant
 
-In `Engine.runScheme`, when the all-`.full` scheme's `ping` query returns rows, do NOT fall through to the shortcut + per-token prefix path — otherwise prefix matching surfaces noisy longer words (e.g. `xiche` → 形成 via xi prefix-of xing, che prefix-of cheng). The early-return uses a local `var pingProducedAny: Bool`, not `out.count` — the latter fails when `out` was already primed by an earlier scheme and the new rows dedup to a no-op.
+In `Engine.runScheme`, when the all-`.full` scheme's `ping` query returns rows, do NOT fall through to the shortcut + per-token prefix path — otherwise even with the stricter `tokenMatches` above, alternative segmentations and tail-drop variants of an exact hit would still produce duplicate / re-ranked rows that drown out the exact match. The early-return uses a local `var pingProducedAny: Bool`, not `out.count` — the latter fails when `out` was already primed by an earlier scheme and the new rows dedup to a no-op. Historical example: `xiche` → 形成 (xing cheng) via xi prefix-of xing, che prefix-of cheng. With the new tokenMatches rule that specific case is also blocked at the per-token level, but the early-return is still load-bearing for general dedup correctness.
 
-In `UserLexicon.runScheme`, all-`.full` schemes **never** fall through to the shortcut path, regardless of whether ping found rows. Reason: user lex is small and personal — when ping doesn't hit, prefix-extending the user's full syllables to longer ones (e.g. `zhe`→`zheng` surfacing `整块` for input `zhekuai`, when user only has `整块` not `这块`) is noise, not signal. The Engine path still surfaces "user typed shorter pinyin, system has longer canonical word" cases (`zenmeyan`→`怎么样`) via Engine's own shortcut+prefix fallback against the system dictionary; user lex doesn't need to duplicate that. See `docs/2026-05-03-postmortem.md` "Bug 1 没有被根治" for the discovery story.
+In `UserLexicon.runScheme`, all-`.full` schemes **never** fall through to the shortcut path, regardless of whether ping found rows. Reason: user lex is small and personal — even with the stricter tokenMatches, surfacing the user's longer entries when they typed a shorter prefix (e.g. user has `整块 (zheng kuai)` only, types `zhekuai`) is unwanted. The Engine path no longer surfaces those either now that `.full` requires equality, so the asymmetry is mostly historical. See `docs/2026-05-03-postmortem.md` "Bug 1 没有被根治" for the discovery story.
 
 ## Important Notes
 

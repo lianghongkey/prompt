@@ -115,11 +115,66 @@ public struct PinyinSegmentor {
 
                 let chars = Array(text)
                 var memo: [Int: [SegmentScheme]] = [:]
-                let raw = build(chars: chars, start: 0, memo: &memo)
+                var raw = build(chars: chars, start: 0, memo: &memo)
+
+                // Whole-input typo correction (e.g. gn → ng): segment each corrected
+                // variant separately, then remap each token's `text` back to the
+                // original input chars at the same positions so the marked text
+                // preserves the user's actual typing. Substitutions are
+                // length-preserving, so position-based remap is sound.
+                //
+                // Doing this at input level (instead of inside matchSyllable) avoids
+                // a boundary-greedy bug in per-substring matching: matching "liagn"
+                // → "liang" inside matchSyllable would consume the 'g' that belongs
+                // to "ge" in the alternative segmentation.
+                //
+                // Every corrected segmentation is accepted, including ones where
+                // the swapped pair straddles a syllable boundary (e.g. `liagne` →
+                // `liange` segmenting as `[lian, ge]`). The earlier "swapped pair
+                // must stay inside one token" guard existed to block 两根 (liang
+                // gen) from prefix-matching `[lian, ge]`, but that prefix-on-full
+                // path is gone (see Engine.tokenMatches), so the guard is obsolete
+                // and was dropping legitimate matches like 链格 / 帘个 / 两个.
+                if TypoCorrectionSettings.isAnyEnabled {
+                        for correctedText in TypoCorrectionExpander.variants(for: text) {
+                                let correctedChars = Array(correctedText)
+                                guard correctedChars.count == chars.count else { continue }
+                                var correctedMemo: [Int: [SegmentScheme]] = [:]
+                                let correctedRaw = build(chars: correctedChars, start: 0, memo: &correctedMemo)
+                                for scheme in correctedRaw {
+                                        raw.append(remapSchemeText(scheme: scheme, originalChars: chars))
+                                }
+                        }
+                        // Dedup: a corrected variant whose segmentation collides with
+                        // one already produced by the original input (e.g. when the
+                        // pattern doesn't actually appear in a given substring) would
+                        // otherwise generate identical schemes twice.
+                        if raw.count > 1 {
+                                raw = Array(Set(raw))
+                        }
+                }
 
                 let sorted = raw.sorted(by: schemeIsBetter(_:_:))
                 cacheScheme(text: text, segmentation: sorted)
                 return sorted
+        }
+
+        /// Rebuild a scheme produced from a typo-corrected string so each token's
+        /// `text` shows the original (uncorrected) characters at the same positions.
+        /// `origin` is left untouched (it's already the canonical syllable used for
+        /// DB queries). Length-preserving substitution is required.
+        private static func remapSchemeText(scheme: SegmentScheme, originalChars: [Character]) -> SegmentScheme {
+                var pos = 0
+                var remapped: SegmentScheme = []
+                remapped.reserveCapacity(scheme.count)
+                for token in scheme {
+                        let len = token.text.count
+                        guard pos + len <= originalChars.count else { return scheme }
+                        let originalText = String(originalChars[pos ..< (pos + len)])
+                        remapped.append(SegmentToken(text: originalText, origin: token.origin, kind: token.kind))
+                        pos += len
+                }
+                return remapped
         }
 
         /// Number of tokens in the best (first) scheme. Equals 0 when input is empty
@@ -207,7 +262,13 @@ public struct PinyinSegmentor {
                 if let canonical = matchDirect(text) {
                         return canonical
                 }
-                // Then fuzzy expansion if enabled.
+                // Then fuzzy expansion if enabled. Sequential typo correction is NOT
+                // applied here on substrings — it would greedily consume characters
+                // across syllable boundaries (e.g. "liagn" → "liang" eats the 'g'
+                // that belongs to the next syllable in "liagne" = lian+ge). Typo
+                // correction is instead a whole-input preprocessing step in
+                // `segment(text:)`, which produces alternative segmentations for the
+                // corrected text in addition to the original.
                 if FuzzyPinyinSettings.isAnyEnabled {
                         let str = String(text)
                         for variant in FuzzyPinyinExpander.expand(str) where variant != str {

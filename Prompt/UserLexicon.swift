@@ -398,22 +398,32 @@ struct UserLexicon: Sendable {
                 return candidates
         }
 
-        /// See Engine.tokenMatches — same prefix-match semantics.
+        /// See Engine.tokenMatches — same semantics. `.abbrev` uses prefix,
+        /// `.full` uses equality (modulo fuzzy). Prefix on `.full` is forbidden:
+        /// `"ne"` must not silently extend to `"neng"`.
         private static func tokenMatches(token: SegmentToken,
                                          syllable: String,
                                          fuzzyEnabled: Bool) -> (Bool, Bool) {
-                let needle = token.text
-                if syllable.hasPrefix(needle) { return (true, false) }
-                if !fuzzyEnabled { return (false, false) }
-                for v in FuzzyPinyinExpander.expand(syllable) where v.hasPrefix(needle) {
-                        return (true, true)
-                }
-                if token.kind == .full {
-                        for v in FuzzyPinyinExpander.expand(token.origin) where syllable.hasPrefix(v) {
+                switch token.kind {
+                case .abbrev:
+                        let needle = token.text
+                        if syllable.hasPrefix(needle) { return (true, false) }
+                        if !fuzzyEnabled { return (false, false) }
+                        for v in FuzzyPinyinExpander.expand(syllable) where v.hasPrefix(needle) {
                                 return (true, true)
                         }
+                        return (false, false)
+                case .full:
+                        if syllable == token.origin { return (true, false) }
+                        if !fuzzyEnabled { return (false, false) }
+                        for v in FuzzyPinyinExpander.expand(token.origin) where v == syllable {
+                                return (true, true)
+                        }
+                        for v in FuzzyPinyinExpander.expand(syllable) where v == token.origin {
+                                return (true, true)
+                        }
+                        return (false, false)
                 }
-                return (false, false)
         }
 
 

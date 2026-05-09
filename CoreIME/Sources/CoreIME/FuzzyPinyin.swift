@@ -210,6 +210,7 @@ public struct FuzzyPinyinSettings {
                 }
                 rebuildLookups()
                 saveTypes()
+                PinyinSegmentor.resetCaches()
         }
 
         /// 检查某个类型是否启用

@@ -84,10 +84,15 @@ final class CoreIMETests: XCTestCase {
 
         // MARK: - Hybrid (initials + full syllable mix)
 
-        /// Core regression for the original bug: "zmyan" must produce 怎么样.
-        /// `zm` are abbrev initials, `yan` is a full syllable that prefix-matches
-        /// the canonical syllable `yang` (since "yan" is a prefix of "yang").
-        func testZmyanProduces怎么样() throws {
+        /// `zmyan` was previously expected to surface 怎么样 via implicit prefix
+        /// extension (yan is a prefix of yang). With the new tokenMatches rule
+        /// `.full` tokens require equality (modulo fuzzy), so `yan ≠ yang` unless
+        /// the user explicitly enables `an/ang` fuzzy.
+        ///
+        /// This test asserts both halves: without fuzzy, 怎么样 does NOT appear;
+        /// with `an/ang` fuzzy, it does. Pure-abbrev shortcut `zmy → 怎么样` is
+        /// covered separately (testZmyShortcutStillWorks) and is unaffected.
+        func testZmyanRequiresAnAngFuzzyFor怎么样() throws {
                 Engine.prepare()
                 let text = "zmyan"
                 let schemes = PinyinSegmentor.segment(text: text)
@@ -95,9 +100,28 @@ final class CoreIMETests: XCTestCase {
                 XCTAssertEqual(best.map(\.text), ["z", "m", "yan"])
                 XCTAssertEqual(best.map(\.kind), [.abbrev, .abbrev, .full])
 
-                let candidates = Engine.suggest(text: text, segmentation: schemes, needsSymbols: false)
-                XCTAssertTrue(candidates.contains(where: { $0.text == "怎么样" }),
-                              "zmyan should produce 怎么样; top: \(candidates.prefix(5).map(\.text))")
+                // Without fuzzy: 怎么样 must NOT appear (yan is a complete syllable,
+                // engine no longer extends it to yang).
+                let original = FuzzyPinyinSettings.enabledTypes
+                for t in FuzzyPinyinType.allCases { FuzzyPinyinSettings.setType(t, enabled: false) }
+                PinyinSegmentor.resetCaches()
+                defer {
+                        for t in FuzzyPinyinType.allCases {
+                                FuzzyPinyinSettings.setType(t, enabled: original.contains(t))
+                        }
+                        PinyinSegmentor.resetCaches()
+                }
+                let baseCandidates = Engine.suggest(text: text, segmentation: schemes, needsSymbols: false)
+                XCTAssertFalse(baseCandidates.contains(where: { $0.text == "怎么样" }),
+                               "zmyan without fuzzy must NOT surface 怎么样; top: \(baseCandidates.prefix(5).map(\.text))")
+
+                // With an/ang fuzzy: yan and yang become equivalent → 怎么样 appears.
+                FuzzyPinyinSettings.setType(.an_ang, enabled: true)
+                PinyinSegmentor.resetCaches()
+                let fuzzySchemes = PinyinSegmentor.segment(text: text)
+                let fuzzyCandidates = Engine.suggest(text: text, segmentation: fuzzySchemes, needsSymbols: false)
+                XCTAssertTrue(fuzzyCandidates.contains(where: { $0.text == "怎么样" }),
+                              "zmyan with an/ang fuzzy should surface 怎么样; top: \(fuzzyCandidates.prefix(5).map(\.text))")
         }
 
         func testZmyangProduces怎么样() throws {
@@ -213,18 +237,142 @@ final class CoreIMETests: XCTestCase {
 
         // MARK: - Full-pinyin typo / partial typing
 
-        /// User typed "zenmeyan" intending 怎么样 (yang). The all-full ping path
-        /// finds nothing exact, but the prefix-match fallback should surface 怎么样
-        /// because "yan" is a prefix of "yang".
-        func testZenmeyanFallsBackToPrefix() throws {
+        /// User typed "zenmeyan" intending 怎么样 (yang). Previously the engine
+        /// extended `yan → yang` via shortcut+prefix fallback. The new rule
+        /// requires explicit fuzzy: without `an/ang` fuzzy, 怎么样 must NOT
+        /// appear; with it, the fuzzy-equivalent path surfaces it.
+        func testZenmeyanRequiresAnAngFuzzyFor怎么样() throws {
                 Engine.prepare()
                 let text = "zenmeyan"
                 let schemes = PinyinSegmentor.segment(text: text)
                 guard let best = schemes.first else { XCTFail(); return }
                 XCTAssertTrue(best.isAllFull, "zenmeyan should segment as all-full [zen, me, yan]")
+
+                let original = FuzzyPinyinSettings.enabledTypes
+                for t in FuzzyPinyinType.allCases { FuzzyPinyinSettings.setType(t, enabled: false) }
+                PinyinSegmentor.resetCaches()
+                defer {
+                        for t in FuzzyPinyinType.allCases {
+                                FuzzyPinyinSettings.setType(t, enabled: original.contains(t))
+                        }
+                        PinyinSegmentor.resetCaches()
+                }
+                let baseCandidates = Engine.suggest(text: text, segmentation: schemes, needsSymbols: false)
+                XCTAssertFalse(baseCandidates.contains(where: { $0.text == "怎么样" }),
+                               "zenmeyan without fuzzy must NOT surface 怎么样; top: \(baseCandidates.prefix(5).map(\.text))")
+
+                FuzzyPinyinSettings.setType(.an_ang, enabled: true)
+                PinyinSegmentor.resetCaches()
+                let fuzzySchemes = PinyinSegmentor.segment(text: text)
+                let fuzzyCandidates = Engine.suggest(text: text, segmentation: fuzzySchemes, needsSymbols: false)
+                XCTAssertTrue(fuzzyCandidates.contains(where: { $0.text == "怎么样" }),
+                              "zenmeyan with an/ang fuzzy should surface 怎么样; top: \(fuzzyCandidates.prefix(5).map(\.text))")
+        }
+
+        /// Regression for the `gonne → 功能` noise. With `on/ong` fuzzy enabled,
+        /// `gon` is fuzzy-resolved to `gong`, segmentation becomes `[gon, ne]`
+        /// (all-full). Previously the all-full ping miss fell through to
+        /// shortcut+prefix and `"ne" → "neng"` prefix match surfaced 功能
+        /// (gong neng) — every token compounded another layer of expansion.
+        /// With `.full` tokens restricted to exact-or-fuzzy match, `ne ≠ neng`
+        /// and 功能 must not appear.
+        func testGonneOnOngFuzzyDoesNotSurface功能() throws {
+                Engine.prepare()
+                let original = FuzzyPinyinSettings.enabledTypes
+                for t in FuzzyPinyinType.allCases { FuzzyPinyinSettings.setType(t, enabled: false) }
+                FuzzyPinyinSettings.setType(.on_ong, enabled: true)
+                PinyinSegmentor.resetCaches()
+                defer {
+                        for t in FuzzyPinyinType.allCases {
+                                FuzzyPinyinSettings.setType(t, enabled: original.contains(t))
+                        }
+                        PinyinSegmentor.resetCaches()
+                }
+                let text = "gonne"
+                let schemes = PinyinSegmentor.segment(text: text)
                 let candidates = Engine.suggest(text: text, segmentation: schemes, needsSymbols: false)
-                XCTAssertTrue(candidates.contains(where: { $0.text == "怎么样" }),
-                              "zenmeyan should still surface 怎么样; top: \(candidates.prefix(5).map(\.text))")
+                XCTAssertFalse(candidates.contains(where: { $0.text == "功能" }),
+                               "gonne with on/ong fuzzy must NOT surface 功能; top: \(candidates.prefix(10).map(\.text))")
+        }
+
+        /// Regression for the typo-correction guard removal. With `gn → ng`
+        /// enabled, `liagne` corrects to `liange`, which has two valid
+        /// segmentations: `[liang, e]` and `[lian, ge]`. The previous
+        /// `schemeRespectsReplacements` guard rejected `[lian, ge]` (the
+        /// swapped pair `ng` straddles its lian|ge boundary), which silently
+        /// blocked legitimate candidates like 链格 (lian ge). Now both
+        /// segmentations are accepted; under the strict `.full` tokenMatches
+        /// rule, the noise case 两根 (liang gen) is still blocked because
+        /// `gen ≠ ge`.
+        func testLiagneTypoCorrectionSurfacesLiangeCandidates() throws {
+                Engine.prepare()
+                let originalTypo = TypoCorrectionSettings.enabledTypes
+                let originalFuzzy = FuzzyPinyinSettings.enabledTypes
+                for t in TypoCorrectionType.allCases { TypoCorrectionSettings.setType(t, enabled: false) }
+                for t in FuzzyPinyinType.allCases { FuzzyPinyinSettings.setType(t, enabled: false) }
+                TypoCorrectionSettings.setType(.ng_gn, enabled: true)
+                PinyinSegmentor.resetCaches()
+                defer {
+                        for t in TypoCorrectionType.allCases {
+                                TypoCorrectionSettings.setType(t, enabled: originalTypo.contains(t))
+                        }
+                        for t in FuzzyPinyinType.allCases {
+                                FuzzyPinyinSettings.setType(t, enabled: originalFuzzy.contains(t))
+                        }
+                        PinyinSegmentor.resetCaches()
+                }
+                let text = "liagne"
+                let schemes = PinyinSegmentor.segment(text: text)
+                let schemeOrigins = schemes.map { $0.map(\.origin) }
+                XCTAssertTrue(schemeOrigins.contains(["liang", "e"]),
+                              "[liang, e] must be among schemes; got: \(schemeOrigins)")
+                XCTAssertTrue(schemeOrigins.contains(["lian", "ge"]),
+                              "[lian, ge] must NOT be filtered out; got: \(schemeOrigins)")
+
+                let candidates = Engine.suggest(text: text, segmentation: schemes, needsSymbols: false)
+                let texts = candidates.map(\.text)
+                // Any common 2-char word with pinyin "lian ge" demonstrates that
+                // [lian, ge] survived the typo-correction filter and ping-matched.
+                let lianGeWords = ["恋歌", "连个", "练个", "连歌"]
+                XCTAssertTrue(lianGeWords.contains(where: { texts.contains($0) }),
+                              "liagne (gn→ng) should surface a [lian, ge] candidate; top: \(texts.prefix(15))")
+                XCTAssertFalse(texts.contains("两根"),
+                               "liagne must still NOT surface 两根 (liang gen); top: \(texts.prefix(15))")
+        }
+
+        /// `liagne` (gn→ng) → 两个 (liang ge) requires `ian/iang` fuzzy.
+        ///
+        /// Why: corrected `liange` is 6 chars; the only segmentations that fit
+        /// are `[liang, e]` and `[lian, ge]` (no `[liang, ge]` — that needs 7
+        /// chars). 两个 has syllables `liang ge`, so it can only match via
+        /// `[lian, ge]` with token1 = "lian" fuzzy-equivalent to "liang". That
+        /// equivalence is exactly what `ian/iang` fuzzy provides; without it
+        /// the strict full-token rule (lian ≠ liang) blocks the match.
+        func testLiagneSurfaces两个OnlyWithIanIangFuzzy() throws {
+                Engine.prepare()
+                let originalTypo = TypoCorrectionSettings.enabledTypes
+                let originalFuzzy = FuzzyPinyinSettings.enabledTypes
+                for t in TypoCorrectionType.allCases { TypoCorrectionSettings.setType(t, enabled: false) }
+                for t in FuzzyPinyinType.allCases { FuzzyPinyinSettings.setType(t, enabled: false) }
+                TypoCorrectionSettings.setType(.ng_gn, enabled: true)
+                PinyinSegmentor.resetCaches()
+                defer {
+                        for t in TypoCorrectionType.allCases { TypoCorrectionSettings.setType(t, enabled: originalTypo.contains(t)) }
+                        for t in FuzzyPinyinType.allCases { FuzzyPinyinSettings.setType(t, enabled: originalFuzzy.contains(t)) }
+                        PinyinSegmentor.resetCaches()
+                }
+                let text = "liagne"
+                // Without ian/iang fuzzy: 两个 must NOT appear (lian ≠ liang).
+                let baseCandidates = Engine.suggest(text: text, segmentation: PinyinSegmentor.segment(text: text), needsSymbols: false)
+                XCTAssertFalse(baseCandidates.contains(where: { $0.text == "两个" }),
+                               "without ian/iang fuzzy, liagne must NOT surface 两个; top: \(baseCandidates.prefix(15).map(\.text))")
+
+                // With ian/iang fuzzy: 两个 should surface.
+                FuzzyPinyinSettings.setType(.ian_iang, enabled: true)
+                PinyinSegmentor.resetCaches()
+                let fuzzyCandidates = Engine.suggest(text: text, segmentation: PinyinSegmentor.segment(text: text), needsSymbols: false)
+                XCTAssertTrue(fuzzyCandidates.contains(where: { $0.text == "两个" }),
+                              "with ian/iang fuzzy, liagne should surface 两个; top: \(fuzzyCandidates.prefix(15).map(\.text))")
         }
 
         /// "zenme" exact match must rank 怎么 first, not get drowned out by

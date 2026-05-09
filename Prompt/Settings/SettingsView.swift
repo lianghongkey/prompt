@@ -10,6 +10,7 @@ struct SettingsView: View {
         @State private var isInputModeSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .inputMode
         @State private var isVoiceSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .voice
         @State private var isFuzzyPinyinSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .fuzzyPinyin
+        @State private var isTypoCorrectionSettingsViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .typoCorrection
         @State private var isAboutViewActive: Bool = AppSettings.selectedSettingsSidebarRow == .about
 
         var body: some View {
@@ -20,6 +21,7 @@ struct SettingsView: View {
                                         Label("输入法选择", systemImage: "character.bubble").tag(SettingsSidebarRow.inputMode)
                                         Label("语音输入", systemImage: "mic").tag(SettingsSidebarRow.voice)
                                         Label("模糊音", systemImage: "speaker.wave.2").tag(SettingsSidebarRow.fuzzyPinyin)
+                                        Label("顺序纠错", systemImage: "arrow.left.arrow.right").tag(SettingsSidebarRow.typoCorrection)
                                         Label("关于", systemImage: "info.circle").tag(SettingsSidebarRow.about)
                                 }
                                 .padding(.top, 10)
@@ -44,6 +46,9 @@ struct SettingsView: View {
                                         NavigationLink(destination: FuzzyPinyinSettingsView(), isActive: $isFuzzyPinyinSettingsViewActive) {
                                                 Label("模糊音", systemImage: "speaker.wave.2")
                                         }
+                                        NavigationLink(destination: TypoCorrectionSettingsView(), isActive: $isTypoCorrectionSettingsViewActive) {
+                                                Label("顺序纠错", systemImage: "arrow.left.arrow.right")
+                                        }
                                         NavigationLink(destination: AboutView(), isActive: $isAboutViewActive) {
                                                 Label("关于", systemImage: "info.circle")
                                         }
@@ -67,6 +72,8 @@ struct SettingsView: View {
                         VoiceSettingsView()
                 case .fuzzyPinyin:
                         FuzzyPinyinSettingsView()
+                case .typoCorrection:
+                        TypoCorrectionSettingsView()
                 case .about:
                         AboutView()
                 }
@@ -82,6 +89,7 @@ enum SettingsSidebarRow: Int, Hashable, Identifiable, CaseIterable {
         case inputMode
         case voice
         case fuzzyPinyin
+        case typoCorrection
         case about
         var id: Int {
                 return rawValue

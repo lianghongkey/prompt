@@ -315,35 +315,58 @@ public struct Engine {
         }
 
         /// Match one scheme token against one space-separated pinyin syllable.
-        /// Both `.full` and `.abbrev` tokens use **prefix match**: the token's text
-        /// (which equals `origin` for full, equals the initial(s) for abbrev) must be
-        /// a prefix of the stored syllable, or a fuzzy variant of it.
+        /// The two kinds match by different rules:
         ///
-        /// Why prefix for `.full` too: a user-typed full syllable like "yan" should
-        /// match canonical "yang" (since "yan" is a prefix of "yang"). This is
-        /// what makes "zmyan" match 怎么样 (zen me **yang**). Exact-only matching is
-        /// reserved for the `ping` fast path in `runScheme`, which the all-full
-        /// branch tries first to keep frequent full-pinyin input clean.
+        /// - `.abbrev`: prefix match. The 1- or 2-letter initial must be a prefix
+        ///   of the stored syllable (e.g. token `"z"` matches `"zen"`, `"zhong"`).
+        ///   Prefix is the whole point of an abbrev token.
+        ///
+        /// - `.full`: equality match against `token.origin` (the canonical syllable),
+        ///   modulo fuzzy-pinyin equivalence. Prefix is **forbidden** here: `"ne"`
+        ///   is a complete syllable and must not silently extend to `"neng"`; they
+        ///   are different syllables.
+        ///
+        /// Rationale: allowing prefix on `.full` produced compound noise. With
+        /// `on/ong` fuzzy, `gonne` segments as `[gon→gong, ne]`; ping `"gong ne"`
+        /// finds nothing, then prefix-match used to extend `"ne" → "neng"` via
+        /// the shortcut path, surfacing 功能 (gong neng) — every token gets
+        /// "brain-expanded" and the candidate list fills with noise.
+        ///
+        /// Trade-off: cases like `zmyan → 怎么样` (yan/yang near-miss) and
+        /// `zenmeyan → 怎么样` no longer work via implicit prefix; they require
+        /// the user to enable the corresponding fuzzy rule (`an/ang`). That is
+        /// the right place for "near miss" semantics — explicit and toggleable —
+        /// instead of an always-on hidden behavior. Pure-abbrev shortcuts like
+        /// `zmy → 怎么样` and full-pinyin scheme-alternative cases like
+        /// `nhao → 你好`, `wsmyao → 为什么要` are unaffected.
         ///
         /// Returns (matched, usedFuzzy).
         private static func tokenMatches(token: SegmentToken,
                                          syllable: String,
                                          fuzzyEnabled: Bool) -> (Bool, Bool) {
-                let needle = token.text
-                if syllable.hasPrefix(needle) { return (true, false) }
-                if !fuzzyEnabled { return (false, false) }
-                for v in FuzzyPinyinExpander.expand(syllable) where v.hasPrefix(needle) {
-                        return (true, true)
-                }
-                if token.kind == .full {
-                        // Also try fuzzy variants of the canonical token form. "yan" has
-                        // no fuzzy variants but a token like "in" has "ing", so the user
-                        // typing "in" can match a stored "ing"-syllable.
-                        for v in FuzzyPinyinExpander.expand(token.origin) where syllable.hasPrefix(v) {
+                switch token.kind {
+                case .abbrev:
+                        let needle = token.text
+                        if syllable.hasPrefix(needle) { return (true, false) }
+                        if !fuzzyEnabled { return (false, false) }
+                        for v in FuzzyPinyinExpander.expand(syllable) where v.hasPrefix(needle) {
                                 return (true, true)
                         }
+                        return (false, false)
+                case .full:
+                        if syllable == token.origin { return (true, false) }
+                        if !fuzzyEnabled { return (false, false) }
+                        // Equality under fuzzy: either side's expansion contains the other.
+                        // Covers in↔ing, an↔ang, etc., where the user's typed canonical
+                        // syllable and the DB-stored canonical syllable are fuzzy peers.
+                        for v in FuzzyPinyinExpander.expand(token.origin) where v == syllable {
+                                return (true, true)
+                        }
+                        for v in FuzzyPinyinExpander.expand(syllable) where v == token.origin {
+                                return (true, true)
+                        }
+                        return (false, false)
                 }
-                return (false, false)
         }
 
         // MARK: - Shortcut fallback for non-letter / unparseable input

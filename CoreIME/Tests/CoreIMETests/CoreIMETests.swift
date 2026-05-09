@@ -375,6 +375,39 @@ final class CoreIMETests: XCTestCase {
                               "with ian/iang fuzzy, liagne should surface 两个; top: \(fuzzyCandidates.prefix(15).map(\.text))")
         }
 
+        /// Typo-corrected schemes (e.g. liagne → liange) should produce
+        /// candidates flagged `isFuzzyMatch = true`, so they sort below true
+        /// exact-typed matches in the candidate list. Identical word matched
+        /// from typed-`liange` and typed-`liagne` (with gn→ng) should differ
+        /// only in this flag.
+        func testTypoCorrectedCandidatesAreMarkedFuzzy() throws {
+                Engine.prepare()
+                let originalTypo = TypoCorrectionSettings.enabledTypes
+                let originalFuzzy = FuzzyPinyinSettings.enabledTypes
+                for t in TypoCorrectionType.allCases { TypoCorrectionSettings.setType(t, enabled: false) }
+                for t in FuzzyPinyinType.allCases { FuzzyPinyinSettings.setType(t, enabled: false) }
+                TypoCorrectionSettings.setType(.ng_gn, enabled: true)
+                PinyinSegmentor.resetCaches()
+                defer {
+                        for t in TypoCorrectionType.allCases { TypoCorrectionSettings.setType(t, enabled: originalTypo.contains(t)) }
+                        for t in FuzzyPinyinType.allCases { FuzzyPinyinSettings.setType(t, enabled: originalFuzzy.contains(t)) }
+                        PinyinSegmentor.resetCaches()
+                }
+                // Typed correctly: 恋歌 should be a non-fuzzy ping match.
+                let exactCandidates = Engine.suggest(text: "liange", segmentation: PinyinSegmentor.segment(text: "liange"), needsSymbols: false)
+                guard let exactLiange = exactCandidates.first(where: { $0.text == "恋歌" }) else {
+                        XCTFail("liange must surface 恋歌; got: \(exactCandidates.prefix(10).map(\.text))"); return
+                }
+                XCTAssertFalse(exactLiange.isFuzzyMatch, "liange (typed correctly) → 恋歌 must NOT be marked fuzzy")
+
+                // Typed with typo: 恋歌 is reachable only via typo-corrected scheme.
+                let typoCandidates = Engine.suggest(text: "liagne", segmentation: PinyinSegmentor.segment(text: "liagne"), needsSymbols: false)
+                guard let typoLiange = typoCandidates.first(where: { $0.text == "恋歌" }) else {
+                        XCTFail("liagne (with gn→ng) must surface 恋歌; got: \(typoCandidates.prefix(10).map(\.text))"); return
+                }
+                XCTAssertTrue(typoLiange.isFuzzyMatch, "liagne → 恋歌 must be marked fuzzy (typo-corrected scheme)")
+        }
+
         /// "zenme" exact match must rank 怎么 first, not get drowned out by
         /// prefix-extension candidates from 怎门, 增没 etc. Ping path runs first
         /// and exits before prefix backfill.

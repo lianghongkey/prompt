@@ -242,10 +242,13 @@ struct UserLexicon: Sendable {
                                       out: inout [Candidate]) {
                 let combinedInput = scheme.map(\.text).joined()
                 let mark = combinedInput
+                // Schemes from typo-corrected input are near-misses; tag every
+                // candidate fuzzy so they sort below true exact-typed matches.
+                let schemeIsTypoCorrected = scheme.isTypoCorrected
 
                 if scheme.isAllFull {
                         let pingText = scheme.map(\.origin).joined()
-                        let matched = pingQuery(pingText: pingText, input: combinedInput, mark: mark, isFuzzy: false, maxSyllableCount: scheme.count)
+                        let matched = pingQuery(pingText: pingText, input: combinedInput, mark: mark, isFuzzy: schemeIsTypoCorrected, maxSyllableCount: scheme.count)
                         appendUnique(matched, into: &out, seen: &seenKeys)
 
                         if fuzzyEnabled {
@@ -280,7 +283,8 @@ struct UserLexicon: Sendable {
                 let shortcutMatched = shortcutSchemeQuery(scheme: scheme,
                                                           input: combinedInput,
                                                           mark: mark,
-                                                          fuzzyEnabled: fuzzyEnabled)
+                                                          fuzzyEnabled: fuzzyEnabled,
+                                                          forceFuzzyMatch: schemeIsTypoCorrected)
                 appendUnique(shortcutMatched, into: &out, seen: &seenKeys)
         }
 
@@ -357,7 +361,8 @@ struct UserLexicon: Sendable {
         private static func shortcutSchemeQuery(scheme: SegmentScheme,
                                                 input: String,
                                                 mark: String,
-                                                fuzzyEnabled: Bool) -> [Candidate] {
+                                                fuzzyEnabled: Bool,
+                                                forceFuzzyMatch: Bool = false) -> [Candidate] {
                 guard let code = schemeShortcutCode(scheme) else { return [] }
                 guard let stmt = shortcutQueryStatement else { return [] }
                 sqlite3_reset(stmt)
@@ -378,7 +383,7 @@ struct UserLexicon: Sendable {
                         guard parts.count == schemeSyllableCount else { continue }
 
                         var matched = true
-                        var anyFuzzy = false
+                        var anyFuzzy = forceFuzzyMatch
                         for (token, syl) in zip(scheme, parts) {
                                 let syllable = String(syl)
                                 let (ok, fuzzy) = tokenMatches(token: token, syllable: syllable, fuzzyEnabled: fuzzyEnabled)

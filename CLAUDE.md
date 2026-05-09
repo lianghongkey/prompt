@@ -410,6 +410,8 @@ A previous "swapped pair must stay inside one token" guard existed to block 两�
 
 Doing typo correction at input level (instead of inside `matchSyllable`) avoids a boundary-greedy bug: matching `liagn → liang` inside `matchSyllable` would consume the `g` that belongs to `ge` in the alternative segmentation. Substitutions are length-preserving so position-based remap is sound.
 
+`SegmentToken.isTypoCorrected` is set true on every token in a remapped scheme. `Engine.runScheme` and `UserLexicon.runScheme` propagate this as `forceFuzzyMatch` into shortcut queries and as the `isFuzzy` argument to ping queries, so all candidates from a typo-corrected scheme are flagged `Candidate.isFuzzyMatch = true`. They still appear in the list but sort below candidates from schemes the user actually typed — typing `liange` correctly puts 恋歌 above 恋歌 from `liagne`-typo. Regression: `testTypoCorrectedCandidatesAreMarkedFuzzy`.
+
 ### tokenMatches: full = exact-or-fuzzy, abbrev = prefix
 
 `Engine.tokenMatches` (and the mirrored copy in `UserLexicon.tokenMatches`) uses two different matching rules per token kind:

@@ -108,6 +108,8 @@ Engine 那一侧**不**做同样的改动。Engine 的 shortcut+前缀回退是 
 > `UserLexicon.tokenMatches` 同步收紧。回归测试：`testGonneOnOngFuzzyDoesNotSurface功能`、`testZmyanRequiresAnAngFuzzyFor怎么样`、`testZenmeyanRequiresAnAngFuzzyFor怎么样`。详见 CLAUDE.md "tokenMatches: full = exact-or-fuzzy, abbrev = prefix"。
 >
 > **追加**：拆掉 prefix-on-full 同时也让 `PinyinSegmentor.schemeRespectsReplacements` 失去存在意义。它原本是为了拦 `[lian, ge]`（`liagne` 纠正后的另一种切分），怕它通过 prefix 撞到 `两根 (liang gen)`。现在 `tokenMatches` 严格 `.full` 等值，`gen ≠ ge` 不会匹配，`liang ≠ lian` 不会匹配（除非开 `ian/iang`，而即便开了 `gen` 也不等于 `ge`）—— 守卫已经多余，反而把 `liagne → 恋歌/连个/练个` 这类合法候选挡掉了。守卫整段删除，回归测试 `testLiagneTypoCorrectionSurfacesLiangeCandidates`。
+>
+> **再追加**：放开守卫后，typo 纠正命中和"用户精确打"命中在排序里平起平坐，对真正打 `liange` 的人不公平。新增 `SegmentToken.isTypoCorrected` 字段（remap 时置 true），`Engine.runScheme` / `UserLexicon.runScheme` 把这个 flag 透传到 ping 和 shortcut 路径，强制把对应 `Candidate.isFuzzyMatch` 设为 true，排序时降级到 fuzzy 同档。不丢候选，只是"打错纠回来"的版本永远沉到"老老实实打对"的版本之后。回归测试 `testTypoCorrectedCandidatesAreMarkedFuzzy`。
 
 #### 同类场景扫描
 

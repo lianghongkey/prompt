@@ -127,6 +127,14 @@ ensures only legitimate `lian ge` words (恋歌/连个/练个) and tail-drop sin
 chars (两/亮/凉) surface — never 两根 (liang gen), because `gen ≠ ge` and
 `liang ≠ lian` without `ian/iang` fuzzy.
 
+Every token in a typo-corrected (remapped) scheme has `isTypoCorrected =
+true`. `Engine.runScheme` (and the user-lex mirror) reads this flag and
+forces every produced `Candidate.isFuzzyMatch = true`, so typo-corrected
+matches sort below the same word matched from cleanly-typed input. A user
+who typed `liange` correctly will see 恋歌 ranked above the 恋歌 produced
+by typing `liagne`-with-typo-correction; both still appear, just in the
+right order.
+
 ### Why prefix-on-full was removed
 
 A previous version allowed `.full` tokens to also prefix-match (so a user-typed
@@ -324,6 +332,8 @@ even though the user typed an abbreviated input.
   both `[liang, e]` and `[lian, ge]` schemes; `lian ge` words (恋歌/连个)
   surface, while 两根 (liang gen) is still suppressed by the strict full
   rule.
+- Typo-correction demotion: typo-corrected matches are flagged
+  `isFuzzyMatch = true` so they sort below true exact-typed matches.
 - Exact-first ranking: `zenme` puts 怎么 at the top of the candidate list.
 - Single-letter syllable set: only `a/e/o` are full single-letter syllables;
   `b/n/z/y` are abbrev; `i/u/v` cannot segment.

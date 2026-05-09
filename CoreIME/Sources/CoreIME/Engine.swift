@@ -181,6 +181,11 @@ public struct Engine {
                                       queriedHashes: inout Set<Int>,
                                       out: inout [Candidate]) {
                 let combinedInput = scheme.map(\.text).joined()
+                // Schemes from typo-corrected input (e.g. liagne → liange) are
+                // semantically a near-miss, not a true exact match. Mark every
+                // candidate they produce as fuzzy so it sorts below candidates from
+                // schemes the user actually typed.
+                let schemeIsTypoCorrected = scheme.isTypoCorrected
 
                 if scheme.isAllFull {
                         // Fast path: exact `ping` lookup using B-tree index.
@@ -192,7 +197,7 @@ public struct Engine {
                         let spacedPinyin = scheme.map(\.origin).joined(separator: " ")
                         let hash = spacedPinyin.deterministicHash
                         if queriedHashes.insert(hash).inserted {
-                                let candidates = pinyinMatchInternal(text: spacedPinyin, input: combinedInput, isFuzzyMatch: false, maxSyllableCount: scheme.count)
+                                let candidates = pinyinMatchInternal(text: spacedPinyin, input: combinedInput, isFuzzyMatch: schemeIsTypoCorrected, maxSyllableCount: scheme.count)
                                 if !candidates.isEmpty { pingProducedAny = true }
                                 appendUnique(candidates, into: &out, seen: &seenOrders)
                         }
@@ -203,7 +208,7 @@ public struct Engine {
                                         let expanded = expandedArray.joined(separator: " ")
                                         let h = expanded.deterministicHash
                                         guard queriedHashes.insert(h).inserted else { continue }
-                                        let isFuzzy = expanded != spacedPinyin
+                                        let isFuzzy = expanded != spacedPinyin || schemeIsTypoCorrected
                                         let candidates = pinyinMatchInternal(text: expanded, input: combinedInput, isFuzzyMatch: isFuzzy, maxSyllableCount: scheme.count)
                                         if !candidates.isEmpty { pingProducedAny = true }
                                         appendUnique(candidates, into: &out, seen: &seenOrders)
@@ -227,7 +232,8 @@ public struct Engine {
                                                      shortcutCode: shortcutCode,
                                                      input: combinedInput,
                                                      fuzzyEnabled: fuzzyEnabled,
-                                                     isFallback: isFallback)
+                                                     isFallback: isFallback,
+                                                     forceFuzzyMatch: schemeIsTypoCorrected)
                 appendUnique(candidates, into: &out, seen: &seenOrders)
         }
 
@@ -255,13 +261,17 @@ public struct Engine {
         }
 
         /// Query `pinyintable WHERE shortcut = ?`, then in-Swift filter so that
-        /// each scheme token's `text` is a (possibly fuzzy) prefix of the corresponding
-        /// space-separated pinyin syllable in the row.
+        /// each scheme token matches the corresponding space-separated pinyin
+        /// syllable per `tokenMatches`. `forceFuzzyMatch` tags every produced
+        /// Candidate `isFuzzyMatch = true` regardless of per-token fuzzy use —
+        /// caller passes `true` when the scheme came from typo correction so
+        /// those near-miss matches sort below true exact-typed candidates.
         private static func shortcutSchemeQuery(scheme: SegmentScheme,
                                                 shortcutCode: Int,
                                                 input: String,
                                                 fuzzyEnabled: Bool,
-                                                isFallback: Bool) -> [Candidate] {
+                                                isFallback: Bool,
+                                                forceFuzzyMatch: Bool = false) -> [Candidate] {
                 guard let stmt = shortcutStatement else { return [] }
                 sqlite3_reset(stmt)
                 sqlite3_bind_int64(stmt, 1, Int64(shortcutCode))
@@ -289,7 +299,7 @@ public struct Engine {
                         guard parts.count == schemeSyllableCount else { continue }
 
                         var matched = true
-                        var anyFuzzy = false
+                        var anyFuzzy = forceFuzzyMatch
                         for (token, syl) in zip(scheme, parts) {
                                 let syllable = String(syl)
                                 let (ok, fuzzy) = tokenMatches(token: token, syllable: syllable, fuzzyEnabled: fuzzyEnabled)

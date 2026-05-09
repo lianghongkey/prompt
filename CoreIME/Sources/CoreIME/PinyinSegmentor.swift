@@ -7,6 +7,11 @@ import SQLite3
 /// - `.full`: `text` is a complete syllable; `origin` is its canonical form (used for DB queries).
 /// - `.abbrev`: `text` is a 1- or 2-letter initial (`b/p/m/.../w` or `zh/ch/sh`);
 ///   `origin == text`. Stands for "any syllable starting with these letters".
+///
+/// `isTypoCorrected` marks tokens produced from a typo-corrected variant of the
+/// raw input (see `PinyinSegmentor.segment` typo-correction loop). Candidates
+/// generated from any scheme containing such a token are demoted in sort by
+/// being marked `isFuzzyMatch = true`.
 public struct SegmentToken: Hashable, Sendable {
         public enum Kind: Hashable, Sendable {
                 case full
@@ -16,11 +21,13 @@ public struct SegmentToken: Hashable, Sendable {
         public let text: String
         public let origin: String
         public let kind: Kind
+        public let isTypoCorrected: Bool
 
-        public init(text: String, origin: String, kind: Kind) {
+        public init(text: String, origin: String, kind: Kind, isTypoCorrected: Bool = false) {
                 self.text = text
                 self.origin = origin
                 self.kind = kind
+                self.isTypoCorrected = isTypoCorrected
         }
 
         public var isFull: Bool { kind == .full }
@@ -48,6 +55,12 @@ extension SegmentScheme {
         /// True iff every token is `.full` (eligible for the fast `ping` index).
         public var isAllFull: Bool {
                 return !self.contains(where: \.isAbbrev)
+        }
+
+        /// True iff any token in this scheme came from typo-corrected input.
+        /// Candidates from such schemes are demoted by `isFuzzyMatch = true`.
+        public var isTypoCorrected: Bool {
+                return self.contains(where: \.isTypoCorrected)
         }
 }
 
@@ -160,7 +173,8 @@ public struct PinyinSegmentor {
         }
 
         /// Rebuild a scheme produced from a typo-corrected string so each token's
-        /// `text` shows the original (uncorrected) characters at the same positions.
+        /// `text` shows the original (uncorrected) characters at the same positions
+        /// and `isTypoCorrected` is set so downstream code can demote the candidates.
         /// `origin` is left untouched (it's already the canonical syllable used for
         /// DB queries). Length-preserving substitution is required.
         private static func remapSchemeText(scheme: SegmentScheme, originalChars: [Character]) -> SegmentScheme {
@@ -171,7 +185,7 @@ public struct PinyinSegmentor {
                         let len = token.text.count
                         guard pos + len <= originalChars.count else { return scheme }
                         let originalText = String(originalChars[pos ..< (pos + len)])
-                        remapped.append(SegmentToken(text: originalText, origin: token.origin, kind: token.kind))
+                        remapped.append(SegmentToken(text: originalText, origin: token.origin, kind: token.kind, isTypoCorrected: true))
                         pos += len
                 }
                 return remapped

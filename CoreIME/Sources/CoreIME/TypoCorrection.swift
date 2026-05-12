@@ -5,27 +5,36 @@ import Foundation
 /// 顺序纠错类型 — 类似模糊音，但用于自动修正常见的字母顺序输入错误。
 /// 与模糊音的区别：模糊音处理发音变体，本模块只处理键入顺序错误（例如把 "ng" 误打成 "gn"）。
 public enum TypoCorrectionType: String, CaseIterable, Identifiable, Sendable {
+        // rawValue 保留 "ng-gn" 以兼容已经持久化的用户设置。
         case ng_gn = "ng-gn"
+        case na_an = "na-an"
+        case ne_en = "ne-en"
 
         public var id: String { rawValue }
 
         public var displayName: String {
                 switch self {
-                case .ng_gn: return "ng / gn"
+                case .ng_gn: return "gn → ng"
+                case .na_an: return "na → an"
+                case .ne_en: return "ne → en"
                 }
         }
 
         public var description: String {
                 switch self {
                 case .ng_gn: return "顺序纠错 (gn → ng)"
+                case .na_an: return "顺序纠错 (na → an)"
+                case .ne_en: return "顺序纠错 (ne → en)"
                 }
         }
 
-        /// 用于音节匹配的子串替换列表 (pattern → replacement)。
-        /// 仅在直接匹配/模糊匹配都失败时尝试。
+        /// 用于音节匹配的子串替换列表 (pattern → replacement)。单向：仅把
+        /// pattern 替换成 replacement，不做反向替换。
         fileprivate var substitutions: [(pattern: String, replacement: String)] {
                 switch self {
                 case .ng_gn: return [("gn", "ng")]
+                case .na_an: return [("na", "an")]
+                case .ne_en: return [("ne", "en")]
                 }
         }
 }

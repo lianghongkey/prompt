@@ -14,7 +14,7 @@ struct TypoCorrectionSettingsView: View {
                                 VStack(alignment: .leading, spacing: 12) {
                                         Text("关于顺序纠错")
                                                 .font(.headline)
-                                        Text("自动修正常见的字母顺序输入错误。例如开启 ng / gn 后，把 \"zhogn\" 也识别为 \"zhong\"。仅当原始拼音无法匹配时才会尝试纠错。")
+                                        Text("自动修正常见的字母顺序输入错误。所有规则均为单向：仅把左侧拼写视作右侧的等价输入，反向不成立。例如开启 gn → ng 后，\"zhogn\" 会被识别为 \"zhong\"，但 \"zhong\" 不会被误识为 \"zhogn\"。仅在原始拼音无法匹配时才会作为额外候选出现。")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                                 .fixedSize(horizontal: false, vertical: true)
@@ -25,13 +25,15 @@ struct TypoCorrectionSettingsView: View {
                                         Text("纠错规则")
                                                 .font(.headline)
 
-                                        Toggle(isOn: bindingFor(.ng_gn)) {
-                                                VStack(alignment: .leading, spacing: 2) {
-                                                        Text("ng / gn")
-                                                                .font(.body)
-                                                        Text(TypoCorrectionType.ng_gn.description)
-                                                                .font(.caption)
-                                                                .foregroundColor(.secondary)
+                                        ForEach(TypoCorrectionType.allCases) { type in
+                                                Toggle(isOn: bindingFor(type)) {
+                                                        VStack(alignment: .leading, spacing: 2) {
+                                                                Text(type.displayName)
+                                                                        .font(.body)
+                                                                Text(type.description)
+                                                                        .font(.caption)
+                                                                        .foregroundColor(.secondary)
+                                                        }
                                                 }
                                         }
                                 }

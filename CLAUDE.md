@@ -123,7 +123,7 @@ aftercareSelection() → insert(candidate.text) + updates bufferText
 
 **Prompt App** (`Prompt/`)
 
-* `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`/`wordCreationInputs`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder`, `static var whisperModelObserver`, `static var correctorObserver`, and `static let sharedAppContext` (see "Multi-instance controller invariants" below).
+* `PromptInputController.swift` — `IMKInputController` subclass. All key handling runs in `Task { @MainActor in ... }`. Core state: `bufferText`, `candidates`, `selectedCandidates`, `wordCreationCharacters`/`wordCreationPinyins`/`wordCreationInputs`, `isPunctuationFullWidth`, `inputStage`, `inputForm`, `isIntendingToRecord`. Holds `static let sharedVoiceRecorder`, `static var whisperModelObserver`, `static var correctorObserver`, and `static let sharedAppContext` (see "Multi-instance controller invariants" below).
 
 * `UserLexicon.swift` — Stores at `~/Library/userlexicon.sqlite3`. Has prepared statements for ping/shortcut/find queries. `handle(_:)` boosts selected word by +1000 and decays same-pinyin siblings by 10% (`frequency * 9 / 10`, min 1). All selections (including first candidate) are recorded so frequency reflects long-term usage proportions. Initial frequency: 1000.
 
@@ -342,6 +342,32 @@ Allows users to narrow down rare characters by typing an auxiliary word's pinyin
 * Returns single-character `Candidate` objects with `input` matching the buffer syllable's text (for correct word creation consumption)
 
 **Cleanup:** `filterText` is cleared in `clearBufferText()`, `deactivateServer()`, and `aftercareSelection()`.
+
+### Context-Aware Punctuation (上下文感知标点)
+
+When `Options.punctuationForm == .chinese` AND the toggle `AppSettings.isContextAwarePunctuationEnabled` is on (default), punctuation width is steered by a persistent `isPunctuationFullWidth: Bool` (default `true`) read through `shouldUseHalfWidthPunctuation()`. The toggle is exposed in `GeneralSettingsView` under "数字 / 字母后使用英文标点" and persists under `SettingsKey.ContextAwarePunctuation`.
+
+**State transitions** (only when the toggle is on; performed inside `insert()` via `updatePunctuationState(for:)`):
+
+* inserted text contains any CJK character → `isPunctuationFullWidth = true`
+* inserted text contains any ASCII letter or digit → `isPunctuationFullWidth = false`
+* pure-punctuation insertion → state unchanged
+
+**Reset to full-width** (always, regardless of the toggle — cheap and avoids stale state if the user later flips the toggle on):
+
+* `activateServer` / `deactivateServer` (focus switch)
+* `switchInputMethodMode(to: .mandarin)` (Shift-tap → Mandarin / Caps-Lock → Mandarin). Without this the `false` state left by ABC-mode typing would leak into the next Mandarin standby.
+* Non-buffering keyDown of any navigation key in `Self.navigationKeyCodes` (arrow keys, Home, End, PageUp, PageDown). This is the "光标切换" signal — mouse clicks are deliberately not handled because IMK gives the IME no event when the host moves the caret with a mouse, and the design trade-off accepts that. The reset runs before the Cmd/Option `shouldIgnoreCurrentEvent` short-circuit so Cmd+arrow / Option+arrow / Shift+arrow caret moves still reset.
+
+**Differences from the previous (deleted in d74f644) implementation:**
+
+* Added a runtime toggle (previously hardcoded on)
+* Reset on `switchInputMethodMode(to: .mandarin)` — previous version only reset on activate/deactivate, leaving ABC-mode English residue that produced unexpected half-width punctuation after the very first Shift-tap back to Mandarin (likely the "切换回中文标点的功能不太好" complaint)
+* Reset on non-buffering navigation keyDown — previous version had no caret-movement signal at all
+
+Applies to every punctuation insertion site in Mandarin mode that was previously inspecting `Options.punctuationForm == .chinese`: number-key + shift, backquote (both standalone and instant-symbol forms), the general `.punctuation(_)` cases (buffering default and the non-buffering / shift branch), and the `.separator` (`'`) key.
+
+`isChineseCharacter` on `Character` (in `CharacterExtensions.swift`) detects CJK Unified Ideographs (U+4E00–9FFF, U+3400–4DBF, U+F900–FAFF, U+20000–2A6DF).
 
 ### suggest() Pipeline
 

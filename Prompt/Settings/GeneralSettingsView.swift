@@ -8,6 +8,7 @@ struct GeneralSettingsView: View {
 
         @State private var isEmojiSuggestionsOn: Bool = Options.isEmojiSuggestionsOn
         @State private var isInputMemoryOn: Bool = AppSettings.isInputMemoryOn
+        @State private var isContextAwarePunctuationOn: Bool = AppSettings.isContextAwarePunctuationEnabled
 
         @State private var isClearInputMemoryConfirmDialogPresented: Bool = false
         @State private var isPerformingClearInputMemory: Bool = false
@@ -39,6 +40,22 @@ struct GeneralSettingsView: View {
                                                         Options.updateEmojiSuggestions(to: newState)
                                                 }
                                         Spacer()
+                                }
+                                .block()
+                                VStack(alignment: .leading, spacing: 8) {
+                                        HStack {
+                                                Toggle("数字 / 字母后使用英文标点", isOn: $isContextAwarePunctuationOn)
+                                                        .toggleStyle(.switch)
+                                                        .scaledToFit()
+                                                        .onChange(of: isContextAwarePunctuationOn) { newState in
+                                                                AppSettings.updateContextAwarePunctuation(to: newState)
+                                                        }
+                                                Spacer()
+                                        }
+                                        Text("中文标点模式下，紧跟在 ASCII 字母或数字后输入的标点自动变为半角；输入中文、切换中文模式、移动光标或切换焦点之后，恢复全角中文标点。")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                                .fixedSize(horizontal: false, vertical: true)
                                 }
                                 .block()
                                 VStack(alignment: .leading, spacing: 12) {

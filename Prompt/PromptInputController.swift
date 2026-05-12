@@ -155,6 +155,7 @@ final class PromptInputController: IMKInputController, Sendable {
                                 clearBufferText()
                         }
                         inputStage = .standby
+                        isPunctuationFullWidth = true
                         clearShiftTapState()
                         updateInputForm(to: Self.resolveInitialInputForm(client: client))
                         // Seed the focus-change tracker so the per-event sync in handle()
@@ -191,6 +192,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         selectedCandidates = []
                         selectedNonFirst = false
                         isIntendingToRecord = false
+                        isPunctuationFullWidth = true
                         filterText = ""
                         clearShiftTapState()
                         appContext.updateRecordingIndicator(nil)
@@ -250,6 +252,18 @@ final class PromptInputController: IMKInputController, Sendable {
                 // super.commitComposition(sender)
         }
 
+        /// 视为"光标移动"的导航键键码集合（用于上下文感知标点重置）：方向键、Home、End、PageUp、PageDown。
+        private static let navigationKeyCodes: Set<UInt16> = [
+                KeyCode.Arrow.VK_UP,
+                KeyCode.Arrow.VK_DOWN,
+                KeyCode.Arrow.VK_LEFT,
+                KeyCode.Arrow.VK_RIGHT,
+                KeyCode.Special.VK_HOME,
+                KeyCode.Special.VK_END,
+                KeyCode.Special.VK_PAGEUP,
+                KeyCode.Special.VK_PAGEDOWN,
+        ]
+
         private static let sharedVoiceRecorder: VoiceRecorder = VoiceRecorder()
         private static var whisperModelObserver: NSObjectProtocol?
 
@@ -279,6 +293,12 @@ final class PromptInputController: IMKInputController, Sendable {
                 // is re-activated (e.g. switching back from another input method)
                 // we want to start fresh in Mandarin, not remember the last toggled state.
                 let newForm: InputForm = mode.isMandarin ? .mandarin : .transparent
+                // 切到中文模式时，把上下文感知标点状态拨回"全角"。否则刚刚 ABC 模式下
+                // 输入的英文会让 isPunctuationFullWidth 维持为 false，进入中文模式后
+                // 第一个标点会意外是半角。
+                if mode.isMandarin {
+                        isPunctuationFullWidth = true
+                }
                 updateInputForm(to: newForm)
                 // Eagerly mirror to the per-app memory so a sibling instance's
                 // activateServer (multi-instance hosts like Safari/Notes/Mail can fire
@@ -517,6 +537,7 @@ final class PromptInputController: IMKInputController, Sendable {
                 let shouldClearMarkedText: Bool = !(inputStage.isBuffering)
                 // let replacementRange = NSRange(location: NSNotFound, length: 0)
                 currentClient?.insertText(text as NSString, replacementRange: replacementRange())
+                updatePunctuationState(for: text)
                 if shouldClearMarkedText {
                         clearMarkedText()
                 }
@@ -559,6 +580,29 @@ final class PromptInputController: IMKInputController, Sendable {
         /// Whether any candidate was selected from a non-first position.
         /// When false (all selections were the top candidate), skip frequency updates.
         private var selectedNonFirst: Bool = false
+
+        /// 上下文感知标点状态。true（默认）= 全角中文标点；false = 半角英文标点。
+        /// 仅当 `AppSettings.isContextAwarePunctuationEnabled` 且
+        /// `Options.punctuationForm == .chinese` 时才会改变行为。
+        /// 转换规则在 `updatePunctuationState(for:)`：CJK → true，ASCII 字母/数字 → false，
+        /// 纯标点不变。Focus 切换 / 键盘移动光标 / 切到 mandarin 模式时一律回到 true。
+        private var isPunctuationFullWidth: Bool = true
+        private func updatePunctuationState(for text: String) {
+                guard AppSettings.isContextAwarePunctuationEnabled else { return }
+                if text.contains(where: { $0.isChineseCharacter }) {
+                        isPunctuationFullWidth = true
+                } else if text.contains(where: { $0.isASCII && ($0.isLetter || $0.isNumber) }) {
+                        isPunctuationFullWidth = false
+                }
+                // Pure-punctuation insertion leaves the state unchanged
+        }
+        /// 当 isPunctuationFullWidth=false 时返回 true（用半角），否则全角。
+        /// 关掉开关或不在中文标点模式时永远返回 false（让外层走原本的全角分支）。
+        private func shouldUseHalfWidthPunctuation() -> Bool {
+                guard AppSettings.isContextAwarePunctuationEnabled else { return false }
+                guard Options.punctuationForm.isChineseMode else { return false }
+                return !isPunctuationFullWidth
+        }
 
         /// Cross-reference filter: Shift+letter input for filtering candidates by intersection
         private var filterText: String = "" {
@@ -1057,6 +1101,12 @@ final class PromptInputController: IMKInputController, Sendable {
                 }
                 let modifiers = event.modifierFlags
                 let code: UInt16 = event.keyCode
+                // 上下文感知标点：非 buffering 时按导航键（方向键 / Home / End / PageUp / PageDown）
+                // 视为光标移动，回到全角中文标点的默认状态。无论事件是否被 IME 处理都生效，
+                // 所以放在 shouldIgnoreCurrentEvent (Cmd / Option 修饰) 判断之前。
+                if !inputStage.isBuffering && Self.navigationKeyCodes.contains(code) {
+                        isPunctuationFullWidth = true
+                }
                 let shouldIgnoreCurrentEvent: Bool = modifiers.contains(.command) || modifiers.contains(.option)
                 guard !shouldIgnoreCurrentEvent else { return false }
                 // Shift+Space (no candidates visible, not auto-repeat): start voice recording (only if model is loaded)
@@ -1310,7 +1360,10 @@ final class PromptInputController: IMKInputController, Sendable {
                                 } else if isShifting {
                                         switch Options.punctuationForm {
                                         case .chinese:
-                                                let symbol: String = PunctuationKey.numberKeyShiftingMandarinSymbol(of: number) ?? String.empty
+                                                let useHalfWidth = shouldUseHalfWidthPunctuation()
+                                                let symbol: String = useHalfWidth
+                                                        ? (PunctuationKey.numberKeyShiftingSymbol(of: number) ?? String.empty)
+                                                        : (PunctuationKey.numberKeyShiftingMandarinSymbol(of: number) ?? String.empty)
                                                 insert(bufferText + symbol)
                                                 bufferText = String.empty
                                         case .english:
@@ -1401,9 +1454,16 @@ final class PromptInputController: IMKInputController, Sendable {
                         guard currentInputForm.isMandarin else { return }
                         guard !isBuffering else { return }
                         guard Options.punctuationForm.isChineseMode else { return }
-                        let symbol: String = isShifting
-                                ? PunctuationKey.backquote.instantShiftingSymbol ?? PunctuationKey.backquote.shiftingKeyText
-                                : PunctuationKey.backquote.instantSymbol ?? PunctuationKey.backquote.keyText
+                        let useHalfWidth = shouldUseHalfWidthPunctuation()
+                        let symbol: String = {
+                                if useHalfWidth {
+                                        return isShifting ? PunctuationKey.backquote.shiftingKeyText : PunctuationKey.backquote.keyText
+                                } else {
+                                        return isShifting
+                                                ? PunctuationKey.backquote.instantShiftingSymbol ?? PunctuationKey.backquote.shiftingKeyText
+                                                : PunctuationKey.backquote.instantSymbol ?? PunctuationKey.backquote.keyText
+                                }
+                        }()
                         insert(symbol)
                 case .punctuation(let punctuationKey):
                         guard currentInputForm.isMandarin else { return }
@@ -1420,7 +1480,11 @@ final class PromptInputController: IMKInputController, Sendable {
                                 default:
                                         switch Options.punctuationForm {
                                         case .chinese:
-                                                if let symbol = punctuationKey.instantSymbol {
+                                                let useHalfWidth = shouldUseHalfWidthPunctuation()
+                                                if useHalfWidth {
+                                                        insert(bufferText + punctuationKey.keyText)
+                                                        bufferText = String.empty
+                                                } else if let symbol = punctuationKey.instantSymbol {
                                                         insert(bufferText + symbol)
                                                         bufferText = String.empty
                                                 } else {
@@ -1435,13 +1499,20 @@ final class PromptInputController: IMKInputController, Sendable {
                         } else {
                                 switch Options.punctuationForm {
                                 case .chinese:
-                                        let symbol: String? = isShifting ? punctuationKey.instantShiftingSymbol : punctuationKey.instantSymbol
-                                        if let symbol {
+                                        let useHalfWidth = shouldUseHalfWidthPunctuation()
+                                        if useHalfWidth {
+                                                let symbol: String = isShifting ? punctuationKey.shiftingKeyText : punctuationKey.keyText
                                                 insert(bufferText + symbol)
                                                 bufferText = String.empty
                                         } else {
-                                                insert(bufferText)
-                                                bufferText = isShifting ? punctuationKey.shiftingKeyText : punctuationKey.keyText
+                                                let symbol: String? = isShifting ? punctuationKey.instantShiftingSymbol : punctuationKey.instantSymbol
+                                                if let symbol {
+                                                        insert(bufferText + symbol)
+                                                        bufferText = String.empty
+                                                } else {
+                                                        insert(bufferText)
+                                                        bufferText = isShifting ? punctuationKey.shiftingKeyText : punctuationKey.keyText
+                                                }
                                         }
                                 case .english:
                                         let symbol: String = isShifting ? punctuationKey.shiftingKeyText : punctuationKey.keyText
@@ -1462,9 +1533,16 @@ final class PromptInputController: IMKInputController, Sendable {
                                 } else {
                                         switch Options.punctuationForm {
                                         case .chinese:
-                                                let symbol: String = isShifting
-                                                        ? PunctuationKey.quote.instantShiftingSymbol ?? PunctuationKey.quote.shiftingKeyText
-                                                        : PunctuationKey.quote.instantSymbol ?? PunctuationKey.quote.keyText
+                                                let useHalfWidth = shouldUseHalfWidthPunctuation()
+                                                let symbol: String = {
+                                                        if useHalfWidth {
+                                                                return isShifting ? PunctuationKey.quote.shiftingKeyText : PunctuationKey.quote.keyText
+                                                        } else {
+                                                                return isShifting
+                                                                        ? PunctuationKey.quote.instantShiftingSymbol ?? PunctuationKey.quote.shiftingKeyText
+                                                                        : PunctuationKey.quote.instantSymbol ?? PunctuationKey.quote.keyText
+                                                        }
+                                                }()
                                                 insert(bufferText + symbol)
                                                 bufferText = String.empty
                                         case .english:

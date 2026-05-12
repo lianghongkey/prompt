@@ -171,6 +171,28 @@ struct AppSettings: Sendable {
                 UserDefaults.standard.set(joined, forKey: SettingsKey.AppsExcludedFromInputMemory)
         }
 
+        // MARK: - Context-Aware Punctuation
+
+        /// 是否启用"上下文感知标点"：中文标点模式下，紧接在 ASCII 字母 / 数字后输入
+        /// 的标点会使用半角符号；中文之后或刚激活 / 切换光标 / 切到中文模式之后，
+        /// 立刻恢复输入法对应的全角中文标点。
+        private(set) static var isContextAwarePunctuationEnabled: Bool = {
+                let savedValue: Int = UserDefaults.standard.integer(forKey: SettingsKey.ContextAwarePunctuation)
+                switch savedValue {
+                case 2:
+                        return false
+                case 0, 1:
+                        return true
+                default:
+                        return true
+                }
+        }()
+        static func updateContextAwarePunctuation(to isOn: Bool) {
+                isContextAwarePunctuationEnabled = isOn
+                let value: Int = isOn ? 1 : 2
+                UserDefaults.standard.set(value, forKey: SettingsKey.ContextAwarePunctuation)
+        }
+
         // MARK: - Caps Lock to Mandarin
 
         /// 是否使用 Caps Lock 键切换到中文输入
@@ -202,6 +224,7 @@ struct SettingsKey {
         static let DefaultInputModeOnActivation: String = "DefaultInputModeOnActivation"
         static let UseCapsLockForMandarin: String = "UseCapsLockForMandarin"
         static let AppsExcludedFromInputMemory: String = "AppsExcludedFromInputMemory"
+        static let ContextAwarePunctuation: String = "ContextAwarePunctuation"
 }
 
 extension Notification.Name {

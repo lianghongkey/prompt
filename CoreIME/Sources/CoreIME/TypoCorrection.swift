@@ -9,6 +9,7 @@ public enum TypoCorrectionType: String, CaseIterable, Identifiable, Sendable {
         case ng_gn = "ng-gn"
         case na_an = "na-an"
         case ne_en = "ne-en"
+        case me_em = "me-em"
 
         public var id: String { rawValue }
 
@@ -17,6 +18,7 @@ public enum TypoCorrectionType: String, CaseIterable, Identifiable, Sendable {
                 case .ng_gn: return "gn → ng"
                 case .na_an: return "na → an"
                 case .ne_en: return "ne → en"
+                case .me_em: return "em → me"
                 }
         }
 
@@ -25,6 +27,7 @@ public enum TypoCorrectionType: String, CaseIterable, Identifiable, Sendable {
                 case .ng_gn: return "顺序纠错 (gn → ng)"
                 case .na_an: return "顺序纠错 (na → an)"
                 case .ne_en: return "顺序纠错 (ne → en)"
+                case .me_em: return "顺序纠错 (em → me)"
                 }
         }
 
@@ -35,6 +38,7 @@ public enum TypoCorrectionType: String, CaseIterable, Identifiable, Sendable {
                 case .ng_gn: return [("gn", "ng")]
                 case .na_an: return [("na", "an")]
                 case .ne_en: return [("ne", "en")]
+                case .me_em: return [("em", "me")]
                 }
         }
 }

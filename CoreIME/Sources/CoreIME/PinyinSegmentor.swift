@@ -141,20 +141,24 @@ public struct PinyinSegmentor {
                 // → "liang" inside matchSyllable would consume the 'g' that belongs
                 // to "ge" in the alternative segmentation.
                 //
-                // Every corrected segmentation is accepted, including ones where
-                // the swapped pair straddles a syllable boundary (e.g. `liagne` →
-                // `liange` segmenting as `[lian, ge]`). The earlier "swapped pair
-                // must stay inside one token" guard existed to block 两根 (liang
-                // gen) from prefix-matching `[lian, ge]`, but that prefix-on-full
-                // path is gone (see Engine.tokenMatches), so the guard is obsolete
-                // and was dropping legitimate matches like 链格 / 帘个 / 两个.
+                // A corrected segmentation is accepted only when each substitution
+                // (1) lies entirely inside one `.full` token, and (2) that token is
+                // strictly longer than the pattern (i.e. the syllable has at least
+                // one letter outside the swapped pair). Rationale:
+                //  - (1) rejects boundary-straddling segmentations like `liagne` →
+                //    `[lian, ge]` (the `ng` swap spans `lian|ge`). These tended to
+                //    surface noisy candidates more often than they helped.
+                //  - (2) rejects "the whole syllable IS the swap" cases like bare
+                //    `ne → en` or `na → an`, where the user typed exactly two
+                //    letters whose reversed form happens to be a different
+                //    syllable — almost never an intended correction.
                 if TypoCorrectionSettings.isAnyEnabled {
-                        for correctedText in TypoCorrectionExpander.variants(for: text) {
-                                let correctedChars = Array(correctedText)
+                        for variant in TypoCorrectionExpander.variants(for: text) {
+                                let correctedChars = Array(variant.text)
                                 guard correctedChars.count == chars.count else { continue }
                                 var correctedMemo: [Int: [SegmentScheme]] = [:]
                                 let correctedRaw = build(chars: correctedChars, start: 0, memo: &correctedMemo)
-                                for scheme in correctedRaw {
+                                for scheme in correctedRaw where schemeContainsSubstitutions(scheme: scheme, ranges: variant.substitutionRanges) {
                                         raw.append(remapSchemeText(scheme: scheme, originalChars: chars))
                                 }
                         }
@@ -170,6 +174,35 @@ public struct PinyinSegmentor {
                 let sorted = raw.sorted(by: schemeIsBetter(_:_:))
                 cacheScheme(text: text, segmentation: sorted)
                 return sorted
+        }
+
+        /// Returns true iff every `range` in `ranges` lies entirely inside a
+        /// single token of `scheme` AND that token's text is strictly longer than
+        /// the range. Used to filter typo-corrected segmentations:
+        /// - inside-one-token: the swap must not straddle a syllable boundary.
+        /// - strictly-longer: the syllable must have additional letters outside
+        ///   the swap (rejects bare `ne → en`, `na → an`, etc.).
+        private static func schemeContainsSubstitutions(scheme: SegmentScheme, ranges: [Range<Int>]) -> Bool {
+                for range in ranges {
+                        var pos = 0
+                        var contained = false
+                        for token in scheme {
+                                let len = token.text.count
+                                let tokenStart = pos
+                                let tokenEnd = pos + len
+                                pos = tokenEnd
+                                if tokenEnd <= range.lowerBound { continue }
+                                // First token reaching `range.lowerBound` decides:
+                                // either it fully contains the range and is longer,
+                                // or this scheme is rejected.
+                                if tokenStart <= range.lowerBound && range.upperBound <= tokenEnd && len > range.count {
+                                        contained = true
+                                }
+                                break
+                        }
+                        if !contained { return false }
+                }
+                return true
         }
 
         /// Rebuild a scheme produced from a typo-corrected string so each token's

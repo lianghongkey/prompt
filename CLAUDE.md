@@ -406,15 +406,16 @@ See `docs/2026-05-03-postmortem.md` for the discovery story (Safari Cmd+T new-ta
 
 ### Sequential Typo Correction (顺序纠错)
 
-`PinyinSegmentor.segment(text:)` runs typo correction at the input level: every enabled rule (currently `gn ↔ ng`) generates a corrected variant of the whole input, each variant is segmented independently, and the resulting tokens are remapped so `token.text` shows the **original** characters (preserving the user's typing in the marked text) while `token.origin` is the canonical syllable used for DB lookups.
+`PinyinSegmentor.segment(text:)` runs typo correction at the input level: every enabled rule (`gn → ng`, `na → an`, `ne → en`, `em → me`, `ie → ei`) generates a corrected variant of the whole input together with the character ranges where the substitution was applied (`TypoCorrectionVariant`). Each variant is segmented independently and tokens are remapped so `token.text` shows the **original** characters (preserving the user's typing in the marked text) while `token.origin` is the canonical syllable used for DB lookups.
 
-Every corrected segmentation is accepted, including ones where the swapped pair straddles a syllable boundary. For example `liagne` (gn→ng) yields both `[liang, e]` (swapped pair stays inside `liang`) and `[lian, ge]` (swapped pair straddles the lian|ge boundary). Both are queried; the first surfaces 两 / 亮 / 凉 single chars, the second surfaces 恋歌 / 连个 / 练个 etc. via exact `lian ge` ping.
+A corrected segmentation is accepted only when **every** substitution range (1) lies entirely inside one `.full` token, and (2) the containing token's text is strictly longer than the pattern (i.e. the syllable has at least one letter outside the swapped pair). Both rules are enforced by `PinyinSegmentor.schemeContainsSubstitutions`.
 
-A previous "swapped pair must stay inside one token" guard existed to block 两根 (liang gen) from prefix-matching `[lian, ge]`. That guard was removed once the prefix-on-full path in `tokenMatches` was retired (see next section) — now `[lian, ge]` cannot match 两根 anyway because `gen ≠ ge` under the equality-or-fuzzy rule.
+- Rule (1) rejects boundary-straddling cases. Example: `liagne` (gn→ng) corrects to `liange`. `[liang, e]` is kept (the `ng` swap stays inside `liang`); `[lian, ge]` is rejected (`ng` straddles `lian|ge`). This blocks both legitimate `lian ge` words (恋歌 / 连个 / 练个) and noise like 两根 — a deliberate trade-off.
+- Rule (2) rejects "the syllable IS the swap" cases. Example: with `ne → en` enabled, bare `ne` would correct to `en` (a valid syllable), but the swap covers the entire syllable so the scheme is filtered out. Same for bare `ie → ei`, `na → an`, `em → me`.
 
 Doing typo correction at input level (instead of inside `matchSyllable`) avoids a boundary-greedy bug: matching `liagn → liang` inside `matchSyllable` would consume the `g` that belongs to `ge` in the alternative segmentation. Substitutions are length-preserving so position-based remap is sound.
 
-`SegmentToken.isTypoCorrected` is set true on every token in a remapped scheme. `Engine.runScheme` and `UserLexicon.runScheme` propagate this as `forceFuzzyMatch` into shortcut queries and as the `isFuzzy` argument to ping queries, so all candidates from a typo-corrected scheme are flagged `Candidate.isFuzzyMatch = true`. They still appear in the list but sort below candidates from schemes the user actually typed — typing `liange` correctly puts 恋歌 above 恋歌 from `liagne`-typo. Regression: `testTypoCorrectedCandidatesAreMarkedFuzzy`.
+`SegmentToken.isTypoCorrected` is set true on every token in a remapped scheme. `Engine.runScheme` and `UserLexicon.runScheme` propagate this as `forceFuzzyMatch` into shortcut queries and as the `isFuzzy` argument to ping queries, so all candidates from a typo-corrected scheme are flagged `Candidate.isFuzzyMatch = true`. They still appear in the list but sort below candidates from schemes the user actually typed — typing `xiang` correctly puts 想 above 想 reached from `xiagn`-typo. Regression: `testTypoCorrectedCandidatesAreMarkedFuzzy`.
 
 ### tokenMatches: full = exact-or-fuzzy, abbrev = prefix
 

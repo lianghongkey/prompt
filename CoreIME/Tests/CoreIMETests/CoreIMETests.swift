@@ -295,16 +295,17 @@ final class CoreIMETests: XCTestCase {
                                "gonne with on/ong fuzzy must NOT surface 功能; top: \(candidates.prefix(10).map(\.text))")
         }
 
-        /// Regression for the typo-correction guard removal. With `gn → ng`
-        /// enabled, `liagne` corrects to `liange`, which has two valid
-        /// segmentations: `[liang, e]` and `[lian, ge]`. The previous
-        /// `schemeRespectsReplacements` guard rejected `[lian, ge]` (the
-        /// swapped pair `ng` straddles its lian|ge boundary), which silently
-        /// blocked legitimate candidates like 链格 (lian ge). Now both
-        /// segmentations are accepted; under the strict `.full` tokenMatches
-        /// rule, the noise case 两根 (liang gen) is still blocked because
-        /// `gen ≠ ge`.
-        func testLiagneTypoCorrectionSurfacesLiangeCandidates() throws {
+        /// Typo correction must keep the swapped pair inside a single token.
+        ///
+        /// With `gn → ng` enabled, `liagne` corrects to `liange`, which has two
+        /// valid segmentations: `[liang, e]` (the swapped pair `ng` stays inside
+        /// `liang`) and `[lian, ge]` (the swap straddles the `lian|ge`
+        /// boundary). Per the "inside one syllable" rule, only `[liang, e]` is
+        /// accepted; `[lian, ge]` is filtered out. This blocks both legitimate
+        /// `lian ge` words (恋歌 etc.) and noise like 两根 — a deliberate
+        /// trade-off accepting fewer cross-boundary results in exchange for
+        /// less noise.
+        func testLiagneTypoCorrectionKeepsSwapInsideOneSyllable() throws {
                 Engine.prepare()
                 let originalTypo = TypoCorrectionSettings.enabledTypes
                 let originalFuzzy = FuzzyPinyinSettings.enabledTypes
@@ -325,61 +326,81 @@ final class CoreIMETests: XCTestCase {
                 let schemes = PinyinSegmentor.segment(text: text)
                 let schemeOrigins = schemes.map { $0.map(\.origin) }
                 XCTAssertTrue(schemeOrigins.contains(["liang", "e"]),
-                              "[liang, e] must be among schemes; got: \(schemeOrigins)")
-                XCTAssertTrue(schemeOrigins.contains(["lian", "ge"]),
-                              "[lian, ge] must NOT be filtered out; got: \(schemeOrigins)")
+                              "[liang, e] (swap stays inside liang) must be among schemes; got: \(schemeOrigins)")
+                XCTAssertFalse(schemeOrigins.contains(["lian", "ge"]),
+                               "[lian, ge] (swap straddles boundary) must be filtered out; got: \(schemeOrigins)")
 
                 let candidates = Engine.suggest(text: text, segmentation: schemes, needsSymbols: false)
                 let texts = candidates.map(\.text)
-                // Any common 2-char word with pinyin "lian ge" demonstrates that
-                // [lian, ge] survived the typo-correction filter and ping-matched.
-                let lianGeWords = ["恋歌", "连个", "练个", "连歌"]
-                XCTAssertTrue(lianGeWords.contains(where: { texts.contains($0) }),
-                              "liagne (gn→ng) should surface a [lian, ge] candidate; top: \(texts.prefix(15))")
+                // No [lian, ge] survivors: 恋歌 / 连个 / 练个 / 连歌 should NOT appear.
+                for w in ["恋歌", "连个", "练个", "连歌"] {
+                        XCTAssertFalse(texts.contains(w),
+                                       "liagne (gn→ng) must NOT surface \(w) (would require [lian, ge]); top: \(texts.prefix(15))")
+                }
                 XCTAssertFalse(texts.contains("两根"),
                                "liagne must still NOT surface 两根 (liang gen); top: \(texts.prefix(15))")
         }
 
-        /// `liagne` (gn→ng) → 两个 (liang ge) requires `ian/iang` fuzzy.
+        /// `ne → en` enabled does NOT correct bare `ne` to 嗯/恩.
         ///
-        /// Why: corrected `liange` is 6 chars; the only segmentations that fit
-        /// are `[liang, e]` and `[lian, ge]` (no `[liang, ge]` — that needs 7
-        /// chars). 两个 has syllables `liang ge`, so it can only match via
-        /// `[lian, ge]` with token1 = "lian" fuzzy-equivalent to "liang". That
-        /// equivalence is exactly what `ian/iang` fuzzy provides; without it
-        /// the strict full-token rule (lian ≠ liang) blocks the match.
-        func testLiagneSurfaces两个OnlyWithIanIangFuzzy() throws {
+        /// Rule: the syllable containing the swap must have additional letters
+        /// outside the swap. Bare `ne` corrected to `en` produces a syllable
+        /// that consists of nothing but the swapped pair, which the filter
+        /// rejects. (Inside `dne → den`, `den` is a valid syllable with `d`
+        /// outside the swap — that case would be accepted, but `den` doesn't
+        /// surface common Chinese characters so we don't assert on it here.)
+        func testBareNeNotCorrectedToEnWhenOnlySwapInSyllable() throws {
                 Engine.prepare()
                 let originalTypo = TypoCorrectionSettings.enabledTypes
                 let originalFuzzy = FuzzyPinyinSettings.enabledTypes
                 for t in TypoCorrectionType.allCases { TypoCorrectionSettings.setType(t, enabled: false) }
                 for t in FuzzyPinyinType.allCases { FuzzyPinyinSettings.setType(t, enabled: false) }
-                TypoCorrectionSettings.setType(.ng_gn, enabled: true)
+                TypoCorrectionSettings.setType(.ne_en, enabled: true)
                 PinyinSegmentor.resetCaches()
                 defer {
                         for t in TypoCorrectionType.allCases { TypoCorrectionSettings.setType(t, enabled: originalTypo.contains(t)) }
                         for t in FuzzyPinyinType.allCases { FuzzyPinyinSettings.setType(t, enabled: originalFuzzy.contains(t)) }
                         PinyinSegmentor.resetCaches()
                 }
-                let text = "liagne"
-                // Without ian/iang fuzzy: 两个 must NOT appear (lian ≠ liang).
-                let baseCandidates = Engine.suggest(text: text, segmentation: PinyinSegmentor.segment(text: text), needsSymbols: false)
-                XCTAssertFalse(baseCandidates.contains(where: { $0.text == "两个" }),
-                               "without ian/iang fuzzy, liagne must NOT surface 两个; top: \(baseCandidates.prefix(15).map(\.text))")
-
-                // With ian/iang fuzzy: 两个 should surface.
-                FuzzyPinyinSettings.setType(.ian_iang, enabled: true)
-                PinyinSegmentor.resetCaches()
-                let fuzzyCandidates = Engine.suggest(text: text, segmentation: PinyinSegmentor.segment(text: text), needsSymbols: false)
-                XCTAssertTrue(fuzzyCandidates.contains(where: { $0.text == "两个" }),
-                              "with ian/iang fuzzy, liagne should surface 两个; top: \(fuzzyCandidates.prefix(15).map(\.text))")
+                let schemes = PinyinSegmentor.segment(text: "ne")
+                let schemeOrigins = schemes.map { $0.map(\.origin) }
+                XCTAssertFalse(schemeOrigins.contains(["en"]),
+                               "bare ne must NOT typo-correct to [en] (whole syllable is the swap); got: \(schemeOrigins)")
         }
 
-        /// Typo-corrected schemes (e.g. liagne → liange) should produce
+        /// `ie → ei` enabled corrects `bie` → `bei` and surfaces 北/被/北方 etc.
+        ///
+        /// The swap `ie` lies inside `bei` (positions 1..3) and `bei` has the
+        /// extra `b` outside the swap, so it passes both filters.
+        func testIeEiCorrectsBieToBei() throws {
+                Engine.prepare()
+                let originalTypo = TypoCorrectionSettings.enabledTypes
+                let originalFuzzy = FuzzyPinyinSettings.enabledTypes
+                for t in TypoCorrectionType.allCases { TypoCorrectionSettings.setType(t, enabled: false) }
+                for t in FuzzyPinyinType.allCases { FuzzyPinyinSettings.setType(t, enabled: false) }
+                TypoCorrectionSettings.setType(.ie_ei, enabled: true)
+                PinyinSegmentor.resetCaches()
+                defer {
+                        for t in TypoCorrectionType.allCases { TypoCorrectionSettings.setType(t, enabled: originalTypo.contains(t)) }
+                        for t in FuzzyPinyinType.allCases { FuzzyPinyinSettings.setType(t, enabled: originalFuzzy.contains(t)) }
+                        PinyinSegmentor.resetCaches()
+                }
+                let schemes = PinyinSegmentor.segment(text: "bie")
+                let schemeOrigins = schemes.map { $0.map(\.origin) }
+                XCTAssertTrue(schemeOrigins.contains(["bei"]),
+                              "bie must typo-correct to [bei] (ie→ei inside bei); got: \(schemeOrigins)")
+
+                // Bare `ie` must NOT correct to `ei` (whole-syllable swap).
+                let bareSchemes = PinyinSegmentor.segment(text: "ie")
+                let bareOrigins = bareSchemes.map { $0.map(\.origin) }
+                XCTAssertFalse(bareOrigins.contains(["ei"]),
+                               "bare ie must NOT typo-correct to [ei]; got: \(bareOrigins)")
+        }
+
+        /// Typo-corrected schemes (e.g. xiagn → xiang) should produce
         /// candidates flagged `isFuzzyMatch = true`, so they sort below true
-        /// exact-typed matches in the candidate list. Identical word matched
-        /// from typed-`liange` and typed-`liagne` (with gn→ng) should differ
-        /// only in this flag.
+        /// exact-typed matches. Identical word matched from typed-`xiang` and
+        /// typed-`xiagn` (with gn→ng) should differ only in this flag.
         func testTypoCorrectedCandidatesAreMarkedFuzzy() throws {
                 Engine.prepare()
                 let originalTypo = TypoCorrectionSettings.enabledTypes
@@ -393,19 +414,19 @@ final class CoreIMETests: XCTestCase {
                         for t in FuzzyPinyinType.allCases { FuzzyPinyinSettings.setType(t, enabled: originalFuzzy.contains(t)) }
                         PinyinSegmentor.resetCaches()
                 }
-                // Typed correctly: 恋歌 should be a non-fuzzy ping match.
-                let exactCandidates = Engine.suggest(text: "liange", segmentation: PinyinSegmentor.segment(text: "liange"), needsSymbols: false)
-                guard let exactLiange = exactCandidates.first(where: { $0.text == "恋歌" }) else {
-                        XCTFail("liange must surface 恋歌; got: \(exactCandidates.prefix(10).map(\.text))"); return
+                // Typed correctly: 想 should be a non-fuzzy ping match.
+                let exactCandidates = Engine.suggest(text: "xiang", segmentation: PinyinSegmentor.segment(text: "xiang"), needsSymbols: false)
+                guard let exact = exactCandidates.first(where: { $0.text == "想" }) else {
+                        XCTFail("xiang must surface 想; got: \(exactCandidates.prefix(10).map(\.text))"); return
                 }
-                XCTAssertFalse(exactLiange.isFuzzyMatch, "liange (typed correctly) → 恋歌 must NOT be marked fuzzy")
+                XCTAssertFalse(exact.isFuzzyMatch, "xiang (typed correctly) → 想 must NOT be marked fuzzy")
 
-                // Typed with typo: 恋歌 is reachable only via typo-corrected scheme.
-                let typoCandidates = Engine.suggest(text: "liagne", segmentation: PinyinSegmentor.segment(text: "liagne"), needsSymbols: false)
-                guard let typoLiange = typoCandidates.first(where: { $0.text == "恋歌" }) else {
-                        XCTFail("liagne (with gn→ng) must surface 恋歌; got: \(typoCandidates.prefix(10).map(\.text))"); return
+                // Typed with typo: 想 is reachable only via the typo-corrected scheme [xiang].
+                let typoCandidates = Engine.suggest(text: "xiagn", segmentation: PinyinSegmentor.segment(text: "xiagn"), needsSymbols: false)
+                guard let typo = typoCandidates.first(where: { $0.text == "想" }) else {
+                        XCTFail("xiagn (with gn→ng) must surface 想; got: \(typoCandidates.prefix(10).map(\.text))"); return
                 }
-                XCTAssertTrue(typoLiange.isFuzzyMatch, "liagne → 恋歌 must be marked fuzzy (typo-corrected scheme)")
+                XCTAssertTrue(typo.isFuzzyMatch, "xiagn → 想 must be marked fuzzy (typo-corrected scheme)")
         }
 
         /// "zenme" exact match must rank 怎么 first, not get drowned out by

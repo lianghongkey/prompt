@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		AA000002AA000002AA000002 /* whisper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA000001AA000001AA000001 /* whisper.framework */; };
 		AA000003AA000003AA000003 /* whisper.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AA000001AA000001AA000001 /* whisper.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		EE000002EE000002EE000002 /* llama.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE000001EE000001EE000001 /* llama.framework */; };
+		EE000003EE000003EE000003 /* llama.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = EE000001EE000001EE000001 /* llama.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		370C646F2BFEC3A5006F2ABA /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370C646E2BFEC3A5006F2ABA /* GeneralSettingsView.swift */; };
 		AA001100AA001100AA001100 /* MicrophoneTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001100BB001100BB001100 /* MicrophoneTestView.swift */; };
 		9BB8EFEC10CC4E9E9AD90926 /* FuzzyPinyinSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A029780BDA94DD4BB45D8D2 /* FuzzyPinyinSettingsView.swift */; };
@@ -26,7 +28,6 @@
 		C2DB0967FDF4443FB5F59239 /* VoiceRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39C801959FF5413BAF5C25EC /* VoiceRecorder.swift */; };
 		CC000001CC000001CC000001 /* CorrectorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002CC000002CC000002 /* CorrectorEngine.swift */; };
 		CC100001CC100001CC100001 /* CapsLockState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC100002CC100002CC100002 /* CapsLockState.swift */; };
-		DD000001DD000001DD000001 /* llama-server in Resources */ = {isa = PBXBuildFile; fileRef = DD000002DD000002DD000002 /* llama-server */; };
 		371B27CC2B3EB93A00EC1271 /* DisplayCandidate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27A72B3EB93900EC1271 /* DisplayCandidate.swift */; };
 		371B27CD2B3EB93A00EC1271 /* Comment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27A82B3EB93900EC1271 /* Comment.swift */; };
 		371B27CE2B3EB93A00EC1271 /* Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27A92B3EB93900EC1271 /* Language.swift */; };
@@ -154,7 +155,7 @@
 		379DBF992C8EA79900D041C8 /* CandidateWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidateWindow.swift; sourceTree = "<group>"; };
 		37A619B02BAE2F5A00A0C7F9 /* prompt.pdf */ = {isa = PBXFileReference; lastKnownFileType = file; path = prompt.pdf; sourceTree = "<group>"; };
 		AA000001AA000001AA000001 /* whisper.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = whisper.framework; path = Frameworks/whisper.framework; sourceTree = SOURCE_ROOT; };
-		DD000002DD000002DD000002 /* llama-server */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = "llama-server"; path = "Resources/llama-server"; sourceTree = "<group>"; };
+		EE000001EE000001EE000001 /* llama.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = llama.framework; path = Frameworks/llama.framework; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -164,6 +165,7 @@
 			files = (
 				371B27A42B3EB8F100EC1271 /* CoreIME in Frameworks */,
 				AA000002AA000002AA000002 /* whisper.framework in Frameworks */,
+				EE000002EE000002EE000002 /* llama.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -174,6 +176,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				AA000003AA000003AA000003 /* whisper.framework in Embed Frameworks */,
+				EE000003EE000003EE000003 /* llama.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -248,7 +251,6 @@
 				3764F6112BFAC36400B3737B /* InfoPlist.xcstrings */,
 				3764F6132BFAC36400B3737B /* Localizable.xcstrings */,
 				37A619B02BAE2F5A00A0C7F9 /* prompt.pdf */,
-				DD000002DD000002DD000002 /* llama-server */,
 				371B27ED2B3EB95F00EC1271 /* Assets.xcassets */,
 				371B27EE2B3EB95F00EC1271 /* Images.xcassets */,
 				371B277C2B3EB66A00EC1271 /* Preview Content */,
@@ -285,6 +287,7 @@
 			isa = PBXGroup;
 			children = (
 				AA000001AA000001AA000001 /* whisper.framework */,
+				EE000001EE000001EE000001 /* llama.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -475,7 +478,6 @@
 			files = (
 				371B27F02B3EB95F00EC1271 /* Images.xcassets in Resources */,
 				37A619B22BAE2F5A00A0C7F9 /* prompt.pdf in Resources */,
-				DD000001DD000001DD000001 /* llama-server in Resources */,
 				3764F6122BFAC36400B3737B /* InfoPlist.xcstrings in Resources */,
 				3764F6142BFAC36400B3737B /* Localizable.xcstrings in Resources */,
 				371B27EF2B3EB95F00EC1271 /* Assets.xcassets in Resources */,

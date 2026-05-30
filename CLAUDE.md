@@ -137,7 +137,7 @@ aftercareSelection() → insert(candidate.text) + updates bufferText
 
 * `VoiceRecorder.swift` — Captures 16kHz mono Float32 PCM audio via `AVAudioEngine` (`AudioCapture`) and transcribes using a whisper GGML model (`.bin`) via `whisper.cpp`. Model path is configured as `.mlmodelc` in Settings; the `.bin` sibling is derived automatically. Transcription result is inserted as text via `onTranscription` callback.
 
-* `CorrectorEngine.swift` — Singleton (`CorrectorEngine.shared`) that manages a llama.cpp server for post-transcription error correction. Launches `llama-server` as a child `Process`, connects to `http://127.0.0.1:8081`, and calls the OpenAI-compatible `/v1/chat/completions` endpoint. On startup, checks if an existing server is already running on the port before attempting to launch a new process.
+* `CorrectorEngine.swift` — Singleton (`CorrectorEngine.shared`) for post-transcription error correction. Runs llama.cpp **in-process** (no subprocess, no HTTP server, no port): contains a `LlamaContext` actor that loads a GGUF via the `llama.framework` C API and does greedy decoding on a background thread. Streams tokens back to the MainActor via an `AsyncStream` (order-preserving). The legacy `startServer`/`stopServer`/`isServerRunning`/`correctStreaming` API names are kept for caller stability but now mean load/unload/loaded/in-process-generate.
 
 ### Shift-Tap Input Mode Toggle (中英文切换)
 
@@ -228,55 +228,42 @@ Triggered by **Shift+Space when NOT buffering** (idle/standby in Mandarin mode) 
 
 * Model loading runs on `whisperQueue` to avoid blocking the main thread
 
-### Post-Transcription Error Correction (LLM)
+### Post-Transcription Error Correction (LLM, in-process)
 
-After voice transcription completes, the text can optionally be sent to a local llama.cpp server for grammar/error correction before insertion.
+After voice transcription completes, the text can optionally be corrected by a local LLM (ChineseErrorCorrector4-4B, a Qwen3-4B fine-tune) before insertion. Inference is **in-process** via llama.cpp — there is no `llama-server` subprocess and no HTTP/port anymore (replaced 2026-05-30; see `docs`/git history for the old subprocess design).
 
-**Configuration (in General Settings):**
+**Linking — `Frameworks/llama.framework`:**
 
-* `llamaServerPath` — Path to the `llama-server` executable (persisted in UserDefaults)
+* A self-contained dynamic framework built by `packaging/build_llama_framework.sh`: it merges llama.cpp's static `.a` (`libllama` + `libggml*` + `ggml-metal` + `ggml-blas`) into one dylib via `clang++ -dynamiclib -Wl,-all_load`, with Metal kernels embedded (`GGML_METAL_EMBED_LIBRARY=ON`, no runtime `.metallib` needed). `install_name = @rpath/...`, module map exposes `llama.h`.
+* **Why a dynamic framework, not static `.a` force_load into the app binary:** `whisper.framework` already embeds its own ggml (exports 1000+ `ggml_*` symbols). Statically linking llama.cpp's ggml into the main executable would collide with whisper's ggml (and the two ggml versions can differ). As a separate dynamic framework, macOS two-level namespace keeps the two ggml copies fully isolated — same pattern as `whisper.framework`. Built arm64-only (local-mac testing); `FRAMEWORK_SEARCH_PATHS`/`LD_RUNPATH_SEARCH_PATHS` already point at `$(SOURCE_ROOT)/Frameworks`.
+* Rebuild the framework after pulling a new llama.cpp: `./packaging/build_llama_framework.sh` (reads from `../ChineseErrorCorrector/llama.cpp/build`, overridable via `LLAMA_CPP_DIR`).
 
-* `llamaModelPath` — Path to a `.gguf` model file (persisted in UserDefaults)
+**Configuration (in 语音输入 Settings):**
 
-* Status indicator shows server state: notConfigured / starting / running / stopped / failed
+* `llamaModelPath` — Path to a `.gguf` model file (persisted in UserDefaults). No executable path needed anymore.
+* Status indicator: notConfigured / starting(=加载模型中) / running(=就绪) / stopped / failed. "启动服务" / "停止服务" buttons for manual load/unload.
 
-* "启动服务" / "停止服务" buttons for manual control
+**Engine lifecycle (`CorrectorEngine.swift`):**
 
-**Server lifecycle (`CorrectorEngine.swift`):**
-
-* `CorrectorEngine.shared` is a singleton, similar to `sharedVoiceRecorder`
-
-* On `activateServer`, if both paths are configured and `userStopped == false`, calls `startServer()`
-
-* `startServer()` first checks if an existing server is already responding on `127.0.0.1:8081/health`; if so, connects without launching a new process
-
-* If no server found, launches `llama-server` as a direct `Process` with arguments: `-m modelPath --host 127.0.0.1 --port 8081 -ngl 99 --seed 42 -c 1024`
-
-* Health polling: up to 30 seconds, 0.5s intervals, exits early if process dies
-
-* `userStopped` flag prevents auto-reconnect after user clicks "停止服务"; cleared when user clicks "启动服务" (`userInitiated: true`)
-
-* `correctorPathsDidChange` notification triggers server restart when paths change in Settings
+* `LlamaContext` actor — loads the GGUF (`llama_model_load_from_file`, `n_gpu_layers=99` → Metal), greedy sampler (deterministic), `n_ctx=2048`. `generate(prompt:maxTokens:onPiece:)` runs the decode loop on the actor's background executor and calls `onPiece` per **complete UTF-8 boundary** (multi-byte Chinese chars are never split mid-stream).
+* `CorrectorEngine.shared` (@MainActor singleton) — `startServer()` loads the model on a `Task.detached` background thread (never blocks the IME); `stopServer()` drops the actor (`deinit` frees llama.cpp resources). `userStopped` prevents auto-reconnect after manual stop.
+* On `activateServer`, if `llamaModelPath` is set and not already loaded/loading, calls `startServer()`. `correctorPathsDidChange` notification reloads when the path changes in Settings.
 
 **Correction flow:**
 
-* `insertTranscribedText()` checks `CorrectorEngine.shared.isServerRunning`
+* `insertTranscribedText()` checks `CorrectorEngine.shared.isServerRunning` (model loaded). If loaded, `await correctStreaming(text:onToken:)` decodes in-process; each visible delta is shown as marked text (underlined preview) for low perceived latency. Final result replaces the marked text on commit.
+* ChatML prompt: `<|im_start|>system\n{systemPrompt}<|im_end|>\n<|im_start|>user\n{text}<|im_end|>\n<|im_start|>assistant\n`, where `systemPrompt` is the model card's 纠错专家 instruction.
+* If the model isn't loaded or decoding fails, the raw (Traditional→Simplified) transcription is inserted as fallback — **a decode failure must never crash the IME** (in-process inference shares the IME process).
 
-* If running: `await CorrectorEngine.shared.correct(text:)` sends text to `/v1/chat/completions` (OpenAI-compatible API)
+**`<think>` block handling (important):** this fine-tuned GGUF **always** emits a `<think>…</think>` chain-of-thought before the answer, and the Qwen3 `/no_think` switch does NOT disable it (it leaks as literal text). Therefore:
 
-* Prompt: "你是一个文本纠错专家，纠正输入句子中的语法错误，并输出正确的句子，输入句子为：" + transcribed text
-
-* Parameters: `temperature=0`, `seed=42`, `max_tokens=1024`, `timeout=10s`
-
-* If correction fails or server not running, original transcribed text is inserted as fallback
+* `stripThinking()` removes everything up to and including `</think>` from the final committed text.
+* `correctStreaming` **suppresses the think block from the streaming preview**: it detects a leading `<think` and emits nothing until `</think>`, then streams only the post-think correction as deltas (falls back to normal streaming if no think block appears). Consequence: the first *visible* corrected token is delayed until the whole think block is generated (~1s for a short sentence), which offsets the streaming-latency optimization — a property of this model, not the integration.
 
 **State management:**
 
 * `AppSettings.correctorServerState: CorrectorServerState` (`.notConfigured` / `.starting` / `.running` / `.stopped` / `.failed`)
-
-* State changes post `.correctorServerStateDidChange` notification with `["state": rawValue, "status": statusText]`
-
-* `GeneralSettingsView` observes this notification to update the status dot and text
+* State changes post `.correctorServerStateDidChange` notification with `["state": rawValue, "status": statusText]`; `VoiceSettingsView` observes it to update the status dot and text.
 
 ### Word Creation Feature
 

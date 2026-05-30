@@ -136,6 +136,7 @@ final class VoiceRecorder {
         private var samples: [Float] = []
         nonisolated(unsafe) private var ctx: OpaquePointer?   // accessed only on whisperQueue
         private let logger = Logger(subsystem: "hk.eduhk.inputmethod.Prompt", category: "VoiceRecorder")
+        private let timing = Logger(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Timing")
 
         var isModelLoaded: Bool = false
         var isModelLoading: Bool = false
@@ -163,18 +164,12 @@ final class VoiceRecorder {
                 whisperQueue.async { [weak self] in
                         if let old = oldCtx { whisper_free(old) }
                         let newCtx = whisper_init_from_file(binPath)
-                        // ggml Metal GPU resource-set init runs asynchronously after
-                        // whisper_init_from_file returns (on DispatchQueue.global(.default)).
-                        // Keeping whisperQueue occupied here ensures applicationWillTerminate's
-                        // whisperQueue.sync {} blocks until Metal init has had time to settle,
-                        // preventing the ggml_abort race in static destructors.
-                        if newCtx != nil {
-                                Thread.sleep(forTimeInterval: 0.8)
-                        }
+                        let didLoad = (newCtx != nil)
+                        // 先把"已加载"状态发出去，让用户立刻能录音。
                         DispatchQueue.main.async {
                                 self?.isModelLoading = false
                                 self?.ctx = newCtx
-                                if newCtx != nil {
+                                if didLoad {
                                         self?.isModelLoaded = true
                                         self?.logger.info("Whisper model loaded successfully")
                                         Self.postLoadState(.loaded)
@@ -182,6 +177,15 @@ final class VoiceRecorder {
                                         self?.logger.error("Whisper model load failed for: \(binPath)")
                                         Self.postLoadState(.failed)
                                 }
+                        }
+                        // 仍然在 whisperQueue 上空跑 0.8s：ggml Metal 后台资源初始化是异步的
+                        // （跑在 DispatchQueue.global(.default) 上），保持 whisperQueue 占用
+                        // 让 applicationWillTerminate 里 whisperQueue.sync {} 必然等到 Metal
+                        // 初始化稳定后才退出，避免静态析构里 ggml_abort。
+                        // 录音的 transcribe() 会进同一个 queue，所以即使用户在这 0.8s 内
+                        // 录完抬手，转写会自动排到 sleep 之后跑，不会丢音也不会崩。
+                        if didLoad {
+                                Thread.sleep(forTimeInterval: 0.8)
                         }
                 }
         }
@@ -280,6 +284,7 @@ final class VoiceRecorder {
                 }
                 let buffer = samples
                 samples = []
+                timing.info("T0 stopRecording samples=\(buffer.count) dur_ms=\(buffer.count * 1000 / 16000)")
                 guard buffer.count > 8000 else {
                         logger.info("Recording too short (\(buffer.count) samples), skipping transcription")
                         onTranscription?("")
@@ -300,6 +305,8 @@ final class VoiceRecorder {
         private func transcribe(_ buffer: [Float]) {
                 whisperQueue.async { [weak self] in
                         guard let self, let ctx = self.ctx else { return }
+                        self.timing.info("T1 whisper_full begin")
+                        let whisperStart = Date()
                         var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
                         params.print_progress   = false
                         params.print_special    = false
@@ -314,6 +321,8 @@ final class VoiceRecorder {
                                         whisper_full(ctx, params, buf.baseAddress, Int32(buf.count))
                                 }
                         }
+                        let whisperMs = Int(Date().timeIntervalSince(whisperStart) * 1000)
+                        self.timing.info("T2 whisper_full end took_ms=\(whisperMs) result=\(result)")
                         var text = ""
                         if result == 0 {
                                 let eot = whisper_token_eot(ctx)
@@ -343,7 +352,9 @@ final class VoiceRecorder {
                                 }
                         }
                         let finalText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                        self.timing.info("T3 transcription_ready text_len=\(finalText.count)")
                         DispatchQueue.main.async {
+                                self.timing.info("T4 onTranscription main_actor")
                                 self.logger.info("Transcription: \(finalText)")
                                 self.onTranscription?(finalText)
                         }

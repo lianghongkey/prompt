@@ -347,6 +347,7 @@ final class PromptInputController: IMKInputController, Sendable {
         }
 
         private func insertTranscribedText(_ text: String) {
+                Self.timing.info("T5 insertTranscribedText begin text_len=\(text.count)")
                 appContext.updateRecordingIndicator(nil)
                 window.setFrame(.zero, display: true)
                 let client = currentClient ?? client()
@@ -356,12 +357,27 @@ final class PromptInputController: IMKInputController, Sendable {
                 }
                 let simplified = text.applyingTransform(StringTransform("Traditional-Simplified"), reverse: false) ?? text
                 if CorrectorEngine.shared.isServerRunning {
-                        Task { @MainActor in
-                                let corrected = await CorrectorEngine.shared.correct(text: simplified) ?? simplified
-                                client?.insertText(corrected as NSString, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
+                        let correctStart = Date()
+                        Self.timing.info("T6 correct dispatch")
+                        Task { @MainActor [weak self] in
+                                guard let self else { return }
+                                var accumulated = ""
+                                let corrected = await CorrectorEngine.shared.correctStreaming(text: simplified) { delta in
+                                        accumulated += delta
+                                        // 边收边把累积内容显示成 marked text（带下划线的预览），
+                                        // 用户能立刻看到 LLM 输出，不用等全部 token decode 完。
+                                        self.mark(text: accumulated)
+                                }
+                                let final = (corrected?.isEmpty == false ? corrected! : simplified)
+                                let correctMs = Int(Date().timeIntervalSince(correctStart) * 1000)
+                                Self.timing.info("T9 correct done took_ms=\(correctMs) result_len=\(final.count)")
+                                // 最终 commit：insertText 会替换掉当前 marked text。
+                                client?.insertText(final as NSString, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
+                                Self.timing.info("T10 insertText (corrected)")
                         }
                 } else {
                         client?.insertText(simplified as NSString, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
+                        Self.timing.info("T10 insertText (raw)")
                 }
         }
 
@@ -377,6 +393,7 @@ final class PromptInputController: IMKInputController, Sendable {
         // appContext. Sharing one AppContext makes the binding stable.
         private var appContext: AppContext { Self.sharedAppContext }
         nonisolated(unsafe) private static let sharedAppContext: AppContext = AppContext()
+        nonisolated(unsafe) static let timing = Logger(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Timing")
 
         private lazy var inputForm: InputForm = InputForm.matchInputMethodMode()
         // Per-app input mode memory, shared across all controller instances in this IME

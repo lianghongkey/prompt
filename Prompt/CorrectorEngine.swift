@@ -17,6 +17,7 @@ final class CorrectorEngine {
         private let prompt = "你是一个文本纠错专家，纠正输入句子中的语法错误，并输出正确的句子，输入句子为："
 
         private let logger = Logger(subsystem: "hk.eduhk.inputmethod.Prompt", category: "CorrectorEngine")
+        private let timing = Logger(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Timing")
 
         // MARK: - 启动 llama-server
 
@@ -101,8 +102,14 @@ final class CorrectorEngine {
 
         // MARK: - 纠错推理
 
-        func correct(text: String) async -> String? {
+        /// 流式纠错：每收到一段新内容调用 onToken（在 MainActor 上），全部完成后返回累积的最终文本。
+        /// 失败返回 nil；返回 "" 表示服务返回了空响应。
+        func correctStreaming(
+                text: String,
+                onToken: @escaping (String) -> Void
+        ) async -> String? {
                 guard isServerRunning else { return nil }
+                timing.info("T7 correctStreaming entry text_len=\(text.count)")
 
                 let url = URL(string: "http://\(host):\(port)/v1/chat/completions")!
                 var request = URLRequest(url: url)
@@ -117,23 +124,41 @@ final class CorrectorEngine {
                         "max_tokens": 1024,
                         "temperature": 0,
                         "seed": 42,
+                        "stream": true,
                 ]
 
                 do {
                         request.httpBody = try JSONSerialization.data(withJSONObject: body)
-                        let (data, response) = try await URLSession.shared.data(for: request)
+                        let httpStart = Date()
+                        timing.info("T8 SSE request begin")
+                        let (bytes, response) = try await URLSession.shared.bytes(for: request)
                         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                                 logger.error("纠错请求 HTTP 失败")
                                 return nil
                         }
-                        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                              let choices = json["choices"] as? [[String: Any]],
-                              let message = choices.first?["message"] as? [String: Any],
-                              let content = message["content"] as? String else {
-                                logger.error("纠错响应解析失败")
-                                return nil
+                        var accumulated = ""
+                        var firstTokenLogged = false
+                        for try await line in bytes.lines {
+                                guard line.hasPrefix("data: ") else { continue }
+                                let payload = line.dropFirst(6)
+                                if payload == "[DONE]" { break }
+                                guard let data = payload.data(using: .utf8),
+                                      let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                                      let choices = json["choices"] as? [[String: Any]],
+                                      let delta = choices.first?["delta"] as? [String: Any],
+                                      let content = delta["content"] as? String,
+                                      !content.isEmpty else { continue }
+                                if !firstTokenLogged {
+                                        let firstMs = Int(Date().timeIntervalSince(httpStart) * 1000)
+                                        timing.info("T8a first_token_ms=\(firstMs)")
+                                        firstTokenLogged = true
+                                }
+                                accumulated += content
+                                onToken(content)
                         }
-                        let result = content.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let totalMs = Int(Date().timeIntervalSince(httpStart) * 1000)
+                        timing.info("T8b SSE done took_ms=\(totalMs) total_chars=\(accumulated.count)")
+                        let result = accumulated.trimmingCharacters(in: .whitespacesAndNewlines)
                         logger.info("纠错完成: \(text) → \(result)")
                         return result
                 } catch {

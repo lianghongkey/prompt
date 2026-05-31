@@ -11,10 +11,10 @@ struct VoiceSettingsView: View {
         @State private var correctorStatusText: String = {
                 switch AppSettings.correctorServerState {
                 case .notConfigured: return "未设置"
-                case .starting: return "启动中…"
-                case .running: return "运行中"
-                case .stopped: return "已停止"
-                case .failed: return "启动失败"
+                case .starting: return "加载模型中…"
+                case .running: return "已加载"
+                case .stopped: return "已卸载"
+                case .failed: return "加载失败"
                 }
         }()
 
@@ -116,7 +116,7 @@ struct VoiceSettingsView: View {
                                 .textSelection(.enabled)
                                 VStack(alignment: .leading, spacing: 8) {
                                         HStack(spacing: 6) {
-                                                Text("语音纠错服务")
+                                                Text("语音纠错模型")
                                                         .font(.headline)
                                                 correctorStatusDot
                                                 Text(correctorStatusText)
@@ -130,12 +130,12 @@ struct VoiceSettingsView: View {
                                                         applyCorrectorModelPath()
                                                 }
                                                 if correctorServerState == .running {
-                                                        Button("停止服务") {
+                                                        Button("卸载模型") {
                                                                 CorrectorEngine.shared.stopServer()
                                                         }
                                                         .foregroundStyle(Color.red)
                                                 } else if correctorServerState != .starting {
-                                                        Button("启动服务") {
+                                                        Button("加载模型") {
                                                                 applyCorrectorModelPath()
                                                                 Task {
                                                                         await CorrectorEngine.shared.startServer(userInitiated: true)

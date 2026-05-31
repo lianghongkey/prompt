@@ -258,7 +258,7 @@ final class CorrectorEngine {
                 userStopped = true
                 llama = nil   // actor 释放，deinit 中清理 llama.cpp 资源
                 isServerRunning = false
-                postState(.stopped, status: "已停止")
+                postState(.stopped, status: "已卸载")
         }
 
         // MARK: - 纠错推理

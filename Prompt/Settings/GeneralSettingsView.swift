@@ -113,13 +113,43 @@ struct GeneralSettingsView: View {
         }
 }
 
+/// NSTextField subclass that handles the standard editing shortcuts itself.
+///
+/// This app is an IMKServer input method with no application main menu, so the
+/// usual Cmd+C / Cmd+V / Cmd+X / Cmd+A / Cmd+Z key equivalents — which AppKit
+/// normally resolves through the Edit menu — never reach the field editor in the
+/// Settings window. We intercept them in `performKeyEquivalent` and dispatch the
+/// standard selectors down the responder chain (the focused field editor handles
+/// them), so copy/paste work without installing a global menu.
+final class EditableTextField: NSTextField {
+        override func performKeyEquivalent(with event: NSEvent) -> Bool {
+                let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                guard flags == .command else {
+                        return super.performKeyEquivalent(with: event)
+                }
+                let action: Selector?
+                switch event.charactersIgnoringModifiers {
+                case "c": action = #selector(NSText.copy(_:))
+                case "v": action = #selector(NSText.paste(_:))
+                case "x": action = #selector(NSText.cut(_:))
+                case "a": action = #selector(NSText.selectAll(_:))
+                case "z": action = Selector(("undo:"))
+                default:  action = nil
+                }
+                if let action, NSApp.sendAction(action, to: nil, from: self) {
+                        return true
+                }
+                return super.performKeyEquivalent(with: event)
+        }
+}
+
 /// NSTextField wrapper that reliably handles paste (Cmd+V) regardless of IME state.
 struct NativeTextField: NSViewRepresentable {
         let placeholder: String
         @Binding var text: String
 
         func makeNSView(context: Context) -> NSTextField {
-                let field = NSTextField()
+                let field = EditableTextField()
                 field.placeholderString = placeholder
                 field.delegate = context.coordinator
                 field.bezelStyle = .roundedBezel

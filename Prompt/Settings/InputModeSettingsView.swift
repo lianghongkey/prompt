@@ -5,6 +5,7 @@ struct InputModeSettingsView: View {
 
         @State private var defaultInputMode: InputMethodMode = AppSettings.defaultInputModeOnActivation
         @State private var useCapsLockForMandarin: Bool = AppSettings.useCapsLockForMandarin
+        @State private var isAutoSwitchFromSystemABCOn: Bool = AppSettings.isAutoSwitchFromSystemABCEnabled
         @State private var excludedApps: [String] = AppSettings.appsExcludedFromInputMemory
         @State private var newExcludedBundleID: String = ""
 
@@ -84,6 +85,25 @@ struct InputModeSettingsView: View {
         }
 
         @ViewBuilder
+        private var autoSwitchFromSystemABCSection: some View {
+                VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                                Toggle("系统输入法源被切到 ABC 时自动切回", isOn: $isAutoSwitchFromSystemABCOn)
+                                        .toggleStyle(.switch)
+                                        .scaledToFit()
+                                        .onChange(of: isAutoSwitchFromSystemABCOn) { newState in
+                                                AppSettings.updateAutoSwitchFromSystemABC(to: newState)
+                                        }
+                                Spacer()
+                        }
+                        Text("有些 App 会记住上次用的是系统自带的「ABC」布局，切换过去时会带着一起生效。开启后，每次切换到别的 App 时都会检查一次，如果发现变成了 ABC 就立即切回本输入法；切到其他输入法不受影响。仅在切换 App 时生效——同一个 App 内手动切换输入法源不会被改回来。")
+                                .font(.caption)
+                                .foregroundStyle(Color.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                }
+        }
+
+        @ViewBuilder
         private var excludedAppsSection: some View {
                 VStack(alignment: .leading, spacing: 8) {
                         Text("不记忆输入法状态的 App")
@@ -146,6 +166,8 @@ struct InputModeSettingsView: View {
                                 defaultModeSection
                                         .block()
                                 capsLockSection
+                                        .block()
+                                autoSwitchFromSystemABCSection
                                         .block()
                                 excludedAppsSection
                                         .block()

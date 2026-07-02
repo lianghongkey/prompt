@@ -212,6 +212,26 @@ struct AppSettings: Sendable {
                 let value: Int = isOn ? 2 : 1
                 UserDefaults.standard.set(value, forKey: SettingsKey.UseCapsLockForMandarin)
         }
+
+        // MARK: - Auto Switch Back From System ABC
+
+        /// 系统输入法源被切到系统自带的「ABC」键盘布局时，自动切回本输入法。
+        private(set) static var isAutoSwitchFromSystemABCEnabled: Bool = {
+                let savedValue: Int = UserDefaults.standard.integer(forKey: SettingsKey.AutoSwitchFromSystemABC)
+                switch savedValue {
+                case 2:
+                        return false
+                case 0, 1:
+                        return true
+                default:
+                        return true
+                }
+        }()
+        static func updateAutoSwitchFromSystemABC(to isOn: Bool) {
+                isAutoSwitchFromSystemABCEnabled = isOn
+                let value: Int = isOn ? 1 : 2
+                UserDefaults.standard.set(value, forKey: SettingsKey.AutoSwitchFromSystemABC)
+        }
 }
 
 struct SettingsKey {
@@ -225,6 +245,7 @@ struct SettingsKey {
         static let UseCapsLockForMandarin: String = "UseCapsLockForMandarin"
         static let AppsExcludedFromInputMemory: String = "AppsExcludedFromInputMemory"
         static let ContextAwarePunctuation: String = "ContextAwarePunctuation"
+        static let AutoSwitchFromSystemABC: String = "AutoSwitchFromSystemABC"
 }
 
 extension Notification.Name {

@@ -8,7 +8,8 @@ struct GeneralSettingsView: View {
 
         @State private var isEmojiSuggestionsOn: Bool = Options.isEmojiSuggestionsOn
         @State private var isInputMemoryOn: Bool = AppSettings.isInputMemoryOn
-        @State private var isContextAwarePunctuationOn: Bool = AppSettings.isContextAwarePunctuationEnabled
+        @State private var isContextAwarePunctuationForLettersOn: Bool = AppSettings.isContextAwarePunctuationForLettersEnabled
+        @State private var isContextAwarePunctuationForNumbersOn: Bool = AppSettings.isContextAwarePunctuationForNumbersEnabled
 
         @State private var isClearInputMemoryConfirmDialogPresented: Bool = false
         @State private var isPerformingClearInputMemory: Bool = false
@@ -42,13 +43,22 @@ struct GeneralSettingsView: View {
                                         Spacer()
                                 }
                                 .block()
-                                VStack(alignment: .leading, spacing: 8) {
+                                VStack(alignment: .leading, spacing: 12) {
                                         HStack {
-                                                Toggle("数字 / 字母后使用英文标点", isOn: $isContextAwarePunctuationOn)
+                                                Toggle("字母后使用英文标点", isOn: $isContextAwarePunctuationForLettersOn)
                                                         .toggleStyle(.switch)
                                                         .scaledToFit()
-                                                        .onChange(of: isContextAwarePunctuationOn) { newState in
-                                                                AppSettings.updateContextAwarePunctuation(to: newState)
+                                                        .onChange(of: isContextAwarePunctuationForLettersOn) { newState in
+                                                                AppSettings.updateContextAwarePunctuationForLetters(to: newState)
+                                                        }
+                                                Spacer()
+                                        }
+                                        HStack {
+                                                Toggle("数字后使用英文标点", isOn: $isContextAwarePunctuationForNumbersOn)
+                                                        .toggleStyle(.switch)
+                                                        .scaledToFit()
+                                                        .onChange(of: isContextAwarePunctuationForNumbersOn) { newState in
+                                                                AppSettings.updateContextAwarePunctuationForNumbers(to: newState)
                                                         }
                                                 Spacer()
                                         }

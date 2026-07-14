@@ -489,6 +489,7 @@ final class PromptInputController: IMKInputController, Sendable {
                 wordCreationCharacters = []
                 wordCreationPinyins = []
                 wordCreationInputs = []
+                isPunctuationFullWidth = true
         }
         private lazy var bufferText: String = .empty {
                 willSet {
@@ -605,10 +606,13 @@ final class PromptInputController: IMKInputController, Sendable {
         /// 纯标点不变。Focus 切换 / 键盘移动光标 / 切到 mandarin 模式时一律回到 true。
         private var isPunctuationFullWidth: Bool = true
         private func updatePunctuationState(for text: String) {
-                guard AppSettings.isContextAwarePunctuationEnabled else { return }
-                if text.contains(where: { $0.isChineseCharacter }) {
+                let hasLetters = text.contains(where: { $0.isASCII && $0.isLetter })
+                let hasNumbers = text.contains(where: { $0.isASCII && $0.isNumber })
+                let hasChinese = text.contains(where: { $0.isChineseCharacter })
+
+                if hasChinese {
                         isPunctuationFullWidth = true
-                } else if text.contains(where: { $0.isASCII && ($0.isLetter || $0.isNumber) }) {
+                } else if (hasLetters && AppSettings.isContextAwarePunctuationForLettersEnabled) || (hasNumbers && AppSettings.isContextAwarePunctuationForNumbersEnabled) {
                         isPunctuationFullWidth = false
                 }
                 // Pure-punctuation insertion leaves the state unchanged
@@ -616,7 +620,7 @@ final class PromptInputController: IMKInputController, Sendable {
         /// 当 isPunctuationFullWidth=false 时返回 true（用半角），否则全角。
         /// 关掉开关或不在中文标点模式时永远返回 false（让外层走原本的全角分支）。
         private func shouldUseHalfWidthPunctuation() -> Bool {
-                guard AppSettings.isContextAwarePunctuationEnabled else { return false }
+                guard AppSettings.isContextAwarePunctuationForLettersEnabled || AppSettings.isContextAwarePunctuationForNumbersEnabled else { return false }
                 guard Options.punctuationForm.isChineseMode else { return false }
                 return !isPunctuationFullWidth
         }

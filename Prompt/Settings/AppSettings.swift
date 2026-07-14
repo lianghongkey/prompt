@@ -173,24 +173,80 @@ struct AppSettings: Sendable {
 
         // MARK: - Context-Aware Punctuation
 
-        /// 是否启用"上下文感知标点"：中文标点模式下，紧接在 ASCII 字母 / 数字后输入
+        /// 是否启用"上下文感知标点（字母后）"：中文标点模式下，紧接在 ASCII 字母后输入
         /// 的标点会使用半角符号；中文之后或刚激活 / 切换光标 / 切到中文模式之后，
         /// 立刻恢复输入法对应的全角中文标点。
-        private(set) static var isContextAwarePunctuationEnabled: Bool = {
-                let savedValue: Int = UserDefaults.standard.integer(forKey: SettingsKey.ContextAwarePunctuation)
-                switch savedValue {
-                case 2:
-                        return false
-                case 0, 1:
-                        return true
-                default:
+        private(set) static var isContextAwarePunctuationForLettersEnabled: Bool = {
+                // Backward compatibility: use old setting if new ones don't exist
+                let oldSavedValue = UserDefaults.standard.integer(forKey: SettingsKey.ContextAwarePunctuation)
+                let newSavedValue = UserDefaults.standard.integer(forKey: SettingsKey.ContextAwarePunctuationForLetters)
+                if newSavedValue != 0 {
+                        // New setting exists, use it
+                        switch newSavedValue {
+                        case 2:
+                                return false
+                        case 1:
+                                return true
+                        default:
+                                return true
+                        }
+                } else if oldSavedValue != 0 {
+                        // Fall back to old setting
+                        switch oldSavedValue {
+                        case 2:
+                                return false
+                        case 0, 1:
+                                return true
+                        default:
+                                return true
+                        }
+                } else {
+                        // Default
                         return true
                 }
         }()
-        static func updateContextAwarePunctuation(to isOn: Bool) {
-                isContextAwarePunctuationEnabled = isOn
+        static func updateContextAwarePunctuationForLetters(to isOn: Bool) {
+                isContextAwarePunctuationForLettersEnabled = isOn
                 let value: Int = isOn ? 1 : 2
-                UserDefaults.standard.set(value, forKey: SettingsKey.ContextAwarePunctuation)
+                UserDefaults.standard.set(value, forKey: SettingsKey.ContextAwarePunctuationForLetters)
+        }
+
+        /// 是否启用"上下文感知标点（数字后）"：中文标点模式下，紧接在 ASCII 数字后输入
+        /// 的标点会使用半角符号；中文之后或刚激活 / 切换光标 / 切到中文模式之后，
+        /// 立刻恢复输入法对应的全角中文标点。
+        private(set) static var isContextAwarePunctuationForNumbersEnabled: Bool = {
+                // Backward compatibility: use old setting if new ones don't exist
+                let oldSavedValue = UserDefaults.standard.integer(forKey: SettingsKey.ContextAwarePunctuation)
+                let newSavedValue = UserDefaults.standard.integer(forKey: SettingsKey.ContextAwarePunctuationForNumbers)
+                if newSavedValue != 0 {
+                        // New setting exists, use it
+                        switch newSavedValue {
+                        case 2:
+                                return false
+                        case 1:
+                                return true
+                        default:
+                                return true
+                        }
+                } else if oldSavedValue != 0 {
+                        // Fall back to old setting
+                        switch oldSavedValue {
+                        case 2:
+                                return false
+                        case 0, 1:
+                                return true
+                        default:
+                                return true
+                        }
+                } else {
+                        // Default
+                        return true
+                }
+        }()
+        static func updateContextAwarePunctuationForNumbers(to isOn: Bool) {
+                isContextAwarePunctuationForNumbersEnabled = isOn
+                let value: Int = isOn ? 1 : 2
+                UserDefaults.standard.set(value, forKey: SettingsKey.ContextAwarePunctuationForNumbers)
         }
 
         // MARK: - Caps Lock to Mandarin
@@ -245,6 +301,8 @@ struct SettingsKey {
         static let UseCapsLockForMandarin: String = "UseCapsLockForMandarin"
         static let AppsExcludedFromInputMemory: String = "AppsExcludedFromInputMemory"
         static let ContextAwarePunctuation: String = "ContextAwarePunctuation"
+        static let ContextAwarePunctuationForLetters: String = "ContextAwarePunctuationForLetters"
+        static let ContextAwarePunctuationForNumbers: String = "ContextAwarePunctuationForNumbers"
         static let AutoSwitchFromSystemABC: String = "AutoSwitchFromSystemABC"
 }
 

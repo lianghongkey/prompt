@@ -168,13 +168,12 @@ final class PromptInputController: IMKInputController, Sendable {
                         }
                         prepareWindow()
                         client?.overrideKeyboard(withKeyboardNamed: "com.apple.keylayout.ABC")
-                        setupVoiceModelObserver()
                         // Set up transcription callback for the currently active controller
                         Self.sharedVoiceRecorder.onTranscription = { [weak self] text in
                                 self?.insertTranscribedText(text)
                         }
                         // Trigger model loading if not already loaded or currently loading
-                        if AppSettings.isVoiceModelConfigured && !Self.sharedVoiceRecorder.isModelLoaded && !Self.sharedVoiceRecorder.isModelLoading {
+                        if AppSettings.isVoiceRecognitionEnabled && !Self.sharedVoiceRecorder.isModelLoaded && !Self.sharedVoiceRecorder.isModelLoading {
                                 Self.sharedVoiceRecorder.reload()
                         }
                 }
@@ -260,7 +259,13 @@ final class PromptInputController: IMKInputController, Sendable {
         ]
 
         private static let sharedVoiceRecorder: VoiceRecorder = VoiceRecorder()
-        private static var voiceModelObserver: NSObjectProtocol?
+
+        /// (Re)load the shared voice model. Called by AppDelegate — both at launch (when
+        /// the toggle is already on) and whenever `.voiceModelDidChange` fires — so loading
+        /// does not depend on any controller having been activated in a text field first.
+        static func reloadVoiceModel() {
+                sharedVoiceRecorder.reload()
+        }
 
         private var isIntendingToRecord: Bool = false
 
@@ -305,17 +310,6 @@ final class PromptInputController: IMKInputController, Sendable {
                         Self.bundleInputForms[bundleID] = newForm
                 }
                 logger.debug("switchInputMethodMode (runtime): -> \(String(describing: mode))")
-        }
-
-        private func setupVoiceModelObserver() {
-                guard Self.voiceModelObserver == nil else { return }
-                Self.voiceModelObserver = NotificationCenter.default.addObserver(
-                        forName: .voiceModelDidChange,
-                        object: nil,
-                        queue: .main
-                ) { _ in
-                        Self.sharedVoiceRecorder.reload()
-                }
         }
 
         private func insertTranscribedText(_ text: String) {

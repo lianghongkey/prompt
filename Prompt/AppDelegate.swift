@@ -13,12 +13,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         private lazy var imkServer: IMKServer? = nil
         private var appActivationObserver: NSObjectProtocol?
+        private var voiceModelObserver: NSObjectProtocol?
 
         func applicationDidFinishLaunching(_ notification: Notification) {
                 let name: String = (Bundle.main.infoDictionary?["InputMethodConnectionName"] as? String) ?? "hk.eduhk.inputmethod.Prompt_Connection"
                 let identifier: String = Bundle.main.bundleIdentifier ?? "hk.eduhk.inputmethod.Prompt"
                 imkServer = IMKServer(name: name, bundleIdentifier: identifier)
                 setupInputSourceMonitor()
+                setupVoiceModel()
+        }
+
+        // Voice-model loading is driven from here (app-level), not from a controller, so it
+        // works even when the Settings toggle is flipped before the IME has been activated in
+        // any text field. Otherwise the Settings panel would sit at "加载中" forever because
+        // nothing ever called reload().
+        private func setupVoiceModel() {
+                if voiceModelObserver == nil {
+                        voiceModelObserver = NotificationCenter.default.addObserver(
+                                forName: .voiceModelDidChange,
+                                object: nil,
+                                queue: .main
+                        ) { _ in
+                                PromptInputController.reloadVoiceModel()
+                        }
+                }
+                // Preload at launch if the user has voice recognition enabled, so it is ready
+                // before first use and the Settings panel reflects the real load state.
+                if AppSettings.isVoiceRecognitionEnabled {
+                        PromptInputController.reloadVoiceModel()
+                }
         }
 
         func applicationWillTerminate(_ notification: Notification) {

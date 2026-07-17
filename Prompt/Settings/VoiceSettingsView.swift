@@ -3,7 +3,7 @@ import CoreIME
 
 struct VoiceSettingsView: View {
 
-        @State private var senseVoiceModelDir: String = AppSettings.senseVoiceModelDir
+        @State private var isEnabled: Bool = AppSettings.isVoiceRecognitionEnabled
         @State private var voiceModelLoadState: VoiceModelLoadState = AppSettings.voiceModelLoadState
 
         @ViewBuilder
@@ -22,16 +22,16 @@ struct VoiceSettingsView: View {
 
         private var statusText: String {
                 switch voiceModelLoadState {
-                case .notConfigured: return "未设置"
+                case .notConfigured: return "未启用"
                 case .loading:      return "加载中…"
                 case .loaded:       return "已加载"
-                case .failed:       return "加载失败（请检查模型目录）"
+                case .failed:       return "加载失败"
                 }
         }
 
-        private func applySenseVoiceModelDir() {
-                AppSettings.updateSenseVoiceModelDir(to: senseVoiceModelDir)
-                voiceModelLoadState = senseVoiceModelDir.isEmpty ? .notConfigured : .loading
+        private func applyEnabled() {
+                AppSettings.updateVoiceRecognitionEnabled(to: isEnabled)
+                voiceModelLoadState = isEnabled ? .loading : .notConfigured
                 NotificationCenter.default.post(name: .voiceModelDidChange, object: nil)
         }
 
@@ -40,33 +40,35 @@ struct VoiceSettingsView: View {
                         VStack(alignment: .leading, spacing: 16) {
                                 VStack(alignment: .leading, spacing: 8) {
                                         HStack(spacing: 6) {
-                                                Text("SenseVoice 模型目录")
+                                                Text("语音识别")
                                                         .font(.headline)
                                                 statusDot
                                                 Text(statusText)
                                                         .font(.caption)
                                                         .foregroundStyle(Color.secondary)
                                         }
-                                        NativeTextField(placeholder: "粘贴 dist 目录路径（含 SenseVoiceSmall.mlmodelc）", text: $senseVoiceModelDir)
-                                                .frame(height: 22)
-                                        HStack {
-                                                Button("应用") {
-                                                        applySenseVoiceModelDir()
+                                        Toggle("启用语音识别（SenseVoice）", isOn: $isEnabled)
+                                                .onChange(of: isEnabled) { _ in
+                                                        applyEnabled()
                                                 }
-                                                if !senseVoiceModelDir.isEmpty {
-                                                        Button("清除") {
-                                                                senseVoiceModelDir = ""
-                                                                AppSettings.updateSenseVoiceModelDir(to: "")
-                                                                voiceModelLoadState = .notConfigured
-                                                                NotificationCenter.default.post(name: .voiceModelDidChange, object: nil)
+                                                .disabled(!AppSettings.isVoiceModelBundled)
+                                        if AppSettings.isVoiceModelBundled {
+                                                VStack(alignment: .leading, spacing: 6) {
+                                                        Text("模型已随 App 打包，无需额外配置。开启后，中文待机时按 Shift+Space 开始录音，松开插入识别文本。")
+                                                        if voiceModelLoadState == .loading {
+                                                                Text("⏳ 首次开启会为神经引擎（ANE）优化模型，约需 1–2 分钟，请耐心等待，这是一次性的。完成后状态会变为“已加载”，之后每次启动仅需约 1 秒。")
+                                                                        .foregroundStyle(Color.orange)
+                                                        } else {
+                                                                Text("首次开启会为神经引擎优化模型（约 1–2 分钟，一次性）；之后每次启动仅需约 1 秒。")
+                                                                        .foregroundStyle(Color.secondary)
                                                         }
-                                                        .foregroundStyle(Color.red)
                                                 }
-                                                Spacer()
-                                        }
-                                        Text("用 SenseVoiceSmall/build_sensevoice_mlmodelc.sh 生成 dist/ 后，把该目录路径粘贴到此处。中文待机时 Shift+Space 开始录音，松开结束并插入识别文本。")
                                                 .font(.caption)
-                                                .foregroundStyle(Color.secondary)
+                                        } else {
+                                                Text("此版本未包含语音模型。请先运行 SenseVoiceSmall/build_sensevoice_mlmodelc.sh 生成 dist/ 后重新构建 App。")
+                                                        .font(.caption)
+                                                        .foregroundStyle(Color.red)
+                                        }
                                 }
                                 .block()
                                 .onReceive(NotificationCenter.default.publisher(for: .voiceModelLoadStateDidChange)) { notification in

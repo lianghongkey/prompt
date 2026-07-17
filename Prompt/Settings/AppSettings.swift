@@ -86,19 +86,34 @@ struct AppSettings: Sendable {
 
         // MARK: - Voice recognition (SenseVoiceSmall)
 
-        /// SenseVoiceSmall 模型目录（含 SenseVoiceSmall.mlmodelc / query_embeddings.f32 /
-        /// am.mvn / tokens.json，即 build_sensevoice_mlmodelc.sh 产出的 dist/）。空则未配置。
-        private(set) static var senseVoiceModelDir: String = {
-                UserDefaults.standard.string(forKey: SettingsKey.SenseVoiceModelDir) ?? ""
-        }()
-        static func updateSenseVoiceModelDir(to path: String) {
-                senseVoiceModelDir = path
-                UserDefaults.standard.set(path, forKey: SettingsKey.SenseVoiceModelDir)
+        /// SenseVoiceSmall 模型已随 App 一起打包进 bundle（构建脚本 “Bundle SenseVoice Model”
+        /// 把 dist/ 里的 SenseVoiceSmall.mlmodelc / query_embeddings.f32 / am.mvn / tokens.json
+        /// 拷进 Prompt.app/Contents/Resources/SenseVoiceModel/）。用户不再需要指定路径。
+        static var bundledSenseVoiceModelURL: URL? {
+                Bundle.main.resourceURL?.appendingPathComponent("SenseVoiceModel", isDirectory: true)
         }
 
-        /// 语音识别是否已配置模型目录。
-        static var isVoiceModelConfigured: Bool {
-                return !senseVoiceModelDir.isEmpty
+        /// 语音识别是否已启用（用户开关，持久化，默认关闭）。
+        private(set) static var isVoiceRecognitionEnabled: Bool = {
+                UserDefaults.standard.bool(forKey: SettingsKey.VoiceRecognitionEnabled)
+        }()
+        static func updateVoiceRecognitionEnabled(to enabled: Bool) {
+                isVoiceRecognitionEnabled = enabled
+                UserDefaults.standard.set(enabled, forKey: SettingsKey.VoiceRecognitionEnabled)
+        }
+
+        /// 供 VoiceRecorder 使用的模型目录：开关开启且 bundle 内存在模型时返回其路径，否则为空。
+        static var senseVoiceModelDir: String {
+                guard isVoiceRecognitionEnabled, let url = bundledSenseVoiceModelURL else { return "" }
+                let mlmodelc = url.appendingPathComponent("SenseVoiceSmall.mlmodelc")
+                guard FileManager.default.fileExists(atPath: mlmodelc.path) else { return "" }
+                return url.path
+        }
+
+        /// bundle 内是否确实打包了语音模型（用于设置界面提示“此版本未包含模型”）。
+        static var isVoiceModelBundled: Bool {
+                guard let url = bundledSenseVoiceModelURL else { return false }
+                return FileManager.default.fileExists(atPath: url.appendingPathComponent("SenseVoiceSmall.mlmodelc").path)
         }
 
         /// Current voice-model load state. Updated by VoiceRecorder; read by VoiceSettingsView on init.
@@ -289,7 +304,7 @@ struct SettingsKey {
         static let EnabledCommentLanguages: String = "EnabledCommentLanguages"
         static let PrimaryCommentLanguage: String = "PrimaryCommentLanguage"
         static let UserLexiconInputMemory: String = "UserLexiconInputMemory"
-        static let SenseVoiceModelDir: String = "SenseVoiceModelDir"
+        static let VoiceRecognitionEnabled: String = "VoiceRecognitionEnabled"
         static let DefaultInputModeOnActivation: String = "DefaultInputModeOnActivation"
         static let UseCapsLockForMandarin: String = "UseCapsLockForMandarin"
         static let AppsExcludedFromInputMemory: String = "AppsExcludedFromInputMemory"

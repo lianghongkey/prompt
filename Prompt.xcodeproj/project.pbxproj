@@ -360,6 +360,7 @@
 				371B27702B3EB66800EC1271 /* Frameworks */,
 				371B27712B3EB66800EC1271 /* Resources */,
 				AA000004AA000004AA000004 /* Embed Frameworks */,
+				CC200001CC200001CC200001 /* Bundle SenseVoice Model */,
 			);
 			buildRules = (
 			);
@@ -493,6 +494,31 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		CC200001CC200001CC200001 /* Bundle SenseVoice Model */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/SenseVoiceSmall/dist/SenseVoiceSmall.mlmodelc",
+				"$(SRCROOT)/SenseVoiceSmall/dist/query_embeddings.f32",
+				"$(SRCROOT)/SenseVoiceSmall/dist/am.mvn",
+				"$(SRCROOT)/SenseVoiceSmall/dist/tokens.json",
+			);
+			name = "Bundle SenseVoice Model";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SenseVoiceModel/SenseVoiceSmall.mlmodelc",
+				"$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SenseVoiceModel/query_embeddings.f32",
+				"$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SenseVoiceModel/am.mvn",
+				"$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SenseVoiceModel/tokens.json",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nSRC=\"${SRCROOT}/SenseVoiceSmall/dist\"\nDST=\"${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/SenseVoiceModel\"\nif [ ! -d \"$SRC/SenseVoiceSmall.mlmodelc\" ]; then\n  echo \"warning: SenseVoice model not found at $SRC/SenseVoiceSmall.mlmodelc — voice recognition will be unavailable in this build\"\n  exit 0\nfi\nmkdir -p \"$DST\"\nfor f in SenseVoiceSmall.mlmodelc query_embeddings.f32 am.mvn tokens.json; do\n  rsync -a --delete \"$SRC/$f\" \"$DST/\"\ndone\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		371B276F2B3EB66800EC1271 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -622,7 +648,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -690,7 +716,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;

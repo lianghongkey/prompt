@@ -168,7 +168,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         }
                         prepareWindow()
                         client?.overrideKeyboard(withKeyboardNamed: "com.apple.keylayout.ABC")
-                        setupWhisperModelObserver()
+                        setupVoiceModelObserver()
                         // Set up transcription callback for the currently active controller
                         Self.sharedVoiceRecorder.onTranscription = { [weak self] text in
                                 self?.insertTranscribedText(text)
@@ -176,11 +176,6 @@ final class PromptInputController: IMKInputController, Sendable {
                         // Trigger model loading if not already loaded or currently loading
                         if AppSettings.isVoiceModelConfigured && !Self.sharedVoiceRecorder.isModelLoaded && !Self.sharedVoiceRecorder.isModelLoading {
                                 Self.sharedVoiceRecorder.reload()
-                        }
-                        // Auto-start corrector server if both paths are configured
-                        setupCorrectorObserver()
-                        if !AppSettings.llamaModelPath.isEmpty && !CorrectorEngine.shared.isServerRunning && AppSettings.correctorServerState != .starting {
-                                Task { await CorrectorEngine.shared.startServer() }
                         }
                 }
         }
@@ -265,7 +260,7 @@ final class PromptInputController: IMKInputController, Sendable {
         ]
 
         private static let sharedVoiceRecorder: VoiceRecorder = VoiceRecorder()
-        private static var whisperModelObserver: NSObjectProtocol?
+        private static var voiceModelObserver: NSObjectProtocol?
 
         private var isIntendingToRecord: Bool = false
 
@@ -312,32 +307,14 @@ final class PromptInputController: IMKInputController, Sendable {
                 logger.debug("switchInputMethodMode (runtime): -> \(String(describing: mode))")
         }
 
-        private func setupWhisperModelObserver() {
-                guard Self.whisperModelObserver == nil else { return }
-                Self.whisperModelObserver = NotificationCenter.default.addObserver(
-                        forName: .whisperModelPathDidChange,
+        private func setupVoiceModelObserver() {
+                guard Self.voiceModelObserver == nil else { return }
+                Self.voiceModelObserver = NotificationCenter.default.addObserver(
+                        forName: .voiceModelDidChange,
                         object: nil,
                         queue: .main
                 ) { _ in
                         Self.sharedVoiceRecorder.reload()
-                }
-        }
-
-        private static var correctorObserver: NSObjectProtocol?
-
-        private func setupCorrectorObserver() {
-                guard Self.correctorObserver == nil else { return }
-                Self.correctorObserver = NotificationCenter.default.addObserver(
-                        forName: .correctorPathsDidChange,
-                        object: nil,
-                        queue: .main
-                ) { _ in
-                        Task { @MainActor in
-                                CorrectorEngine.shared.stopServer()
-                                if !AppSettings.llamaModelPath.isEmpty {
-                                        await CorrectorEngine.shared.startServer()
-                                }
-                        }
                 }
         }
 
@@ -351,29 +328,8 @@ final class PromptInputController: IMKInputController, Sendable {
                         return
                 }
                 let simplified = text.applyingTransform(StringTransform("Traditional-Simplified"), reverse: false) ?? text
-                if CorrectorEngine.shared.isServerRunning {
-                        let correctStart = Date()
-                        Self.timing.info("T6 correct dispatch")
-                        Task { @MainActor [weak self] in
-                                guard let self else { return }
-                                var accumulated = ""
-                                let corrected = await CorrectorEngine.shared.correctStreaming(text: simplified) { delta in
-                                        accumulated += delta
-                                        // 边收边把累积内容显示成 marked text（带下划线的预览），
-                                        // 用户能立刻看到 LLM 输出，不用等全部 token decode 完。
-                                        self.mark(text: accumulated)
-                                }
-                                let final = (corrected?.isEmpty == false ? corrected! : simplified)
-                                let correctMs = Int(Date().timeIntervalSince(correctStart) * 1000)
-                                Self.timing.info("T9 correct done took_ms=\(correctMs) result_len=\(final.count)")
-                                // 最终 commit：insertText 会替换掉当前 marked text。
-                                client?.insertText(final as NSString, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
-                                Self.timing.info("T10 insertText (corrected)")
-                        }
-                } else {
-                        client?.insertText(simplified as NSString, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
-                        Self.timing.info("T10 insertText (raw)")
-                }
+                client?.insertText(simplified as NSString, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
+                Self.timing.info("T10 insertText")
         }
 
         // SHARED across all controller instances in this IME process. The previous

@@ -2,7 +2,6 @@ import AppKit
 import AVFoundation
 import CoreAudio
 import os.log
-import whisper
 
 // MARK: - AudioCapture (16kHz mono Float32 PCM via AVAudioEngine)
 
@@ -120,11 +119,11 @@ private final class AudioCapture: @unchecked Sendable {
         deinit { stopCapture() }
 }
 
-// MARK: - Whisper serial queue
+// MARK: - Voice serial queue
 
-let whisperQueue = DispatchQueue(label: "hk.eduhk.inputmethod.Prompt.whisper", qos: .userInitiated)
+let voiceQueue = DispatchQueue(label: "hk.eduhk.inputmethod.Prompt.voice", qos: .userInitiated)
 
-// MARK: - VoiceRecorder
+// MARK: - VoiceRecorder (SenseVoiceSmall, in-process Core ML)
 
 @MainActor
 final class VoiceRecorder {
@@ -134,7 +133,8 @@ final class VoiceRecorder {
 
         private let capture = AudioCapture()
         private var samples: [Float] = []
-        nonisolated(unsafe) private var ctx: OpaquePointer?   // accessed only on whisperQueue
+        // 只在 voiceQueue / 加载完成的 main 回调里访问。
+        nonisolated(unsafe) private var sense: SenseVoiceEngine?
         private let logger = Logger(subsystem: "hk.eduhk.inputmethod.Prompt", category: "VoiceRecorder")
         private let timing = Logger(subsystem: "hk.eduhk.inputmethod.Prompt", category: "Timing")
 
@@ -142,54 +142,24 @@ final class VoiceRecorder {
         var isModelLoading: Bool = false
         var isRecording: Bool = false
 
-        // 当前后端：whisper.cpp 或 SenseVoiceSmall（Core ML）。
-        enum Backend { case whisper, senseVoice }
-        private var backend: Backend = .whisper
-        // 只在 whisperQueue / 加载完成的 main 回调里访问，模式同 ctx。
-        nonisolated(unsafe) private var sense: SenseVoiceEngine?
-
         // MARK: Model loading
 
-        /// 根据 AppSettings.voiceEngine 加载所选引擎的模型（幂等，供 activate / 设置变更调用）。
+        /// 加载 SenseVoiceSmall 模型目录（后台线程，不阻塞 IME）。幂等，供 activate / 设置变更调用。
         func reload() {
-                switch AppSettings.voiceEngine {
-                case .whisper:
-                        backend = .whisper
+                let dir = AppSettings.senseVoiceModelDir
+                guard !dir.isEmpty else {
+                        isModelLoaded = false
+                        isModelLoading = false
                         sense = nil
-                        let path = AppSettings.whisperModelPath
-                        guard !path.isEmpty else {
-                                isModelLoaded = false
-                                isModelLoading = false
-                                Self.postLoadState(.notConfigured)
-                                return
-                        }
-                        loadModel(fromMlmodelc: path)
-                case .senseVoice:
-                        backend = .senseVoice
-                        // 释放 whisper ctx 省内存（转写走 SenseVoice）。
-                        let oldCtx = ctx
-                        ctx = nil
-                        if let old = oldCtx { whisperQueue.async { whisper_free(old) } }
-                        let dir = AppSettings.senseVoiceModelDir
-                        guard !dir.isEmpty else {
-                                isModelLoaded = false
-                                isModelLoading = false
-                                sense = nil
-                                Self.postLoadState(.notConfigured)
-                                return
-                        }
-                        loadSenseVoice(fromDir: dir)
+                        Self.postLoadState(.notConfigured)
+                        return
                 }
-        }
-
-        /// 加载 SenseVoiceSmall 模型目录（后台线程，不阻塞 IME）。
-        private func loadSenseVoice(fromDir dir: String) {
                 isModelLoaded = false
                 isModelLoading = true
                 Self.postLoadState(.loading)
                 logger.info("Loading SenseVoice model: \(dir)")
                 let url = URL(fileURLWithPath: dir)
-                whisperQueue.async { [weak self] in
+                voiceQueue.async { [weak self] in
                         let engine = try? SenseVoiceEngine(modelDir: url)
                         DispatchQueue.main.async {
                                 guard let self else { return }
@@ -208,56 +178,10 @@ final class VoiceRecorder {
                 }
         }
 
-        /// Load whisper model from a `.mlmodelc` path.
-        /// Derives the corresponding GGML `.bin` path (strips `-encoder` suffix, changes extension).
-        func loadModel(fromMlmodelc mlmodelcPath: String) {
-                guard let binPath = Self.binPath(from: mlmodelcPath) else {
-                        logger.warning("Cannot derive .bin path from: \(mlmodelcPath)")
-                        isModelLoaded = false
-                        isModelLoading = false
-                        Self.postLoadState(.failed)
-                        return
-                }
-                isModelLoaded = false
-                isModelLoading = true
-                Self.postLoadState(.loading)
-                logger.info("Loading whisper model: \(binPath)")
-                // Capture and clear ctx before dispatching to prevent double-free if loadModel is called twice
-                let oldCtx = ctx
-                ctx = nil
-                whisperQueue.async { [weak self] in
-                        if let old = oldCtx { whisper_free(old) }
-                        let newCtx = whisper_init_from_file(binPath)
-                        let didLoad = (newCtx != nil)
-                        // 先把"已加载"状态发出去，让用户立刻能录音。
-                        DispatchQueue.main.async {
-                                self?.isModelLoading = false
-                                self?.ctx = newCtx
-                                if didLoad {
-                                        self?.isModelLoaded = true
-                                        self?.logger.info("Whisper model loaded successfully")
-                                        Self.postLoadState(.loaded)
-                                } else {
-                                        self?.logger.error("Whisper model load failed for: \(binPath)")
-                                        Self.postLoadState(.failed)
-                                }
-                        }
-                        // 仍然在 whisperQueue 上空跑 0.8s：ggml Metal 后台资源初始化是异步的
-                        // （跑在 DispatchQueue.global(.default) 上），保持 whisperQueue 占用
-                        // 让 applicationWillTerminate 里 whisperQueue.sync {} 必然等到 Metal
-                        // 初始化稳定后才退出，避免静态析构里 ggml_abort。
-                        // 录音的 transcribe() 会进同一个 queue，所以即使用户在这 0.8s 内
-                        // 录完抬手，转写会自动排到 sleep 之后跑，不会丢音也不会崩。
-                        if didLoad {
-                                Thread.sleep(forTimeInterval: 0.8)
-                        }
-                }
-        }
-
-        private static func postLoadState(_ state: WhisperModelLoadState) {
-                AppSettings.whisperModelLoadState = state
+        private static func postLoadState(_ state: VoiceModelLoadState) {
+                AppSettings.voiceModelLoadState = state
                 NotificationCenter.default.post(
-                        name: .whisperModelLoadStateDidChange,
+                        name: .voiceModelLoadStateDidChange,
                         object: nil,
                         userInfo: ["state": state.rawValue]
                 )
@@ -280,19 +204,6 @@ final class VoiceRecorder {
                 addr.mSelector = kAudioDevicePropertyTransportType
                 guard AudioObjectGetPropertyData(deviceID, &addr, 0, nil, &size, &transportType) == noErr else { return false }
                 return transportType != kAudioDeviceTransportTypeBuiltIn
-        }
-
-        private static func binPath(from mlmodelcPath: String) -> String? {
-                let url = URL(fileURLWithPath: mlmodelcPath)
-                guard url.pathExtension == "mlmodelc" else { return nil }
-                var name = url.deletingPathExtension().lastPathComponent
-                if name.hasSuffix("-encoder") {
-                        name = String(name.dropLast("-encoder".count))
-                }
-                return url.deletingLastPathComponent()
-                        .appendingPathComponent(name)
-                        .appendingPathExtension("bin")
-                        .path
         }
 
         // MARK: Recording
@@ -367,87 +278,22 @@ final class VoiceRecorder {
         // MARK: Transcription
 
         private func transcribe(_ buffer: [Float]) {
-                if backend == .senseVoice {
-                        whisperQueue.async { [weak self] in
-                                guard let self else { return }
-                                guard let sense = self.sense else {
-                                        DispatchQueue.main.async { self.onTranscription?("") }
-                                        return
-                                }
-                                self.timing.info("T1 sensevoice begin")
-                                let start = Date()
-                                let text = (try? sense.transcribe(samples: buffer)) ?? ""
-                                let ms = Int(Date().timeIntervalSince(start) * 1000)
-                                let finalText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                                self.timing.info("T2 sensevoice end took_ms=\(ms) text_len=\(finalText.count)")
-                                DispatchQueue.main.async {
-                                        self.logger.info("SenseVoice transcription: \(finalText)")
-                                        self.onTranscription?(finalText)
-                                }
+                voiceQueue.async { [weak self] in
+                        guard let self else { return }
+                        guard let sense = self.sense else {
+                                DispatchQueue.main.async { self.onTranscription?("") }
+                                return
                         }
-                        return
-                }
-                whisperQueue.async { [weak self] in
-                        guard let self, let ctx = self.ctx else { return }
-                        self.timing.info("T1 whisper_full begin")
-                        let whisperStart = Date()
-                        var params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY)
-                        params.print_progress   = false
-                        params.print_special    = false
-                        params.print_realtime   = false
-                        params.print_timestamps = false
-                        params.translate        = false
-                        params.detect_language  = false
-                        params.n_threads        = Int32(max(1, ProcessInfo.processInfo.processorCount / 2))
-                        let result: Int32 = "zh".withCString { langPtr in
-                                params.language = langPtr
-                                return buffer.withUnsafeBufferPointer { buf in
-                                        whisper_full(ctx, params, buf.baseAddress, Int32(buf.count))
-                                }
-                        }
-                        let whisperMs = Int(Date().timeIntervalSince(whisperStart) * 1000)
-                        self.timing.info("T2 whisper_full end took_ms=\(whisperMs) result=\(result)")
-                        var text = ""
-                        if result == 0 {
-                                let eot = whisper_token_eot(ctx)
-                                let n = whisper_full_n_segments(ctx)
-                                for i in 0 ..< n {
-                                        // Filter 1: high no-speech probability
-                                        let noSpeechProb = whisper_full_get_segment_no_speech_prob(ctx, i)
-                                        guard noSpeechProb < 0.4 else { continue }
-                                        // Filter 2: low avg token log-prob (hallucination indicator)
-                                        let nTokens = Int(whisper_full_n_tokens(ctx, i))
-                                        var logProbSum: Float = 0
-                                        var logProbCount = 0
-                                        for j in 0 ..< Int32(nTokens) {
-                                                let td = whisper_full_get_token_data(ctx, i, j)
-                                                if td.id < eot {
-                                                        logProbSum += td.plog
-                                                        logProbCount += 1
-                                                }
-                                        }
-                                        if logProbCount > 0 {
-                                                let avgLogProb = logProbSum / Float(logProbCount)
-                                                guard avgLogProb > -1.0 else { continue }
-                                        }
-                                        if let seg = whisper_full_get_segment_text(ctx, i) {
-                                                text += String(cString: seg)
-                                        }
-                                }
-                        }
+                        self.timing.info("T1 sensevoice begin")
+                        let start = Date()
+                        let text = (try? sense.transcribe(samples: buffer)) ?? ""
+                        let ms = Int(Date().timeIntervalSince(start) * 1000)
                         let finalText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                        self.timing.info("T3 transcription_ready text_len=\(finalText.count)")
+                        self.timing.info("T2 sensevoice end took_ms=\(ms) text_len=\(finalText.count)")
                         DispatchQueue.main.async {
-                                self.timing.info("T4 onTranscription main_actor")
-                                self.logger.info("Transcription: \(finalText)")
+                                self.logger.info("SenseVoice transcription: \(finalText)")
                                 self.onTranscription?(finalText)
                         }
-                }
-        }
-
-        deinit {
-                if let ctx {
-                        whisperQueue.async { whisper_free(ctx) }
                 }
         }
 }

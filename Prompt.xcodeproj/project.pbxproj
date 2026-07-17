@@ -7,10 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA000002AA000002AA000002 /* whisper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA000001AA000001AA000001 /* whisper.framework */; };
-		AA000003AA000003AA000003 /* whisper.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AA000001AA000001AA000001 /* whisper.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		EE000002EE000002EE000002 /* llama.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE000001EE000001EE000001 /* llama.framework */; };
-		EE000003EE000003EE000003 /* llama.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = EE000001EE000001EE000001 /* llama.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		370C646F2BFEC3A5006F2ABA /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370C646E2BFEC3A5006F2ABA /* GeneralSettingsView.swift */; };
 		AA001100AA001100AA001100 /* MicrophoneTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA001100BB001100BB001100 /* MicrophoneTestView.swift */; };
 		9BB8EFEC10CC4E9E9AD90926 /* FuzzyPinyinSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A029780BDA94DD4BB45D8D2 /* FuzzyPinyinSettingsView.swift */; };
@@ -26,7 +22,6 @@
 		371B27A42B3EB8F100EC1271 /* CoreIME in Frameworks */ = {isa = PBXBuildFile; productRef = 371B27A32B3EB8F100EC1271 /* CoreIME */; };
 		371B27CB2B3EB93A00EC1271 /* UserLexicon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B27A52B3EB93900EC1271 /* UserLexicon.swift */; };
 		C2DB0967FDF4443FB5F59239 /* VoiceRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39C801959FF5413BAF5C25EC /* VoiceRecorder.swift */; };
-		CC000001CC000001CC000001 /* CorrectorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000002CC000002CC000002 /* CorrectorEngine.swift */; };
 		A1000001A1000001A1000001 /* SenseVoiceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002A1000002A1000002 /* SenseVoiceEngine.swift */; };
 		B1000001B1000001B1000001 /* Fbank.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002B1000002B1000002 /* Fbank.swift */; };
 		CC100001CC100001CC100001 /* CapsLockState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC100002CC100002CC100002 /* CapsLockState.swift */; };
@@ -111,7 +106,6 @@
 		371B27A12B3EB8E900EC1271 /* CoreIME */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = CoreIME; sourceTree = "<group>"; };
 		371B27A52B3EB93900EC1271 /* UserLexicon.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserLexicon.swift; sourceTree = "<group>"; };
 		39C801959FF5413BAF5C25EC /* VoiceRecorder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VoiceRecorder.swift; sourceTree = "<group>"; };
-		CC000002CC000002CC000002 /* CorrectorEngine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CorrectorEngine.swift; sourceTree = "<group>"; };
 		A1000002A1000002A1000002 /* SenseVoiceEngine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SenseVoiceEngine.swift; sourceTree = "<group>"; };
 		B1000002B1000002B1000002 /* Fbank.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Fbank.swift; sourceTree = "<group>"; };
 		CC100002CC100002CC100002 /* CapsLockState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CapsLockState.swift; sourceTree = "<group>"; };
@@ -158,8 +152,6 @@
 		3797F6E82C18902900DE6D0E /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		379DBF992C8EA79900D041C8 /* CandidateWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidateWindow.swift; sourceTree = "<group>"; };
 		37A619B02BAE2F5A00A0C7F9 /* prompt.pdf */ = {isa = PBXFileReference; lastKnownFileType = file; path = prompt.pdf; sourceTree = "<group>"; };
-		AA000001AA000001AA000001 /* whisper.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = whisper.framework; path = Frameworks/whisper.framework; sourceTree = SOURCE_ROOT; };
-		EE000001EE000001EE000001 /* llama.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = llama.framework; path = Frameworks/llama.framework; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -168,8 +160,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				371B27A42B3EB8F100EC1271 /* CoreIME in Frameworks */,
-				AA000002AA000002AA000002 /* whisper.framework in Frameworks */,
-				EE000002EE000002EE000002 /* llama.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -179,8 +169,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				AA000003AA000003AA000003 /* whisper.framework in Embed Frameworks */,
-				EE000003EE000003EE000003 /* llama.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -237,7 +225,6 @@
 				371B27B12B3EB93A00EC1271 /* InputStage.swift */,
 				371B27A52B3EB93900EC1271 /* UserLexicon.swift */,
 				39C801959FF5413BAF5C25EC /* VoiceRecorder.swift */,
-				CC000002CC000002CC000002 /* CorrectorEngine.swift */,
 				A1000002A1000002A1000002 /* SenseVoiceEngine.swift */,
 				B1000002B1000002B1000002 /* Fbank.swift */,
 				CC100002CC100002CC100002 /* CapsLockState.swift */,
@@ -292,8 +279,6 @@
 		371B27A22B3EB8F100EC1271 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				AA000001AA000001AA000001 /* whisper.framework */,
-				EE000001EE000001EE000001 /* llama.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -546,7 +531,6 @@
 				371B27D12B3EB93A00EC1271 /* PunctuationKey.swift in Sources */,
 				371B27CB2B3EB93A00EC1271 /* UserLexicon.swift in Sources */,
 				C2DB0967FDF4443FB5F59239 /* VoiceRecorder.swift in Sources */,
-				CC000001CC000001CC000001 /* CorrectorEngine.swift in Sources */,
 				A1000001A1000001A1000001 /* SenseVoiceEngine.swift in Sources */,
 				B1000001B1000001B1000001 /* Fbank.swift in Sources */,
 				CC100001CC100001CC100001 /* CapsLockState.swift in Sources */,

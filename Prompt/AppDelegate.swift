@@ -22,12 +22,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         func applicationWillTerminate(_ notification: Notification) {
-                // Block until any in-progress whisper model load finishes, including the
-                // 0.8s settling period appended in VoiceRecorder.loadModel that covers the
-                // asynchronous ggml Metal GPU resource-set initialisation.  Without this,
-                // the C++ global destructor for ggml Metal devices can race with the still-
-                // running Metal init thread and trigger ggml_abort.
-                whisperQueue.sync { }
+                // Block until any in-progress voice-model load / transcription on the
+                // voice queue finishes before the process tears down.
+                voiceQueue.sync { }
         }
 
         private static let systemABCInputSourceID: String = "com.apple.keylayout.ABC"

@@ -84,31 +84,7 @@ struct AppSettings: Sendable {
                 return marketingVersion + " (" + currentProjectVersion + ")"
         }()
 
-        /// Whisper model path (.mlmodelc). Empty string means voice recognition is disabled.
-        private(set) static var whisperModelPath: String = {
-                UserDefaults.standard.string(forKey: SettingsKey.WhisperModelPath) ?? ""
-        }()
-        static func updateWhisperModelPath(to path: String) {
-                whisperModelPath = path
-                UserDefaults.standard.set(path, forKey: SettingsKey.WhisperModelPath)
-        }
-
-        /// Current whisper model load state. Updated by VoiceRecorder; read by GeneralSettingsView on init.
-        static var whisperModelLoadState: WhisperModelLoadState = {
-                whisperModelPath.isEmpty ? .notConfigured : .loading
-        }()
-
-        // MARK: - Voice recognition engine (whisper / SenseVoice)
-
-        /// 语音识别引擎：whisper.cpp 或 本地 SenseVoiceSmall（Core ML）。运行时只加载所选那个。
-        private(set) static var voiceEngine: VoiceEngineKind = {
-                let saved = UserDefaults.standard.string(forKey: SettingsKey.VoiceEngine) ?? ""
-                return VoiceEngineKind(rawValue: saved) ?? .whisper
-        }()
-        static func updateVoiceEngine(to engine: VoiceEngineKind) {
-                voiceEngine = engine
-                UserDefaults.standard.set(engine.rawValue, forKey: SettingsKey.VoiceEngine)
-        }
+        // MARK: - Voice recognition (SenseVoiceSmall)
 
         /// SenseVoiceSmall 模型目录（含 SenseVoiceSmall.mlmodelc / query_embeddings.f32 /
         /// am.mvn / tokens.json，即 build_sensevoice_mlmodelc.sh 产出的 dist/）。空则未配置。
@@ -120,13 +96,15 @@ struct AppSettings: Sendable {
                 UserDefaults.standard.set(path, forKey: SettingsKey.SenseVoiceModelDir)
         }
 
-        /// 当前所选语音引擎是否已配置模型路径。
+        /// 语音识别是否已配置模型目录。
         static var isVoiceModelConfigured: Bool {
-                switch voiceEngine {
-                case .whisper:    return !whisperModelPath.isEmpty
-                case .senseVoice: return !senseVoiceModelDir.isEmpty
-                }
+                return !senseVoiceModelDir.isEmpty
         }
+
+        /// Current voice-model load state. Updated by VoiceRecorder; read by VoiceSettingsView on init.
+        static var voiceModelLoadState: VoiceModelLoadState = {
+                senseVoiceModelDir.isEmpty ? .notConfigured : .loading
+        }()
 
         /// Settings Window
         private(set) static var selectedSettingsSidebarRow: SettingsSidebarRow = .general
@@ -135,20 +113,6 @@ struct AppSettings: Sendable {
         }
 
         static let PromptSettingsWindowIdentifierPrefix: String = "PromptSettingsWindowIdentifierPrefix"
-
-        // MARK: - Corrector (llama.cpp server)
-
-        /// Path to GGUF model file
-        private(set) static var llamaModelPath: String = {
-                UserDefaults.standard.string(forKey: SettingsKey.LlamaModelPath) ?? ""
-        }()
-        static func updateLlamaModelPath(to path: String) {
-                llamaModelPath = path
-                UserDefaults.standard.set(path, forKey: SettingsKey.LlamaModelPath)
-        }
-
-        /// Current corrector server state. Updated by CorrectorEngine; read by GeneralSettingsView.
-        static var correctorServerState: CorrectorServerState = .notConfigured
 
         // MARK: - Default input mode on activation
 
@@ -325,10 +289,7 @@ struct SettingsKey {
         static let EnabledCommentLanguages: String = "EnabledCommentLanguages"
         static let PrimaryCommentLanguage: String = "PrimaryCommentLanguage"
         static let UserLexiconInputMemory: String = "UserLexiconInputMemory"
-        static let WhisperModelPath: String = "WhisperModelPath"
-        static let VoiceEngine: String = "VoiceEngine"
         static let SenseVoiceModelDir: String = "SenseVoiceModelDir"
-        static let LlamaModelPath: String = "LlamaModelPath"
         static let DefaultInputModeOnActivation: String = "DefaultInputModeOnActivation"
         static let UseCapsLockForMandarin: String = "UseCapsLockForMandarin"
         static let AppsExcludedFromInputMemory: String = "AppsExcludedFromInputMemory"
@@ -339,35 +300,14 @@ struct SettingsKey {
 }
 
 extension Notification.Name {
-        static let whisperModelPathDidChange = Notification.Name("hk.eduhk.inputmethod.Prompt.whisperModelPathDidChange")
-        static let whisperModelLoadStateDidChange = Notification.Name("hk.eduhk.inputmethod.Prompt.whisperModelLoadStateDidChange")
-        static let correctorServerStateDidChange = Notification.Name("hk.eduhk.inputmethod.Prompt.correctorServerStateDidChange")
-        static let correctorPathsDidChange = Notification.Name("hk.eduhk.inputmethod.Prompt.correctorPathsDidChange")
+        static let voiceModelDidChange = Notification.Name("hk.eduhk.inputmethod.Prompt.voiceModelDidChange")
+        static let voiceModelLoadStateDidChange = Notification.Name("hk.eduhk.inputmethod.Prompt.voiceModelLoadStateDidChange")
 }
 
-enum WhisperModelLoadState: String {
+enum VoiceModelLoadState: String {
         case notConfigured
         case loading
         case loaded
-        case failed
-}
-
-enum VoiceEngineKind: String, CaseIterable {
-        case whisper
-        case senseVoice
-        var displayName: String {
-                switch self {
-                case .whisper:    return "Whisper"
-                case .senseVoice: return "SenseVoice"
-                }
-        }
-}
-
-enum CorrectorServerState: String {
-        case notConfigured
-        case starting
-        case running
-        case stopped
         case failed
 }
 

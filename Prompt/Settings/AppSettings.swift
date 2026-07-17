@@ -98,6 +98,36 @@ struct AppSettings: Sendable {
                 whisperModelPath.isEmpty ? .notConfigured : .loading
         }()
 
+        // MARK: - Voice recognition engine (whisper / SenseVoice)
+
+        /// 语音识别引擎：whisper.cpp 或 本地 SenseVoiceSmall（Core ML）。运行时只加载所选那个。
+        private(set) static var voiceEngine: VoiceEngineKind = {
+                let saved = UserDefaults.standard.string(forKey: SettingsKey.VoiceEngine) ?? ""
+                return VoiceEngineKind(rawValue: saved) ?? .whisper
+        }()
+        static func updateVoiceEngine(to engine: VoiceEngineKind) {
+                voiceEngine = engine
+                UserDefaults.standard.set(engine.rawValue, forKey: SettingsKey.VoiceEngine)
+        }
+
+        /// SenseVoiceSmall 模型目录（含 SenseVoiceSmall.mlmodelc / query_embeddings.f32 /
+        /// am.mvn / tokens.json，即 build_sensevoice_mlmodelc.sh 产出的 dist/）。空则未配置。
+        private(set) static var senseVoiceModelDir: String = {
+                UserDefaults.standard.string(forKey: SettingsKey.SenseVoiceModelDir) ?? ""
+        }()
+        static func updateSenseVoiceModelDir(to path: String) {
+                senseVoiceModelDir = path
+                UserDefaults.standard.set(path, forKey: SettingsKey.SenseVoiceModelDir)
+        }
+
+        /// 当前所选语音引擎是否已配置模型路径。
+        static var isVoiceModelConfigured: Bool {
+                switch voiceEngine {
+                case .whisper:    return !whisperModelPath.isEmpty
+                case .senseVoice: return !senseVoiceModelDir.isEmpty
+                }
+        }
+
         /// Settings Window
         private(set) static var selectedSettingsSidebarRow: SettingsSidebarRow = .general
         static func updateSelectedSettingsSidebarRow(to row: SettingsSidebarRow) {
@@ -296,6 +326,8 @@ struct SettingsKey {
         static let PrimaryCommentLanguage: String = "PrimaryCommentLanguage"
         static let UserLexiconInputMemory: String = "UserLexiconInputMemory"
         static let WhisperModelPath: String = "WhisperModelPath"
+        static let VoiceEngine: String = "VoiceEngine"
+        static let SenseVoiceModelDir: String = "SenseVoiceModelDir"
         static let LlamaModelPath: String = "LlamaModelPath"
         static let DefaultInputModeOnActivation: String = "DefaultInputModeOnActivation"
         static let UseCapsLockForMandarin: String = "UseCapsLockForMandarin"
@@ -318,6 +350,17 @@ enum WhisperModelLoadState: String {
         case loading
         case loaded
         case failed
+}
+
+enum VoiceEngineKind: String, CaseIterable {
+        case whisper
+        case senseVoice
+        var displayName: String {
+                switch self {
+                case .whisper:    return "Whisper"
+                case .senseVoice: return "SenseVoice"
+                }
+        }
 }
 
 enum CorrectorServerState: String {

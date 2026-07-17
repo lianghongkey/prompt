@@ -174,8 +174,8 @@ final class PromptInputController: IMKInputController, Sendable {
                                 self?.insertTranscribedText(text)
                         }
                         // Trigger model loading if not already loaded or currently loading
-                        if !AppSettings.whisperModelPath.isEmpty && !Self.sharedVoiceRecorder.isModelLoaded && !Self.sharedVoiceRecorder.isModelLoading {
-                                Self.sharedVoiceRecorder.loadModel(fromMlmodelc: AppSettings.whisperModelPath)
+                        if AppSettings.isVoiceModelConfigured && !Self.sharedVoiceRecorder.isModelLoaded && !Self.sharedVoiceRecorder.isModelLoading {
+                                Self.sharedVoiceRecorder.reload()
                         }
                         // Auto-start corrector server if both paths are configured
                         setupCorrectorObserver()
@@ -319,12 +319,7 @@ final class PromptInputController: IMKInputController, Sendable {
                         object: nil,
                         queue: .main
                 ) { _ in
-                        let path = AppSettings.whisperModelPath
-                        if path.isEmpty {
-                                Self.sharedVoiceRecorder.isModelLoaded = false
-                        } else {
-                                Self.sharedVoiceRecorder.loadModel(fromMlmodelc: path)
-                        }
+                        Self.sharedVoiceRecorder.reload()
                 }
         }
 

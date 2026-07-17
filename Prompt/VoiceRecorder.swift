@@ -142,7 +142,71 @@ final class VoiceRecorder {
         var isModelLoading: Bool = false
         var isRecording: Bool = false
 
+        // 当前后端：whisper.cpp 或 SenseVoiceSmall（Core ML）。
+        enum Backend { case whisper, senseVoice }
+        private var backend: Backend = .whisper
+        // 只在 whisperQueue / 加载完成的 main 回调里访问，模式同 ctx。
+        nonisolated(unsafe) private var sense: SenseVoiceEngine?
+
         // MARK: Model loading
+
+        /// 根据 AppSettings.voiceEngine 加载所选引擎的模型（幂等，供 activate / 设置变更调用）。
+        func reload() {
+                switch AppSettings.voiceEngine {
+                case .whisper:
+                        backend = .whisper
+                        sense = nil
+                        let path = AppSettings.whisperModelPath
+                        guard !path.isEmpty else {
+                                isModelLoaded = false
+                                isModelLoading = false
+                                Self.postLoadState(.notConfigured)
+                                return
+                        }
+                        loadModel(fromMlmodelc: path)
+                case .senseVoice:
+                        backend = .senseVoice
+                        // 释放 whisper ctx 省内存（转写走 SenseVoice）。
+                        let oldCtx = ctx
+                        ctx = nil
+                        if let old = oldCtx { whisperQueue.async { whisper_free(old) } }
+                        let dir = AppSettings.senseVoiceModelDir
+                        guard !dir.isEmpty else {
+                                isModelLoaded = false
+                                isModelLoading = false
+                                sense = nil
+                                Self.postLoadState(.notConfigured)
+                                return
+                        }
+                        loadSenseVoice(fromDir: dir)
+                }
+        }
+
+        /// 加载 SenseVoiceSmall 模型目录（后台线程，不阻塞 IME）。
+        private func loadSenseVoice(fromDir dir: String) {
+                isModelLoaded = false
+                isModelLoading = true
+                Self.postLoadState(.loading)
+                logger.info("Loading SenseVoice model: \(dir)")
+                let url = URL(fileURLWithPath: dir)
+                whisperQueue.async { [weak self] in
+                        let engine = try? SenseVoiceEngine(modelDir: url)
+                        DispatchQueue.main.async {
+                                guard let self else { return }
+                                self.isModelLoading = false
+                                if let engine {
+                                        self.sense = engine
+                                        self.isModelLoaded = true
+                                        self.logger.info("SenseVoice model loaded successfully")
+                                        Self.postLoadState(.loaded)
+                                } else {
+                                        self.sense = nil
+                                        self.logger.error("SenseVoice model load failed for: \(dir)")
+                                        Self.postLoadState(.failed)
+                                }
+                        }
+                }
+        }
 
         /// Load whisper model from a `.mlmodelc` path.
         /// Derives the corresponding GGML `.bin` path (strips `-encoder` suffix, changes extension).
@@ -303,6 +367,26 @@ final class VoiceRecorder {
         // MARK: Transcription
 
         private func transcribe(_ buffer: [Float]) {
+                if backend == .senseVoice {
+                        whisperQueue.async { [weak self] in
+                                guard let self else { return }
+                                guard let sense = self.sense else {
+                                        DispatchQueue.main.async { self.onTranscription?("") }
+                                        return
+                                }
+                                self.timing.info("T1 sensevoice begin")
+                                let start = Date()
+                                let text = (try? sense.transcribe(samples: buffer)) ?? ""
+                                let ms = Int(Date().timeIntervalSince(start) * 1000)
+                                let finalText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                                self.timing.info("T2 sensevoice end took_ms=\(ms) text_len=\(finalText.count)")
+                                DispatchQueue.main.async {
+                                        self.logger.info("SenseVoice transcription: \(finalText)")
+                                        self.onTranscription?(finalText)
+                                }
+                        }
+                        return
+                }
                 whisperQueue.async { [weak self] in
                         guard let self, let ctx = self.ctx else { return }
                         self.timing.info("T1 whisper_full begin")

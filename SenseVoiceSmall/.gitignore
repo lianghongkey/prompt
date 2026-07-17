@@ -1,0 +1,8 @@
+# Build scratch: virtualenv, cloned upstream repo, downloaded weights (~936MB),
+# intermediate .mlpackage (~448MB) and the compiled .mlmodelc output.
+.build/
+.build_log.txt
+dist/
+*.mlpackage
+*.mlmodelc
+*.npz

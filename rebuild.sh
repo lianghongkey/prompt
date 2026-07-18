@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# 删除用户词库数据库
+# 删除用户词库数据库（重置词频）
+# App Sandbox 后活跃库在容器内，reset 要删这个：
+# rm -f ~/Library/Containers/hk.eduhk.inputmethod.Prompt/Data/Library/userlexicon.sqlite3*
+# 下面这个是旧的（非沙箱）位置，现在只是首启一次性迁移的来源，别误删否则迁移拿不到旧词频：
 # rm -f ~/Library/userlexicon.sqlite3
 
 # rm -rf ~/Library/Developer/Xcode/DerivedData/Prompt-*
@@ -34,9 +37,10 @@ echo "Build and install complete!"
 
 # log stream --predicate 'subsystem == "hk.eduhk.inputmethod.Prompt"' --level debug --style compact
 
-## 词频数据保存的位置
+## 词频数据保存的位置（App Sandbox 后）
 
-# ~/Library/userlexicon.sqlite3
+# ~/Library/Containers/hk.eduhk.inputmethod.Prompt/Data/Library/userlexicon.sqlite3
+# 迁移来源（旧版、非沙箱）： ~/Library/userlexicon.sqlite3
 
 
 

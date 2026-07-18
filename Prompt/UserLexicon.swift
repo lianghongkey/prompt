@@ -20,9 +20,45 @@ struct UserLexicon: Sendable {
                         }
                 }()
                 guard let path else { return nil }
+                migrateLegacyLexiconIfNeeded(containerPath: path)
                 guard sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nil) == SQLITE_OK else { return nil }
                 return db
         }()
+
+        /// One-time migration of the pre-sandbox user lexicon.
+        ///
+        /// Under App Sandbox, `URL.libraryDirectory` redirects to the container
+        /// (`~/Library/Containers/…/Data/Library/`), so the old database at the *real*
+        /// `~/Library/userlexicon.sqlite3` becomes invisible. On the first sandboxed
+        /// launch (container DB absent) we copy the legacy file — plus its `-wal`/`-shm`
+        /// sidecars — into the container. Reading the real home is permitted by the
+        /// `temporary-exception.files.home-relative-path.read-only` entitlement, and
+        /// `NSHomeDirectoryForUser(NSUserName())` returns the real home even inside a
+        /// sandbox.
+        ///
+        /// No-op when not sandboxed (legacy path == container path), when the container
+        /// DB already exists, or when there is no legacy file to migrate.
+        private static func migrateLegacyLexiconIfNeeded(containerPath: String) {
+                let fm = FileManager.default
+                guard !fm.fileExists(atPath: containerPath) else { return }
+                let realHome: String = NSHomeDirectoryForUser(NSUserName()) ?? NSHomeDirectory()
+                let legacyPath: String = (realHome as NSString)
+                        .appendingPathComponent("Library/userlexicon.sqlite3")
+                guard legacyPath != containerPath, fm.fileExists(atPath: legacyPath) else { return }
+                let containerDir = (containerPath as NSString).deletingLastPathComponent
+                try? fm.createDirectory(atPath: containerDir, withIntermediateDirectories: true)
+                for suffix in ["", "-wal", "-shm"] {
+                        let src = legacyPath + suffix
+                        let dst = containerPath + suffix
+                        guard fm.fileExists(atPath: src), !fm.fileExists(atPath: dst) else { continue }
+                        do {
+                                try fm.copyItem(atPath: src, toPath: dst)
+                        } catch {
+                                logger.error("Legacy lexicon migration failed for \(src, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                        }
+                }
+                logger.info("Migrated legacy user lexicon into sandbox container.")
+        }
 
         static func prepare() {
                 let command: String = "CREATE TABLE IF NOT EXISTS userlexicontable(id INTEGER NOT NULL PRIMARY KEY, frequency INTEGER NOT NULL, word TEXT NOT NULL, romanization TEXT NOT NULL, shortcut INTEGER NOT NULL, ping INTEGER NOT NULL);"
